@@ -67,7 +67,8 @@ Canvas Roots handles **highly sensitive personally identifiable information (PII
    - **Never** share your vault publicly without sanitizing PII first
    - Be extremely cautious about who has access to your vault
    - Consider using separate vaults for sensitive genealogical data vs. other notes
-   - Remove or anonymize data before sharing Canvas screenshots
+   - **Use the built-in obfuscation feature** (§5.5 of specification) when sharing Canvas screenshots or GEDCOM exports
+   - The obfuscation feature protects PII while preserving family tree structure for demonstrations and collaboration
 
 3. **Cloud Sync and Backup**
    - Understand that cloud sync services (Obsidian Sync, Dropbox, etc.) will sync all PII
@@ -85,7 +86,9 @@ Canvas Roots handles **highly sensitive personally identifiable information (PII
    - GEDCOM files contain extensive PII about living and deceased individuals
    - Treat GEDCOM files with the same security as financial documents
    - Be cautious when importing GEDCOM files from untrusted sources
-   - Consider redacting information about living individuals before export
+   - **Use the export obfuscation feature** when sharing GEDCOM files publicly or with collaborators
+   - Obfuscation levels range from minimal (dates only) to full (all PII anonymized)
+   - Optionally generate a secure mapping file to reverse obfuscation later
 
 ### For Professional Genealogists
 
@@ -102,10 +105,12 @@ Canvas Roots handles **highly sensitive personally identifiable information (PII
    - Document your data handling procedures
 
 3. **Data Anonymization**
-   - Remove cr_id values before sharing example data
-   - Replace real names with pseudonyms for demonstrations
-   - Use fictional data for screenshots and examples
-   - Implement your own data anonymization workflow as needed
+   - **Use the built-in obfuscation feature** for professional demonstrations and client presentations
+   - Choose appropriate obfuscation levels: Minimal, Standard, or Full based on sharing context
+   - Canvas obfuscation mode provides temporary display anonymization for screenshots
+   - Export obfuscation creates shareable GEDCOM files while preserving structure
+   - Store obfuscation mapping files securely and separately from obfuscated exports
+   - Use fictional data for public examples when obfuscation is insufficient
 
 ## Security Best Practices for Users
 
@@ -135,8 +140,8 @@ Canvas Roots handles **highly sensitive personally identifiable information (PII
 1. **No Built-in Encryption**: The plugin does not encrypt data (relies on Obsidian/OS)
 2. **No Access Controls**: Anyone with vault access can view all data
 3. **No Audit Logging**: The plugin does not log data access
-4. **No Data Masking**: All data is visible in plain text
-5. **No Automatic Redaction**: No automatic PII redaction features
+4. **Obfuscation is Optional**: Users must manually enable obfuscation for exports/canvas
+5. **Obfuscation Mapping Files**: Mapping files contain PII and must be secured separately
 
 ## Reporting a Vulnerability
 
@@ -195,14 +200,39 @@ If you suspect your vault containing family data has been compromised:
    - Consider informing affected family members
    - Document the incident
 
+## Privacy and Obfuscation Features
+
+Canvas Roots includes comprehensive data obfuscation capabilities designed to protect PII:
+
+### Export Obfuscation (Planned - Phase 3)
+- **Multiple obfuscation levels**: None, Minimal, Standard, Full
+- **Selective anonymization**: Names, dates, locations, notes, media
+- **Structure preservation**: Family relationships and graph structure maintained
+- **Reversible mapping**: Optional JSON mapping file for de-obfuscation
+- **GEDCOM compatible**: Obfuscated exports remain valid GEDCOM files
+
+### Canvas Obfuscation (Planned - Phase 4)
+- **Temporary display mode**: Toggle obfuscation for screenshots/presentations
+- **Visual indicators**: Clear indication when obfuscation is active
+- **Non-destructive**: Original notes remain unchanged
+- **Configurable levels**: Same obfuscation levels as export
+
+### Use Cases
+- Share family tree structure on public forums or blogs
+- Create demonstrations for plugin support or tutorials
+- Collaborate with researchers who need structure without PII
+- Comply with privacy regulations (GDPR, CCPA)
+- Protect living individuals' information
+
+See the [Technical Specification §5.5](docs/specification.md#55-privacy-and-data-obfuscation) for complete details.
+
 ## Future Security Enhancements
 
-Planned improvements:
+Additional planned improvements:
 
 - Optional encryption for cr_id values
-- Data sanitization utilities for sharing
 - Automatic living/deceased person detection
-- PII redaction tools for exports
+- Enhanced obfuscation algorithms
 - Audit logging capabilities
 - Access control recommendations
 

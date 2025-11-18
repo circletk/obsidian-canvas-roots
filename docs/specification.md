@@ -289,6 +289,142 @@ The plugin should provide utility functions and pre-built DataViewJS templates t
 - Support complex multi-table queries via Dataview integration
 - Enable export of query results to Canvas or tables
 
+### 5.5 Privacy and Data Obfuscation
+
+**Requirement:** Protect personally identifiable information (PII) when sharing family trees publicly or for demonstrations.
+
+#### 5.5.1 Obfuscation Modes
+
+The plugin must support optional obfuscation during export and canvas rendering:
+
+**Export Obfuscation:**
+- Applied during GEDCOM export via export dialog option
+- Original vault data remains completely intact
+- Generate obfuscated `.ged` file for sharing
+
+**Canvas Obfuscation:**
+- Temporary display mode for screenshots/presentations
+- Toggle via command: `Canvas Roots: Toggle Obfuscation Mode`
+- Visual indicator when obfuscation is active
+- Does not modify underlying notes
+
+#### 5.5.2 Obfuscation Levels
+
+| Level | Names | Dates | Locations | Notes/Research | Media |
+|-------|-------|-------|-----------|----------------|-------|
+| **None** | Original | Original | Original | Original | Original |
+| **Minimal** | Original | Year only | Original | Original | Original |
+| **Standard** | Anonymized | Year only | Region only | Stripped | Excluded |
+| **Full** | Anonymized | Fuzzy ranges | Generic | Stripped | Excluded |
+
+**Obfuscation Strategies:**
+
+**Names:**
+- **Pattern-based:** "Person A", "Person B", "Person C" (maintains readability)
+- **Generated:** Use common placeholder names maintaining gender/cultural context
+- **Relationship-based:** "Father of Person A", "Mother of Person B"
+
+**Dates:**
+- **Year only:** `1847-03-15` → `1847`
+- **Decade:** `1847-03-15` → `1840s`
+- **Fuzzy ranges:** `1847-03-15` → `circa 1845-1850`
+- **Relative:** Maintain age differences and generation gaps
+
+**Locations:**
+- **Region only:** "Boston, Massachusetts, USA" → "Massachusetts, USA"
+- **Country only:** "Boston, Massachusetts, USA" → "USA"
+- **Generic:** "Boston, Massachusetts, USA" → "Urban area, Northeast USA"
+
+**Research Notes:**
+- **Strip all:** Remove all note content
+- **Summarize:** "Has 3 sources, 2 media attachments"
+- **Template:** Replace with placeholder text
+
+**Media:**
+- **Exclude links:** Remove all photo/document references
+- **Placeholder:** Replace with generic avatar/document icon
+
+#### 5.5.3 Obfuscation Mapping
+
+**Mapping File Generation:**
+
+When obfuscation is applied, optionally generate a JSON mapping file for reversing:
+
+```json
+{
+  "obfuscation_date": "2025-11-18T15:30:00Z",
+  "obfuscation_level": "standard",
+  "mappings": {
+    "Person A": "John Robert Smith",
+    "Person B": "Mary Elizabeth Jones",
+    "1847": "1847-03-15",
+    "Massachusetts, USA": "Boston, Massachusetts, USA"
+  }
+}
+```
+
+**Security Considerations:**
+- Mapping file stored locally only (never included in export)
+- User prompted to store in secure location
+- Optional encryption of mapping file
+- Clear warning that mapping file is sensitive
+
+#### 5.5.4 Structural Integrity
+
+**What Must Be Preserved:**
+- Relationship structure (parent-child, spouse connections)
+- Relative chronology (birth order, generation gaps)
+- `cr_id` values (needed for graph structure)
+- Number of children, spouses, generations
+
+**Validation:**
+- Obfuscated export must remain valid GEDCOM
+- Relationship logic must be testable/verifiable
+- Canvas rendering must remain functional
+
+#### 5.5.5 User Interface
+
+**Export Dialog:**
+```
+┌─────────────────────────────────────────┐
+│ Export to GEDCOM                        │
+├─────────────────────────────────────────┤
+│ Obfuscation Level:                      │
+│ ○ None (full data)                      │
+│ ○ Minimal (year only)                   │
+│ ● Standard (names + dates)              │
+│ ○ Full (maximum privacy)                │
+│                                         │
+│ ☑ Generate obfuscation mapping file    │
+│ ☑ Include structural statistics only   │
+│                                         │
+│ [Cancel]              [Export GEDCOM]  │
+└─────────────────────────────────────────┘
+```
+
+**Canvas Obfuscation Command:**
+- Command palette: `Canvas Roots: Toggle Obfuscation Mode`
+- Settings to set default obfuscation level
+- Status bar indicator when active
+- Automatic de-obfuscation on plugin reload
+
+#### 5.5.6 Use Cases
+
+**Public Sharing:**
+- Share family tree structure on forums/blogs
+- Demonstrate plugin functionality
+- Educational examples in genealogy courses
+
+**Collaboration:**
+- Share with researchers who need structure, not PII
+- Comply with privacy regulations (GDPR, etc.)
+- Protect living individuals' information
+
+**Development/Testing:**
+- Create realistic test datasets
+- Debug layout algorithms with real structure
+- Share sample files with plugin developers
+
 ---
 
 ## 6. Enhanced Relationship Modeling
@@ -517,11 +653,13 @@ grandmother_maternal: "[[Sarah Doe]]"
 ### Phase 3
 - GEDCOM import Mode 2 (§5.2)
 - GEDCOM export (§5.3)
+- Basic obfuscation (export only) (§5.5)
 - Multiple spouse support (§6.1)
 - Alternative parent relationships (§6.2)
 - Unknown parent handling (§6.3)
 
 ### Phase 4
+- Advanced obfuscation (canvas mode, all levels) (§5.5)
 - Child ordering (§6.5)
 - Advanced card templates (§6.6)
 - Multi-generational gaps (§6.7)
