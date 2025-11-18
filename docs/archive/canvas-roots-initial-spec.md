@@ -149,3 +149,110 @@ The visualization and data model must support the complexity inherent in genealo
 
 - Expanded Relationships: The D3 layout logic (from the chosen algorithm) must be configured to support visualizing sibling chains and the spouses of siblings, extending the tree beyond direct ancestral lines.
 - Analysis Queries: The plugin should expose utility functions or pre-built DataViewJS templates to allow users to query their rich, structured data (e.g., "List all living descendants," "Table of individuals by age at death," or showing notes linked to specific sources).
+
+6. Enhanced Relationship and Data Modeling
+
+This section outlines advanced features that address the complexity and nuance of real-world genealogical data, improving both data accuracy and user flexibility.
+
+6.1 Multiple Spouse Support
+
+The plugin must support complex marital histories with proper temporal and contextual tracking:
+
+- Multiple Marriages: Extend the `spouse` field to support arrays with metadata for each relationship:
+  - `spouses` (Array of Objects): Each object contains:
+    - `person`: [[Link]] to spouse note
+    - `marriage_date`: (Date YYYY-MM-DD or partial) Optional marriage date
+    - `divorce_date`: (Date YYYY-MM-DD or partial) Optional divorce/separation date
+    - `marriage_status`: (Enum: current, divorced, widowed, separated) Relationship status
+    - `marriage_location`: (String or [[Link]]) Optional location reference
+- Legacy Support: Maintain backward compatibility with simple `spouse: [[Link]]` format
+- Canvas Visualization: D3 layout must position multiple spouse nodes appropriately, with visual indicators for marriage order or current vs. former relationships
+- Child Attribution: Support linking children to specific spousal relationships when applicable
+
+6.2 Multiple and Alternative Parent Relationships
+
+Real families include adoptive, step, foster, and biological relationships that must be tracked distinctly:
+
+- Extended Parent Fields:
+  - `biological_father`, `biological_mother`: [[Link]] to biological parents
+  - `adoptive_father`, `adoptive_mother`: [[Link]] to adoptive parents
+  - `step_father`, `step_mother`: [[Link]] to step-parents
+  - `foster_parents`: Array of [[Link]] references
+  - `guardians`: Array of [[Link]] references for legal guardians
+- Legacy Field Mapping: The original `father` and `mother` fields should default to biological parents unless otherwise specified
+- Visual Differentiation: Canvas rendering must use distinct edge styles (color, line pattern, labels) to indicate relationship types
+- Relationship Priority: Settings to control which parent types are displayed by default in the tree layout
+
+6.3 Unknown or Missing Parent Handling
+
+Genealogical research often involves incomplete data that must be represented clearly:
+
+- Unknown Parent Markers:
+  - Support explicit `unknown` value for `father`/`mother` fields
+  - Support `null` or empty values to indicate missing data
+  - Optional `researching` flag to distinguish "unknown" from "not yet researched"
+- Canvas Placeholder Nodes:
+  - Option to render "Unknown Father" or "Unknown Mother" placeholder nodes
+  - Visual styling to distinguish placeholders from known individuals
+  - Settings toggle for showing/hiding unknown parent placeholders
+- Partial Parent Data: Support storing limited information about unknown parents (e.g., surname only, approximate birth year)
+
+6.4 Flexible Date Precision
+
+Historical records vary in date precision, requiring flexible date handling:
+
+- Date Format Support:
+  - Full precision: `YYYY-MM-DD`
+  - Month precision: `YYYY-MM`
+  - Year precision: `YYYY`
+  - Approximate dates: `~YYYY` or `circa YYYY` notation
+  - Date ranges: `YYYY/YYYY` for uncertainty
+- Display Formatting: Render dates appropriately based on available precision (e.g., "1847" vs. "March 1847" vs. "15 March 1847")
+- Date Calculations: Age and timeline calculations must handle partial dates gracefully:
+  - Unknown month/day should default to mid-year or mid-month for calculations
+  - Comparison operations should account for precision differences
+- GEDCOM Compatibility: Date formats must align with GEDCOM date standards for import/export
+
+6.5 Child Ordering and Sibling Relationships
+
+Large families require flexible child organization:
+
+- Child Sorting Options:
+  - `birth_order` (Manual): Explicit numeric field for custom ordering
+  - `sort_by_age` (Automatic): Sort children by birth date (eldest to youngest)
+  - `sort_by_age_reverse` (Automatic): Youngest to eldest ordering
+  - `alphabetical`: Sort by first name or surname
+  - `custom_sort_field`: User-defined field name for sorting
+- Settings Configuration: Global or per-person setting to specify default child sort method
+- Canvas Layout: D3 layout must respect child ordering when positioning nodes horizontally within a generation
+- Sibling Relationships: Support `siblings` field for cases where parent relationships are unknown but sibling connections are documented
+
+6.6 Customizable Canvas Card Display
+
+Users need control over what information appears on canvas nodes:
+
+- Display Settings:
+  - Configurable property list: Choose which fields appear on cards
+  - Property ordering: Drag-to-reorder interface for field display priority
+  - Conditional display rules:
+    - Show `died` only if person is deceased
+    - Show age at death if both dates available
+    - Show location fields only when populated
+- Card Layout Templates:
+  - Compact view: Name and vital dates only
+  - Standard view: Name, dates, locations
+  - Detailed view: All configured properties
+  - Custom templates: User-defined display format with property placeholders
+- Per-Person Overrides: Option to set custom display properties for specific individuals via note frontmatter
+
+6.7 Multi-Generational Gap Handling
+
+Handle missing intermediate generations in family trees:
+
+- Grandparent Direct Links: When parent records don't exist but grandparent records do:
+  - Support `grandfather_paternal`, `grandmother_paternal`, `grandfather_maternal`, `grandmother_maternal` fields
+  - Canvas visualization should show multi-generational connection with visual indicator
+  - Optional placeholder generation for missing intermediate parents
+- Visual Indicators: Distinct edge styling (e.g., dashed lines, different colors) to indicate generational jumps
+- Data Inference: Option to automatically infer missing parent relationships when grandparent links exist
+- Settings Toggle: User control over whether to display inferred/placeholder relationships

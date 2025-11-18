@@ -90,6 +90,10 @@ The plugin will offer flexibility when importing family data:
 
 ## 📚 Documentation
 
+### Project Specifications
+
+- **[Technical Specification](docs/specification.md)** - Complete technical specification including data models, features, GEDCOM integration, and enhanced relationship modeling
+
 ### For Contributors
 
 - **[Contributing Guide](CONTRIBUTING.md)** - How to contribute to Canvas Roots, including development setup, coding standards, and pull request process
