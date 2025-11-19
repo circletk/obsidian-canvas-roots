@@ -1,6 +1,6 @@
 # Canvas Roots Plugin - Technical Specification
 
-**Version:** 1.1
+**Version:** 1.3
 **Last Updated:** 2025-11-18
 **Status:** Draft
 
@@ -82,6 +82,332 @@ Additional properties for complex genealogical data:
 - Medical and genetic information (§6.9)
 - Location and migration tracking (§6.10)
 
+#### 2.1.3 Reference Numbering Systems (Optional)
+
+**Overview:** Reference numbering systems provide human-readable, hierarchical identifiers that encode genealogical relationships and positions within family trees. These complement the machine-level `cr_id` UUID system by offering intuitive labeling for research organization, file management, and print reports.
+
+**Dual-Identity System:**
+
+| Property | Purpose | Format | Example | Required |
+|----------|---------|--------|---------|----------|
+| `cr_id` | Machine identity for merging, persistence, technical operations | UUID v4 | `abc-123-def-456` | Yes |
+| `cr_ref_num` | Human-readable position for sorting, labeling, printing | System-dependent | `12.3`, `24.0*2`, `5/3.0` | No |
+
+**Supported Systems:**
+
+##### Dollarhide-Cole Numbering System
+
+**Format:** `[tree_prefix/]number[.number]*[*marriage_order]`
+
+**Key Components:**
+- **Direct Ancestors:** End in `.0` (e.g., `12.0` = root's father)
+- **Siblings:** Numbered `.1`, `.2`, `.3`, etc., based on birth order (eldest = `.1`)
+- **Spouses:** Append `*` with marriage order (e.g., `12.3*2` = second spouse)
+- **Descendants:** Append new number (e.g., `12.3` → first child is `12.3.1`)
+- **Multiple Trees:** Use `/` separator (e.g., `5/3.0` = tree 5, person 3, direct ancestor)
+
+**Birth Order Handling:**
+- **Known order:** Use sequential numbers (`.1`, `.2`, `.3`)
+- **Unknown order:** Use alphabetical by first name OR use `.u1`, `.u2`, `.u3` (unknown)
+- **Twins/Multiples:** Same number with letter suffix (`.1a`, `.1b`) OR sequential if order is known
+
+**Examples:**
+
+```yaml
+# Root person
+---
+cr_id: root-uuid
+cr_ref_num: "1"
+name: Starting Person
+---
+
+# Root's father (direct ancestor)
+---
+cr_id: father-uuid
+cr_ref_num: "2.0"
+name: Father of Root
+---
+
+# Root's mother (direct ancestor)
+---
+cr_id: mother-uuid
+cr_ref_num: "3.0"
+name: Mother of Root
+---
+
+# Root's eldest sibling
+---
+cr_id: sibling1-uuid
+cr_ref_num: "1.1"
+name: Eldest Sibling
+---
+
+# Root's second sibling (root is third child)
+---
+cr_id: sibling2-uuid
+cr_ref_num: "1.2"
+name: Second Sibling
+---
+
+# Root's first spouse
+---
+cr_id: spouse1-uuid
+cr_ref_num: "1*1"
+name: First Spouse
+---
+
+# Root's second spouse
+---
+cr_id: spouse2-uuid
+cr_ref_num: "1*2"
+name: Second Spouse
+---
+
+# Root's first child with first spouse
+---
+cr_id: child1-uuid
+cr_ref_num: "1.1"
+name: First Child
+father: "[[Starting Person]]"  # cr_ref_num: "1"
+mother: "[[First Spouse]]"     # cr_ref_num: "1*1"
+---
+
+# Grandchild (first child's eldest child)
+---
+cr_id: grandchild1-uuid
+cr_ref_num: "1.1.1"
+name: First Grandchild
+---
+
+# Multiple trees example: Second family tree, person 3, direct ancestor
+---
+cr_id: tree2-person-uuid
+cr_ref_num: "2/3.0"
+name: Person from Second Tree
+---
+```
+
+**Canvas Display Integration:**
+
+Reference numbers are displayed on canvas nodes when enabled:
+
+```
+┌─────────────────────────────┐
+│ [12.3] John Robert Smith    │  ← Reference number in brackets
+│ 1888-1952                   │
+│                             │
+│ Father: [24.0] John Sr      │
+│ Mother: [25.0] Jane Doe     │
+└─────────────────────────────┘
+```
+
+**Settings Configuration:**
+
+```yaml
+reference_numbering:
+  enabled: true
+  system: "dollarhide-cole"     # Options: "dollarhide-cole", "ahnentafel", "custom"
+
+  root_person: "[[Starting Person]]"
+
+  # Canvas display options
+  display_on_canvas: true
+  display_format: "[{ref_num}] {name}"  # Bracket style
+  # OR: "{ref_num} - {name}"           # Dash style
+  # OR: "{name} ({ref_num})"           # Parenthetical
+
+  # File naming suggestions
+  show_in_filename_suggestions: true
+  filename_template: "{ref_num} - {name}.md"  # "12.3 - John Robert Smith.md"
+
+  # Generation strategy
+  auto_calculate: "suggest"     # Options: "manual", "suggest", "automatic"
+  # "manual": User assigns all numbers manually
+  # "suggest": Plugin suggests numbers, user can edit
+  # "automatic": Plugin auto-assigns and updates
+
+  # Birth order handling
+  unknown_birth_order_strategy: "alphabetical"  # Options: "alphabetical", "unknown_suffix"
+  # "alphabetical": Sort by first name (A=.1, B=.2, etc.)
+  # "unknown_suffix": Use .u1, .u2, .u3 for unknown order
+
+  # Multiple trees
+  allow_multiple_trees: true
+  tree_separator: "/"
+
+  # Display preferences
+  show_on_person_detail_panel: true
+  editable_in_panel: true       # Allow editing ref_num in detail panel
+```
+
+##### Ahnentafel Numbering System
+
+**Format:** Simple integer sequence based on mathematical relationship.
+
+**Rules:**
+- Root person: `1`
+- Father of person `n`: `2n`
+- Mother of person `n`: `2n + 1`
+
+**Examples:**
+
+```yaml
+# Root
+cr_ref_num: "1"
+
+# Father
+cr_ref_num: "2"
+
+# Mother
+cr_ref_num: "3"
+
+# Paternal grandfather
+cr_ref_num: "4"
+
+# Paternal grandmother
+cr_ref_num: "5"
+
+# Maternal grandfather
+cr_ref_num: "6"
+
+# Maternal grandmother
+cr_ref_num: "7"
+```
+
+**Advantages:** Mathematically predictable, compact for ancestor trees.
+
+**Limitations:** Only works for direct ancestors (no siblings, descendants, or spouses).
+
+##### Custom Numbering Systems
+
+**Format:** User-defined pattern.
+
+**Configuration:**
+
+```yaml
+reference_numbering:
+  system: "custom"
+  custom_pattern: "{generation}-{family_line}-{individual}"
+  # Example: "G3-Smith-001"
+```
+
+**Use Cases:**
+- Institutional archives (e.g., `ARCH-FAM-001`)
+- Research projects with specific naming conventions
+- Integration with existing paper-based filing systems
+
+#### GEDCOM Export Integration
+
+Reference numbers are exported using the standard `REFN` (Reference Number) tag:
+
+```gedcom
+0 @I001@ INDI
+1 _UUID abc-123-def-456
+1 REFN 12.3
+2 TYPE Dollarhide-Cole
+1 NAME John Robert /Smith/
+1 BIRT
+2 DATE 15 MAY 1888
+```
+
+**On Import:** If a GEDCOM file contains `REFN` tags, the plugin offers to:
+1. Import reference numbers as-is
+2. Recalculate based on selected system and root person
+3. Ignore reference numbers
+
+#### Generation and Calculation
+
+**Automatic Calculation Triggers:**
+- New person note created with relationship to existing person
+- Relationship fields modified (father, mother, spouse, child)
+- Root person changed in settings
+- User runs "Recalculate Reference Numbers" command
+
+**Calculation Algorithm (Dollarhide-Cole):**
+
+1. Start from root person (ref_num = "1")
+2. Traverse relationships depth-first
+3. For each person:
+   - If direct ancestor: append `.0`
+   - If sibling: append `.1`, `.2`, etc. based on birth order
+   - If spouse: append `*1`, `*2`, etc. based on marriage order
+   - If descendant: append new generation number
+4. Handle cycles by detecting already-numbered persons
+5. Mark conflicts for manual resolution
+
+**Edge Cases:**
+
+- **Multiple paths to same person:** Use shortest path OR path through root's direct lineage
+- **Missing birth dates:** Use alphabetical order or unknown suffix
+- **Disconnected persons:** Assign new tree prefix (e.g., `2/1`) OR leave unnumbered
+- **Cycles in relationships:** Detect and warn user, prevent infinite loops
+
+#### User Interface
+
+**Commands:**
+- `Canvas Roots: Assign Reference Numbers` - Calculate for entire vault
+- `Canvas Roots: Recalculate Reference Numbers` - Recalculate based on current settings
+- `Canvas Roots: Clear Reference Numbers` - Remove all `cr_ref_num` properties
+- `Canvas Roots: Set Root Person for Reference Numbering` - Choose new root
+
+**Detail Panel Integration:**
+
+```
+┌─────────────────────────────────────┐
+│ Person Details                      │
+├─────────────────────────────────────┤
+│ Reference Number: [12.3    ] [↻]   │  ← Editable with recalculate button
+│ UUID: abc-123-def-456               │
+│ Name: John Robert Smith             │
+│ ...                                 │
+└─────────────────────────────────────┘
+```
+
+**File Renaming Suggestions:**
+
+When `show_in_filename_suggestions: true`, the plugin suggests renaming files based on reference numbers:
+
+```
+┌─────────────────────────────────────────────────┐
+│ Reference Number Updated                        │
+├─────────────────────────────────────────────────┤
+│ John Robert Smith.md → 12.3 - John Robert Smith.md │
+│                                                 │
+│ [Skip]  [Rename This File]  [Rename All (23)]  │
+└─────────────────────────────────────────────────┘
+```
+
+#### Use Cases
+
+**Research Organization:**
+- Sort person notes by reference number to mirror printed genealogy charts
+- Quickly identify generation and family line from filename
+- Maintain consistent numbering across digital and paper records
+
+**Print Reports:**
+- Export family trees with reference numbers matching professional genealogy standards
+- Create indexes and tables of contents using reference numbers
+- Cross-reference between narrative reports and charts
+
+**Collaborative Research:**
+- Share consistent person identifiers with research partners
+- Reference specific individuals in correspondence without ambiguity
+- Maintain numbering across multiple researchers' vaults (when using same root and system)
+
+**File Management:**
+- Organize hundreds of person notes with hierarchical file naming
+- Sort files to keep family groups together
+- Quickly locate individuals by position in tree (e.g., "I need the 3rd child of person 12")
+
+**Canvas Navigation:**
+- Quickly identify person's position in tree at a glance
+- Use reference numbers as visual anchors when zooming/panning large trees
+- Filter canvas to show only specific number ranges (e.g., "show me generation 3: all .x.x.x")
+
+#### Implementation Priority
+
+Reference numbering systems are planned for **Phase 2** (enhancement features), after core tree generation and layout are stable.
+
 ### 2.2 Bidirectional Link Automation
 
 **Requirement:** The plugin must automatically maintain inverse relationships when primary relationships are created or modified.
@@ -122,7 +448,238 @@ Additional properties for complex genealogical data:
 3. Recalculate D3 layout positions
 4. Update node coordinates without duplicating
 
-### 3.3 Layout Algorithm
+### 3.3 Person Detail Panel
+
+**Requirement:** Provide a dedicated sidebar panel for viewing and editing person data with live sync to the source note's frontmatter.
+
+#### 3.3.1 Panel Overview
+
+**Purpose:**
+- Quick access to person data without opening full note
+- In-place editing of YAML frontmatter properties
+- Seamless integration with Obsidian Bases workflow
+- Live synchronization between panel, note, and Bases table
+
+**Panel Location:** Right sidebar (configurable in settings)
+
+**Activation:**
+- **Command:** `Canvas Roots: Open Person Detail Panel`
+- **Context menu:** Right-click person node on canvas → "View Person Details"
+- **Keyboard shortcut:** Configurable hotkey
+- **Auto-open:** Optional setting to open when clicking canvas nodes
+
+#### 3.3.2 Panel Components
+
+**Header Section:**
+
+```
+┌─────────────────────────────────────────┐
+│ 👤 John Robert Smith                    │
+│ [Open Note] [Close] [⋮ More]           │
+├─────────────────────────────────────────┤
+```
+
+**Actions:**
+- **Open Note Button:** Opens source note in editor
+- **Open in New Pane:** Split view option
+- **Link to Canvas Node:** Scroll canvas to highlight person
+- **More Menu:** Copy `cr_id`, export person data, etc.
+
+**Editable Fields:**
+
+Display all core properties as editable form fields:
+
+```
+┌─────────────────────────────────────────┐
+│ Basic Information                       │
+├─────────────────────────────────────────┤
+│ Name:        [John Robert Smith       ] │
+│ Born:        [1888-05-15              ] │
+│ Died:        [1952-08-20              ] │
+│ Living:      ☐ (auto-detected)          │
+├─────────────────────────────────────────┤
+│ Relationships                           │
+├─────────────────────────────────────────┤
+│ Father:      [[John Smith Sr]]    [🔗]  │
+│ Mother:      [[Jane Doe]]         [🔗]  │
+│ Spouse(s):   [[Mary Jones]]       [🔗]  │
+│              [+ Add Spouse]             │
+│ Children:    [[Bob Smith]]        [🔗]  │
+│              [[Alice Smith]]      [🔗]  │
+│              (auto-maintained)          │
+├─────────────────────────────────────────┤
+│ Research Notes                          │
+├─────────────────────────────────────────┤
+│ [Rendered markdown content from note    │
+│  body with wikilinks active...          │
+│                                         │
+│  - Source: [[Census 1920]]             │
+│  - Found in Boston records             │
+│  ]                                      │
+├─────────────────────────────────────────┤
+│ [Edit Full Note]                        │
+└─────────────────────────────────────────┘
+```
+
+**Field Types:**
+
+| Field Type | UI Component | Behavior |
+|------------|--------------|----------|
+| **Text** | Text input | Direct edit, saves on blur |
+| **Date** | Date picker + text | Supports flexible formats (§6.4) |
+| **Wikilink** | Link with navigate button | Click to open linked note |
+| **Array** | List with add/remove | Manage multiple values |
+| **Boolean** | Checkbox | Toggle true/false |
+| **Enum** | Dropdown | Predefined choices |
+
+#### 3.3.3 Data Source Integration
+
+**Frontmatter Binding:**
+
+All edits modify the source note's YAML frontmatter directly:
+
+```yaml
+---
+cr_id: abc-123-def-456
+name: John Robert Smith
+father: "[[John Smith Sr]]"
+mother: "[[Jane Doe]]"
+spouse: ["[[Mary Jones]]"]
+born: 1888-05-15
+died: 1952-08-20
+---
+
+# Research Notes
+
+- Source: [[Census 1920]]
+- Found in Boston records
+```
+
+**Live Sync:**
+- **Panel → Note:** Edits immediately update note frontmatter
+- **Note → Panel:** Panel updates when note is edited externally
+- **Bases → Panel:** Changes in Bases table reflect in panel
+- **Panel → Bases:** Panel edits appear in Bases table view
+
+**File Watcher:** Monitor source note for external changes and refresh panel
+
+#### 3.3.4 Markdown Rendering
+
+**Research Notes Field:**
+
+Display a dedicated section for note body content:
+
+**Features:**
+- **Markdown rendering:** Full CommonMark support
+- **Wikilink activation:** Clickable `[[links]]` to other notes
+- **Embed support:** Show `![[embeds]]` inline
+- **Read-only display:** Note body shown but not editable in panel
+- **Scroll area:** Scrollable if content exceeds panel height
+- **Character limit:** Show first 500 chars with "Read more" expansion
+
+**Implementation:**
+- Use Obsidian's built-in markdown renderer
+- Extract note body (content after frontmatter)
+- Render in isolated div with proper styling
+
+#### 3.3.5 Multi-Person Support
+
+**Navigation:**
+
+When multiple people are selected or viewed:
+
+```
+┌─────────────────────────────────────────┐
+│ [◀ Prev] John Robert Smith [Next ▶]    │
+│ Person 2 of 5 in selection              │
+└─────────────────────────────────────────┘
+```
+
+**History Stack:**
+- Track previously viewed persons
+- Back/forward navigation buttons
+- Recent persons dropdown
+
+#### 3.3.6 Settings
+
+**Panel Configuration:**
+
+```yaml
+person_detail_panel:
+  default_location: right    # left, right, bottom
+  auto_open_on_click: true   # Open when clicking canvas nodes
+  fields_displayed:          # Customizable field list
+    - name
+    - born
+    - died
+    - father
+    - mother
+    - spouse
+    - children
+  show_note_body: true       # Display markdown research notes
+  note_body_char_limit: 500  # Preview character limit
+  enable_inline_editing: true # Edit fields in panel vs. note
+```
+
+**Field Display Order:**
+- Drag-to-reorder in settings
+- Hide/show individual fields
+- Group fields by category (Basic, Relationships, Extended)
+
+#### 3.3.7 Advanced Features
+
+**Quick Actions:**
+
+- **Add Child:** Create new child note with automatic relationship
+- **Add Spouse:** Create new spouse note with bidirectional link
+- **Add Parent:** Create or link to parent notes
+- **Duplicate Person:** Copy data to new note for similar entries
+- **Export Person:** Export individual to GEDCOM snippet
+
+**Validation:**
+
+- **Required fields:** Highlight missing `cr_id`
+- **Date validation:** Warn about invalid date formats
+- **Broken links:** Flag missing `[[wikilinks]]`
+- **Circular relationships:** Detect and warn about impossible relationships
+
+**Conflict Resolution:**
+
+If note is edited externally while panel is open:
+
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ Note Modified Externally             │
+│                                         │
+│ The source note has been changed.       │
+│                                         │
+│ [Reload Panel] [Keep Local Changes]    │
+└─────────────────────────────────────────┘
+```
+
+#### 3.3.8 Use Cases
+
+**Quick Data Entry:**
+- Fill in person details without opening full note editor
+- Faster than switching between Canvas and note editor
+- Ideal for bulk data entry sessions
+
+**Bases Integration:**
+- View person details while working in Bases table
+- Cross-reference between Canvas visualization and table data
+- Verify relationships while editing in table view
+
+**Research Workflow:**
+- View research notes while analyzing Canvas tree
+- Quick access to sources and documentation
+- One-click navigation to related persons
+
+**Validation:**
+- Review all person data in structured format
+- Identify missing or incorrect information
+- Fix broken relationships
+
+### 3.4 Layout Algorithm
 
 **Requirements:**
 - Support multi-parent graphs (not simple trees)
@@ -294,11 +851,342 @@ The plugin should provide utility functions and pre-built DataViewJS templates t
 - Support complex multi-table queries via Dataview integration
 - Enable export of query results to Canvas or tables
 
-### 5.5 Privacy and Data Obfuscation
+### 5.5 Multi-Vault Merging and UUID-Based Data Portability
+
+**Requirement:** Enable seamless merging of multiple genealogical collections using UUID-based identity management, preventing data conflicts and facilitating collaborative research.
+
+#### 5.5.1 UUID as Universal Identity
+
+**Core Principle:** The `cr_id` field serves as the **single source of truth** for person identity across all vaults, GEDCOM exports, and Canvas representations.
+
+**UUID Properties:**
+
+```yaml
+cr_id: "abc-123-def-456"  # UUID v4 format recommended
+```
+
+**Requirements:**
+
+| Property | Value | Rationale |
+|----------|-------|-----------|
+| **Format** | UUID v4 (random) | Globally unique, no coordination needed |
+| **Immutability** | Never changes once assigned | Stable identity across renames/moves |
+| **Auto-generation** | Created on note creation | Prevents manual ID conflicts |
+| **GEDCOM mapping** | Maps to `@INDI:xxxxx@` | Round-trip preservation |
+| **Persistence** | Preserved across all operations | Export, import, merge, obfuscation |
+
+**Why UUIDs Solve Merging Problems:**
+
+**Without UUIDs:**
+- File name collision: Two vaults both have "John Smith.md"
+- Cannot determine if same person or different people
+- Manual conflict resolution required for every duplicate name
+- Risk of data loss or incorrect merges
+
+**With UUIDs:**
+- Same `cr_id` = definitively the same person → auto-merge
+- Different `cr_id` = definitively different people → keep both
+- Name similarity check only for suggesting potential duplicates
+- Safe, deterministic merging
+
+#### 5.5.2 Merge Command
+
+**Command:** `Canvas Roots: Merge External Collection`
+
+**Workflow:**
+
+```
+┌─────────────────────────────────────────┐
+│ Merge External Collection               │
+├─────────────────────────────────────────┤
+│ Source:  [📁 Browse Vault/Folder...]   │
+│                                         │
+│ Merge Strategy:                         │
+│ ● UUID-based (recommended)              │
+│ ○ Manual selection only                 │
+│                                         │
+│ Conflict Resolution:                    │
+│ ● Prompt for each conflict              │
+│ ○ Always keep target vault data         │
+│ ○ Always prefer source data             │
+│ ○ Merge all fields (combine arrays)    │
+│                                         │
+│ Duplicate Detection:                    │
+│ ☑ Suggest potential duplicates          │
+│   (same name + similar dates)           │
+│                                         │
+│ [Cancel]              [Start Merge]    │
+└─────────────────────────────────────────┘
+```
+
+**Process:**
+
+1. **Scan source collection** for all notes with `cr_id` fields
+2. **Compare with target vault** based on `cr_id` matching
+3. **Categorize individuals:**
+   - **Exact match:** Same `cr_id` in both vaults
+   - **New person:** `cr_id` only exists in source
+   - **Potential duplicate:** Different `cr_id` but similar name/dates
+
+#### 5.5.3 Merge Resolution Strategies
+
+**Exact Match (Same `cr_id`):**
+
+When the same `cr_id` exists in both vaults, merge field-by-field:
+
+```yaml
+# Target vault (existing)
+---
+cr_id: abc-123-def-456
+name: John Robert Smith
+born: 1888-05-15
+father: "[[John Smith Sr]]"
+spouse: ["[[Mary Jones]]"]
+---
+
+# Source vault (being merged)
+---
+cr_id: abc-123-def-456
+name: John R. Smith
+died: 1952-08-20
+mother: "[[Jane Doe]]"
+spouse: ["[[Mary Jones]]", "[[Sarah Brown]]"]
+notes: "Veteran of WWI"
+---
+
+# Merged result
+---
+cr_id: abc-123-def-456
+name: John Robert Smith  # Keep target (or prompt user)
+born: 1888-05-15
+died: 1952-08-20         # Add from source
+father: "[[John Smith Sr]]"
+mother: "[[Jane Doe]]"   # Add from source
+spouse: ["[[Mary Jones]]", "[[Sarah Brown]]"]  # Merge arrays
+notes: "Veteran of WWI"  # Add from source
+---
+```
+
+**Merge Rules:**
+
+| Field Conflict | Default Behavior | User Override |
+|----------------|------------------|---------------|
+| **Both have value** | Prompt user to choose | Always target/source/merge |
+| **One has value** | Use the available value | N/A |
+| **Arrays** | Union of both arrays | Keep target only |
+| **Dates** | Keep most precise format | Choose manually |
+| **Note body** | Append source to target with separator | Overwrite/skip |
+
+**New Person (Source only):**
+
+Simply import the note with all data intact:
+
+```yaml
+---
+cr_id: xyz-789-new-123
+name: Maria Romano
+born: 1905-03-12
+# ... rest of data
+---
+```
+
+**Potential Duplicate Detection:**
+
+When different `cr_id` values have suspiciously similar data:
+
+```
+┌─────────────────────────────────────────┐
+│ ⚠️ Potential Duplicate Detected         │
+├─────────────────────────────────────────┤
+│ Target Vault:                           │
+│ cr_id: aaa-111-bbb-222                  │
+│ Name: John Smith                        │
+│ Born: 1888-05-15                        │
+│ Died: 1952-08-20                        │
+│                                         │
+│ Source Vault:                           │
+│ cr_id: ccc-333-ddd-444                  │
+│ Name: John Smith                        │
+│ Born: 1888-05-14  (1 day difference!)  │
+│ Died: 1952-08                           │
+│                                         │
+│ Are these the same person?              │
+│ [Yes - Merge] [No - Keep Both] [Skip]  │
+│                                         │
+│ If merged, which cr_id should be kept?  │
+│ ○ aaa-111-bbb-222 (target)              │
+│ ○ ccc-333-ddd-444 (source)              │
+└─────────────────────────────────────────┘
+```
+
+**Similarity Detection Criteria:**
+
+- **Name:** Exact match or close Levenshtein distance
+- **Dates:** Birth/death within reasonable threshold (e.g., 5 years)
+- **Parents:** Same parent names (even if different `cr_id`)
+- **Location:** Same birth/death places
+
+#### 5.5.4 GEDCOM UUID Preservation
+
+**Export Mapping:**
+
+```gedcom
+0 @I001@ INDI
+1 _UUID abc-123-def-456
+1 NAME John Robert /Smith/
+1 BIRT
+2 DATE 15 MAY 1888
+```
+
+**Round-Trip Guarantee:**
+
+1. **Obsidian → GEDCOM:** `cr_id` stored in `_UUID` tag
+2. **GEDCOM → Obsidian:** `_UUID` tag restored to `cr_id` field
+3. **Merge after round-trip:** Same person recognized by preserved UUID
+
+**Benefits:**
+
+- Export to Family Tree Maker, keep `cr_id` in custom tag
+- Re-import after external edits, preserve identity
+- Merge external GEDCOM files that originated from Canvas Roots
+
+#### 5.5.5 Collaborative Research Workflow
+
+**Use Case:** Multiple researchers working on same family tree
+
+**Scenario:**
+- Researcher A has paternal line (500 people)
+- Researcher B has maternal line (400 people)
+- 50 people appear in both collections (shared ancestors)
+
+**Workflow:**
+
+1. **Initial Setup:**
+   - Each researcher maintains separate vault
+   - Each assigns unique `cr_id` to all individuals
+
+2. **Export/Share:**
+   - Researcher A exports to GEDCOM with UUID preservation
+   - Sends to Researcher B
+
+3. **Merge:**
+   - Researcher B runs `Merge External Collection`
+   - Plugin detects 50 shared ancestors via duplicate detection
+   - User confirms which individuals are same person
+   - Plugin merges data, updates `cr_id` references
+
+4. **Synchronization:**
+   - Future merges recognize same `cr_id` values
+   - Only new/changed data prompts for review
+
+#### 5.5.6 Merge Conflict Log
+
+After merge completes, generate a detailed log:
+
+```markdown
+# Merge Log - 2025-11-18 15:30:00
+
+**Source:** /path/to/external/vault
+**Target:** Current vault
+
+## Summary
+
+- **New individuals added:** 320
+- **Exact matches merged:** 45
+- **Potential duplicates reviewed:** 12
+  - Merged as same person: 8
+  - Kept as separate: 4
+- **Conflicts resolved:** 23
+
+## Detailed Changes
+
+### Exact Matches (cr_id matched)
+
+#### John Robert Smith (abc-123-def-456)
+- Added `died` date: 1952-08-20
+- Added `mother` link: [[Jane Doe]]
+- Merged `spouse` array: Added [[Sarah Brown]]
+- Appended research notes (42 lines)
+
+### New Individuals
+
+- Maria Romano (xyz-789-new-123)
+- Giuseppe Romano (xyz-790-new-456)
+[... 318 more ...]
+
+### Duplicates Merged
+
+#### John Smith Jr.
+- Target cr_id: aaa-111-bbb-222 ← **kept**
+- Source cr_id: ccc-333-ddd-444 ← replaced
+- Reason: Same name, birth date within 1 day
+- All references to ccc-333-ddd-444 updated to aaa-111-bbb-222
+
+### Conflicts Resolved
+
+[Detailed list of field-level conflicts and resolutions...]
+```
+
+#### 5.5.7 Settings
+
+**Merge Configuration:**
+
+```yaml
+merge_settings:
+  uuid_preservation: true          # Always preserve cr_id
+  duplicate_detection_threshold:
+    name_similarity: 0.9           # Levenshtein ratio
+    date_difference_years: 5       # Birth/death tolerance
+    require_parent_match: false    # Strict parent matching
+
+  default_conflict_resolution:
+    mode: prompt                   # prompt, target, source, merge
+    array_merge_strategy: union    # union, target_only, source_only
+    note_append_separator: "\n\n---\n\nMerged from external collection:\n\n"
+
+  post_merge:
+    generate_log: true
+    backup_before_merge: true
+    validate_relationships: true   # Check for broken links
+```
+
+#### 5.5.8 Use Cases
+
+**Multi-Vault Research:**
+- Maintain separate vaults for different family branches
+- Periodically merge to create master tree
+- Export combined tree for publication
+
+**Collaborative Genealogy:**
+- Multiple family members research independently
+- Share GEDCOM exports with UUID preservation
+- Merge contributions without data loss
+
+**External Data Integration:**
+- Import GEDCOM from Ancestry.com (assign UUIDs on import)
+- Add research in Obsidian
+- Re-import updated Ancestry data later
+- Merge recognizes same individuals via UUID
+
+**Disaster Recovery:**
+- Vault corruption or accidental deletion
+- Restore from GEDCOM backup
+- Merge with current vault to recover lost data
+- UUIDs prevent duplicate creation
+
+**Migration from Other Tools:**
+- Export from Family Tree Maker
+- Import to Canvas Roots (assign UUIDs)
+- Continue research in Obsidian
+- Later merge with data from GenoPro (also UUID-tagged)
+
+---
+
+### 5.6 Privacy and Data Obfuscation
 
 **Requirement:** Protect personally identifiable information (PII) when sharing family trees publicly or for demonstrations.
 
-#### 5.5.1 Obfuscation Modes
+#### 5.6.1 Obfuscation Modes
 
 The plugin must support optional obfuscation during export and canvas rendering:
 
@@ -313,7 +1201,7 @@ The plugin must support optional obfuscation during export and canvas rendering:
 - Visual indicator when obfuscation is active
 - Does not modify underlying notes
 
-#### 5.5.2 Obfuscation Levels
+#### 5.6.2 Obfuscation Levels
 
 | Level | Names | Dates | Locations | Notes/Research | Media |
 |-------|-------|-------|-----------|----------------|-------|
@@ -322,7 +1210,7 @@ The plugin must support optional obfuscation during export and canvas rendering:
 | **Standard** | Anonymized | Year only | Region only | Stripped | Excluded |
 | **Full** | Anonymized | Fuzzy ranges | Generic | Stripped | Excluded |
 
-#### 5.5.3 Selective Obfuscation Filters
+#### 5.6.3 Selective Obfuscation Filters
 
 **Requirement:** Apply obfuscation selectively based on individual characteristics for targeted privacy protection.
 
@@ -407,7 +1295,7 @@ obfuscation:
 - **Exclude links:** Remove all photo/document references
 - **Placeholder:** Replace with generic avatar/document icon
 
-#### 5.5.4 Obfuscation Mapping
+#### 5.6.4 Obfuscation Mapping
 
 **Mapping File Generation:**
 
@@ -432,7 +1320,7 @@ When obfuscation is applied, optionally generate a JSON mapping file for reversi
 - Optional encryption of mapping file
 - Clear warning that mapping file is sensitive
 
-#### 5.5.5 Structural Integrity
+#### 5.6.5 Structural Integrity
 
 **What Must Be Preserved:**
 - Relationship structure (parent-child, spouse connections)
@@ -445,7 +1333,7 @@ When obfuscation is applied, optionally generate a JSON mapping file for reversi
 - Relationship logic must be testable/verifiable
 - Canvas rendering must remain functional
 
-#### 5.5.6 User Interface
+#### 5.6.6 User Interface
 
 **Export Dialog:**
 ```
@@ -477,7 +1365,7 @@ When obfuscation is applied, optionally generate a JSON mapping file for reversi
 - Status bar indicator when active
 - Automatic de-obfuscation on plugin reload
 
-#### 5.5.7 Use Cases
+#### 5.6.7 Use Cases
 
 **Public Sharing:**
 - Share family tree structure on forums/blogs
@@ -1694,20 +2582,23 @@ succession_plan:
 
 ### Phase 2
 - Re-layout command (§3.2)
+- Reference numbering systems (§2.1.3)
 - GEDCOM import Mode 1 (§5.2)
 - Flexible date precision (§6.4)
 - Basic card customization (§6.6)
 
 ### Phase 3
 - GEDCOM import Mode 2 (§5.2)
-- GEDCOM export (§5.3)
-- Basic obfuscation (export only) (§5.5)
+- GEDCOM export with UUID preservation (§5.3, §5.5.4)
+- Multi-vault merging (§5.5)
+- Basic obfuscation (export only) (§5.6)
 - Multiple spouse support (§6.1)
 - Alternative parent relationships (§6.2)
 - Unknown parent handling (§6.3)
 
 ### Phase 4
-- Advanced obfuscation (canvas mode, all levels) (§5.5)
+- Advanced obfuscation (canvas mode, all levels) (§5.6)
+- Person Detail Panel (§3.3)
 - Child ordering (§6.5)
 - Advanced card templates (§6.6)
 - Multi-generational gaps (§6.7)
