@@ -1,7 +1,7 @@
 # Canvas Roots Plugin - Technical Specification
 
-**Version:** 1.3
-**Last Updated:** 2025-11-18
+**Version:** 1.4
+**Last Updated:** 2025-11-19
 **Status:** Draft
 
 ---
@@ -679,7 +679,578 @@ If note is edited externally while panel is open:
 - Identify missing or incorrect information
 - Fix broken relationships
 
-### 3.4 Layout Algorithm
+### 3.4 Control Center Modal
+
+**Requirement:** Provide a centralized, Material Design-based modal interface for accessing all Canvas Roots features, settings, and operations.
+
+#### 3.4.1 Overview
+
+**Purpose:**
+- Unified interface for all plugin operations
+- Visual feedback and status monitoring
+- Contextual settings and controls
+- Professional, consistent user experience
+
+**Activation:**
+- **Command:** `Canvas Roots: Open Control Center`
+- **Ribbon icon:** Optional persistent access
+- **Keyboard shortcut:** Configurable hotkey
+
+**Implementation File:** `src/ui/control-center.ts`
+
+#### 3.4.2 Architecture
+
+**Design Pattern:** Modal with navigation drawer and tabbed content area
+
+**Inspired by:** Sonigraph plugin's Material Control Panel (`control-panel.ts`)
+
+**Key Components:**
+
+```typescript
+// Main modal class
+class ControlCenterModal extends Modal {
+  private activeTab: string;
+  private drawer: HTMLElement;         // Navigation sidebar
+  private contentContainer: HTMLElement; // Tab content area
+  private appBar: HTMLElement;         // Sticky header
+}
+```
+
+**UI Structure:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│ [X]  Canvas Roots Control Center    [Actions...]   │ ← Sticky Header
+├──────────┬──────────────────────────────────────────┤
+│ Status   │  Tab Content Area                        │
+│ Actions  │  (Dynamic content based on active tab)   │
+│ Tree     │                                           │
+│ GEDCOM   │  Cards, forms, buttons, etc.             │
+│ Person   │                                           │
+│ Advanced │                                           │
+└──────────┴──────────────────────────────────────────┘
+   Drawer       Content
+```
+
+#### 3.4.3 Tab Configurations
+
+**Tab Structure:**
+
+| Tab ID | Name | Icon | Purpose |
+|--------|------|------|---------|
+| `status` | Status | `activity` | Vault statistics, data quality report |
+| `quick-actions` | Quick Actions | `zap` | Primary commands (Generate Tree, Re-Layout, etc.) |
+| `tree-generation` | Tree Generation | `git-branch` | Layout settings, filters, visual styling |
+| `gedcom` | GEDCOM | `file-text` | Import/export operations, merge tools |
+| `person-detail` | Person Details | `user` | Person Detail Panel settings and quick access |
+| `advanced` | Advanced | `settings` | Reference numbering, obfuscation, advanced features |
+
+**Configuration Format:**
+
+```typescript
+const TAB_CONFIGS = [
+  {
+    id: 'status',
+    name: 'Status',
+    icon: 'activity',
+    description: 'Vault statistics and health checks'
+  },
+  {
+    id: 'quick-actions',
+    name: 'Quick Actions',
+    icon: 'zap',
+    description: 'Frequently used commands'
+  },
+  // ... etc
+];
+```
+
+#### 3.4.4 Tab Content Specifications
+
+##### Status Tab
+
+**Purpose:** Display vault-wide statistics and data quality metrics
+
+**Content Sections:**
+
+1. **Vault Statistics Card:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Vault Statistics                    │
+   ├─────────────────────────────────────┤
+   │ Total People:        247            │
+   │ Total Families:      89             │
+   │ Relationship Links:  612            │
+   │ Average Generations: 4.2            │
+   │ Date Range:          1847-2024      │
+   └─────────────────────────────────────┘
+   ```
+
+2. **Data Quality Card:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Data Quality Report                 │
+   ├─────────────────────────────────────┤
+   │ ✓ Complete Records:    215 (87%)    │
+   │ ⚠ Missing cr_id:       5 (2%)       │
+   │ ⚠ Broken Links:        12 (5%)      │
+   │ ⚠ Circular Relations:  0 (0%)       │
+   │                                     │
+   │ [View Details] [Validate Vault]    │
+   └─────────────────────────────────────┘
+   ```
+
+3. **Recent Operations Log:**
+   - Last 5 tree generations
+   - Last GEDCOM import/export
+   - Recent validation runs
+
+##### Quick Actions Tab
+
+**Purpose:** Centralized access to primary commands
+
+**Content:**
+
+1. **Tree Operations:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Tree Operations                     │
+   ├─────────────────────────────────────┤
+   │ [Generate Tree for Current Note]    │
+   │ Root Person: (auto-detect)          │
+   │ Target Canvas: [Select...]          │
+   │                                     │
+   │ [Re-Layout Current Canvas]          │
+   │ [Clear Canvas]                      │
+   └─────────────────────────────────────┘
+   ```
+
+2. **Person Management:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Person Management                   │
+   ├─────────────────────────────────────┤
+   │ [Open Person Detail Panel]          │
+   │ [Create New Person Note]            │
+   │ [Validate All Relationships]        │
+   └─────────────────────────────────────┘
+   ```
+
+3. **Quick Settings:**
+   - Master volume/visibility toggles
+   - Quick preset selection
+   - Active overlay indicator
+
+##### Tree Generation Tab
+
+**Purpose:** Configure tree layout, filters, and styling
+
+**Content Sections:**
+
+1. **Root Selection:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Root Person                         │
+   ├─────────────────────────────────────┤
+   │ Person: [Search or select...]       │
+   │ ○ Use current active note           │
+   │ ○ Use person with cr_root: true     │
+   │ ● Specify: [[John Smith]]           │
+   └─────────────────────────────────────┘
+   ```
+
+2. **Filters:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Tree Filters                        │
+   ├─────────────────────────────────────┤
+   │ Depth Limits:                       │
+   │   Ancestors:  [∞] generations       │
+   │   Descendants: [∞] generations      │
+   │                                     │
+   │ Relationship Types:                 │
+   │   ☑ Biological parents              │
+   │   ☑ Adoptive parents                │
+   │   ☑ Step-parents                    │
+   │   ☑ Spouses                         │
+   │                                     │
+   │ Date Range:                         │
+   │   From: [1800]  To: [2024]         │
+   └─────────────────────────────────────┘
+   ```
+
+3. **Layout Settings:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Layout Configuration                │
+   ├─────────────────────────────────────┤
+   │ Node Dimensions:                    │
+   │   Width:  [200] px                  │
+   │   Height: [100] px                  │
+   │                                     │
+   │ Spacing:                            │
+   │   Horizontal: [50] px               │
+   │   Vertical:   [100] px              │
+   │                                     │
+   │ Algorithm: [D3 Hierarchy]           │
+   └─────────────────────────────────────┘
+   ```
+
+4. **Visual Styling:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Visual Styling                      │
+   ├─────────────────────────────────────┤
+   │ Active Overlay: [None ▼]            │
+   │   ○ None                            │
+   │   ○ House Colors                    │
+   │   ○ Generation Depth                │
+   │   ○ Living vs. Deceased             │
+   │                                     │
+   │ Card Template: [Standard ▼]        │
+   │                                     │
+   │ [Preview Changes]                   │
+   └─────────────────────────────────────┘
+   ```
+
+##### GEDCOM Tab
+
+**Purpose:** Import, export, and merge genealogical data
+
+**Content Sections:**
+
+1. **Import GEDCOM:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Import GEDCOM File                  │
+   ├─────────────────────────────────────┤
+   │ Mode:                               │
+   │   ○ Canvas-only (quick preview)     │
+   │   ● Vault-sync (full integration)   │
+   │                                     │
+   │ UUID Handling:                      │
+   │   ☑ Preserve _UUID tags             │
+   │   ☑ Detect duplicates               │
+   │                                     │
+   │ [Select GEDCOM File...]             │
+   │ [Start Import]                      │
+   └─────────────────────────────────────┘
+   ```
+
+2. **Export GEDCOM:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Export to GEDCOM                    │
+   ├─────────────────────────────────────┤
+   │ Obfuscation Level:                  │
+   │   ○ None (full data)                │
+   │   ○ Minimal (year only)             │
+   │   ● Standard (names + dates)        │
+   │   ○ Full (maximum privacy)          │
+   │                                     │
+   │ Apply to:                           │
+   │   ● All individuals                 │
+   │   ○ Living individuals only         │
+   │   ○ Minors only                     │
+   │                                     │
+   │ ☑ Generate mapping file             │
+   │ ☑ Preserve UUIDs                    │
+   │                                     │
+   │ [Export GEDCOM...]                  │
+   └─────────────────────────────────────┘
+   ```
+
+3. **Merge Collections:**
+   ```
+   ┌─────────────────────────────────────┐
+   │ Merge External Collection           │
+   ├─────────────────────────────────────┤
+   │ Source: [Browse vault/folder...]    │
+   │                                     │
+   │ Strategy:                           │
+   │   ● UUID-based (recommended)        │
+   │   ○ Manual selection only           │
+   │                                     │
+   │ Conflict Resolution:                │
+   │   ● Prompt for each conflict        │
+   │   ○ Always keep target data         │
+   │   ○ Always prefer source data       │
+   │                                     │
+   │ [Start Merge]                       │
+   └─────────────────────────────────────┘
+   ```
+
+##### Person Detail Tab (Phase 4+)
+
+**Purpose:** Configure Person Detail Panel and quick person access
+
+**Content:**
+
+1. **Panel Settings:**
+   - Location (left/right sidebar)
+   - Auto-open behavior
+   - Field display order
+   - Enabled fields
+
+2. **Quick Person Lookup:**
+   - Search and open any person
+   - Recent persons list
+   - Bookmarked persons
+
+##### Advanced Tab (Phase 4+)
+
+**Purpose:** Access to advanced features and experimental settings
+
+**Content Sections:**
+
+1. **Reference Numbering (Phase 2+):**
+   - System selection (Dollarhide-Cole, Ahnentafel, Custom)
+   - Root person configuration
+   - Calculate/recalculate commands
+
+2. **Obfuscation Settings (Phase 3+):**
+   - Canvas obfuscation toggle
+   - Living individuals filter
+   - Minor protection settings
+
+3. **Relationship Quality (Phase 5+):**
+   - Visualization toggles
+   - Color scheme configuration
+
+4. **Medical Genogram (Phase 5+):**
+   - Medical symbol display
+   - Privacy controls
+
+5. **World-Building Features (Phase 6+):**
+   - Organizational evolution
+   - Succession rules engine
+   - Dual relationship trees
+
+#### 3.4.5 Material Design Components
+
+**Reusable UI Components:**
+
+The Control Center uses a set of reusable Material Design components adapted from Sonigraph:
+
+**Component Files:**
+
+```
+src/ui/
+  ├── control-center.ts          ← Main modal class
+  ├── material-components.ts     ← Reusable components
+  ├── lucide-icons.ts            ← Icon management
+  └── control-center.css         ← Material Design styling
+```
+
+**Component Library:**
+
+| Component | Purpose | Example Usage |
+|-----------|---------|---------------|
+| `MaterialCard` | Content containers with headers | Wrap stat displays, forms |
+| `MaterialButton` | Consistent button styling | Actions, navigation |
+| `MaterialSlider` | Numeric input with visual feedback | Spacing, dimensions, volume |
+| `ActionChip` | Toggle buttons and filters | Enable/disable options |
+| `StatCard` | Display key metrics | Vault statistics |
+| `EffectSection` | Collapsible settings groups | Group related settings |
+
+**Example Component Usage:**
+
+```typescript
+// Create a stat card
+const statCard = new StatCard({
+  value: '247',
+  label: 'Total People',
+  iconName: 'users',
+  color: 'primary'
+});
+
+// Create a material card with content
+const settingsCard = new MaterialCard({
+  title: 'Layout Configuration',
+  iconName: 'layout',
+  elevation: 2
+});
+
+// Add slider for node width
+const widthSlider = new MaterialSlider({
+  value: this.plugin.settings.defaultNodeWidth,
+  min: 100,
+  max: 400,
+  step: 10,
+  unit: 'px',
+  onChange: (value) => {
+    this.plugin.settings.defaultNodeWidth = value;
+    await this.plugin.saveSettings();
+  }
+});
+
+settingsCard.addContent(widthSlider.getElement());
+```
+
+#### 3.4.6 Styling System
+
+**CSS Architecture:**
+
+Based on Material Design 3 principles, using Obsidian's native color system:
+
+**Design Tokens:**
+
+```css
+:root {
+  /* Surface colors */
+  --crc-surface: var(--background-secondary);
+  --crc-surface-variant: var(--background-modifier-border-hover);
+
+  /* Primary colors */
+  --crc-primary: var(--interactive-accent);
+  --crc-primary-container: var(--interactive-accent-hover);
+
+  /* Text colors */
+  --crc-on-surface: var(--text-normal);
+  --crc-on-surface-variant: var(--text-muted);
+
+  /* Elevation system */
+  --crc-elevation-1: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --crc-elevation-2: 0 3px 6px rgba(0, 0, 0, 0.16);
+
+  /* Spacing (4dp base unit) */
+  --crc-space-2: 8px;
+  --crc-space-4: 16px;
+  --crc-space-6: 24px;
+
+  /* Corner radius */
+  --crc-corner-sm: 8px;
+  --crc-corner-md: 12px;
+
+  /* Motion */
+  --crc-motion-standard: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --crc-duration-medium: 300ms;
+}
+```
+
+**Class Naming Convention:**
+
+- Prefix: `crc-` (Canvas Roots Control)
+- BEM methodology: `crc-block__element--modifier`
+- Examples:
+  - `.crc-modal-container`
+  - `.crc-drawer__item--active`
+  - `.crc-card__header`
+
+#### 3.4.7 State Management
+
+**Modal State:**
+
+```typescript
+interface ControlCenterState {
+  activeTab: string;
+  lastOpenedPerson?: string;
+  quickSettings: {
+    rootPerson?: string;
+    targetCanvas?: string;
+    activeOverlay?: string;
+  };
+}
+```
+
+**State Persistence:**
+
+- Active tab remembered across sessions
+- Quick settings cached per session
+- Form values preserved during modal lifecycle
+
+#### 3.4.8 Integration Points
+
+**Plugin Integration:**
+
+```typescript
+// In main.ts
+this.addCommand({
+  id: 'open-control-center',
+  name: 'Open Control Center',
+  callback: () => {
+    new ControlCenterModal(this.app, this).open();
+  }
+});
+
+// Optional ribbon icon
+this.addRibbonIcon(
+  'git-branch',
+  'Canvas Roots Control Center',
+  () => {
+    new ControlCenterModal(this.app, this).open();
+  }
+);
+```
+
+**Context Menu Integration:**
+
+```typescript
+// Right-click on canvas nodes
+this.registerEvent(
+  this.app.workspace.on('canvas:node-menu', (menu, node) => {
+    if (this.isPersonNode(node)) {
+      menu.addItem((item) => {
+        item
+          .setTitle('View in Control Center')
+          .setIcon('git-branch')
+          .onClick(() => {
+            const modal = new ControlCenterModal(this.app, this);
+            modal.openToPersonTab(node.file.path);
+          });
+      });
+    }
+  })
+);
+```
+
+#### 3.4.9 Implementation Priority
+
+**MVP (Phase 1):**
+- Modal structure with navigation drawer
+- Status tab (basic stats)
+- Quick Actions tab (Generate Tree, Re-Layout)
+- Material components library (Card, Button, Slider)
+- Basic CSS styling
+
+**Phase 2:**
+- Tree Generation tab with all settings
+- Layout preview functionality
+- Filter controls
+
+**Phase 3:**
+- GEDCOM tab (import/export)
+- Merge collections interface
+
+**Phase 4:**
+- Person Detail tab integration
+- Advanced settings organization
+
+**Phase 5+:**
+- Advanced features as they're implemented
+- Progressive enhancement of existing tabs
+
+#### 3.4.10 Accessibility
+
+**Keyboard Navigation:**
+- Tab key navigation through all interactive elements
+- Arrow keys for drawer navigation
+- Enter/Space to activate buttons
+- Escape to close modal
+
+**Screen Reader Support:**
+- ARIA labels on all icons and actions
+- Semantic HTML structure
+- Focus management
+- Status announcements for async operations
+
+**Visual Accessibility:**
+- High contrast mode support via Obsidian theme
+- Minimum touch target size: 44x44px
+- Clear focus indicators
+- Readable font sizes (minimum 12px)
+
+### 3.5 Layout Algorithm
 
 **Requirements:**
 - Support multi-parent graphs (not simple trees)
@@ -2579,6 +3150,12 @@ succession_plan:
 - Tree generation command (§3.1)
 - Basic D3 layout
 - Canvas JSON read/write (§4.3)
+- **Control Center Modal - MVP** (§3.4.9)
+  - Modal structure with navigation drawer
+  - Status tab (basic stats)
+  - Quick Actions tab (Generate Tree, Re-Layout)
+  - Material components library (Card, Button, Slider)
+  - Basic CSS styling
 
 ### Phase 2
 - Re-layout command (§3.2)
@@ -2586,6 +3163,10 @@ succession_plan:
 - GEDCOM import Mode 1 (§5.2)
 - Flexible date precision (§6.4)
 - Basic card customization (§6.6)
+- **Control Center - Phase 2** (§3.4.9)
+  - Tree Generation tab with all settings
+  - Layout preview functionality
+  - Filter controls
 
 ### Phase 3
 - GEDCOM import Mode 2 (§5.2)
@@ -2595,6 +3176,9 @@ succession_plan:
 - Multiple spouse support (§6.1)
 - Alternative parent relationships (§6.2)
 - Unknown parent handling (§6.3)
+- **Control Center - Phase 3** (§3.4.9)
+  - GEDCOM tab (import/export)
+  - Merge collections interface
 
 ### Phase 4
 - Advanced obfuscation (canvas mode, all levels) (§5.6)
@@ -2604,6 +3188,9 @@ succession_plan:
 - Multi-generational gaps (§6.7)
 - DataView template library (§5.4)
 - Basic location tracking (§6.10)
+- **Control Center - Phase 4** (§3.4.9)
+  - Person Detail tab integration
+  - Advanced settings organization
 
 ### Phase 5 (GenoPro-Inspired Features)
 - Relationship quality visualization (§6.8)
@@ -2621,6 +3208,9 @@ succession_plan:
 - Co-ruling and regency visualization (§7.4)
 - Organizational evolution tracking (§7.5)
 - Timeline branching for institutions (§7.5.2-7.5.3)
+- **Control Center - Phase 6** (§3.4.9)
+  - Advanced feature tabs as implemented
+  - Progressive enhancement of existing tabs
 
 ---
 
@@ -2637,6 +3227,7 @@ succession_plan:
 | Term | Definition |
 |------|------------|
 | **Canvas** | Obsidian's infinite canvas feature for visual organization |
+| **Control Center** | Material Design modal interface providing centralized access to all Canvas Roots features |
 | **D3.js** | JavaScript library for data visualization and layout algorithms |
 | **GEDCOM** | Genealogical Data Communication - standard format for family tree data |
 | **Frontmatter** | YAML metadata block at the top of Markdown files |
