@@ -80,11 +80,10 @@ export class ControlCenterModal extends Modal {
 	 * Create header action buttons
 	 */
 	private createHeaderActions(container: HTMLElement): void {
-		// Close button
+		// Close button (icon only, no text)
 		const closeBtn = container.createEl('button', { cls: 'crc-btn crc-btn--secondary' });
 		const closeIcon = createLucideIcon('x', 16);
 		closeBtn.appendChild(closeIcon);
-		closeBtn.appendText('Close');
 		closeBtn.addEventListener('click', () => this.close());
 	}
 
