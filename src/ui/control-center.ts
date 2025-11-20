@@ -46,6 +46,12 @@ export class ControlCenterModal extends Modal {
 	private spouseBtn?: HTMLButtonElement;
 	private spouseHelp?: HTMLElement;
 
+	// Tree Generation tab state
+	private treeRootPersonField?: RelationshipField;
+	private treeRootPersonInput?: HTMLInputElement;
+	private treeRootPersonBtn?: HTMLButtonElement;
+	private pendingRootPerson?: PersonInfo;
+
 	constructor(app: App, plugin: CanvasRootsPlugin) {
 		super(app);
 		this.plugin = plugin;
@@ -218,6 +224,39 @@ export class ControlCenterModal extends Modal {
 	public openToTab(tabId: string): void {
 		this.activeTab = tabId;
 		this.open();
+	}
+
+	/**
+	 * Open Control Center with a person pre-selected as the tree root
+	 * Opens to the Tree Generation tab with the specified person already populated
+	 *
+	 * @param file - The TFile of the person note
+	 */
+	public async openWithPerson(file: TFile): Promise<void> {
+		// Get person info from file metadata
+		const cache = this.app.metadataCache.getFileCache(file);
+		if (!cache?.frontmatter) {
+			new Notice('Unable to read person data from file');
+			return;
+		}
+
+		const crId = cache.frontmatter.cr_id;
+		const name = cache.frontmatter.name || file.basename;
+
+		if (!crId) {
+			new Notice('This note does not have a cr_id field');
+			return;
+		}
+
+		// Store the person info to be used when the tab renders
+		this.pendingRootPerson = {
+			name,
+			crId,
+			file
+		};
+
+		// Open to Tree Generation tab
+		this.openToTab('tree-generation');
 	}
 
 	// ==========================================================================
@@ -737,6 +776,18 @@ export class ControlCenterModal extends Modal {
 
 		// Root person selection
 		const rootPersonField: RelationshipField = { name: '' };
+
+		// Store reference for openWithPerson() to use
+		this.treeRootPersonField = rootPersonField;
+
+		// Check if we have a pending root person to pre-populate
+		if (this.pendingRootPerson) {
+			rootPersonField.name = this.pendingRootPerson.name;
+			rootPersonField.crId = this.pendingRootPerson.crId;
+			// Clear pending after using it
+			this.pendingRootPerson = undefined;
+		}
+
 		const rootGroup = configContent.createDiv({ cls: 'crc-form-group' });
 		const rootLabel = rootGroup.createEl('label', {
 			cls: 'crc-form-label',
@@ -751,6 +802,10 @@ export class ControlCenterModal extends Modal {
 			'Select the person to center the tree on',
 			rootPersonField
 		);
+
+		// Store input and button references
+		this.treeRootPersonInput = rootFieldResult.input;
+		this.treeRootPersonBtn = rootFieldResult.linkBtn;
 
 		// Tree type selection
 		const typeGroup = configContent.createDiv({ cls: 'crc-form-group' });

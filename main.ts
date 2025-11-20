@@ -1,4 +1,4 @@
-import { Plugin, Notice } from 'obsidian';
+import { Plugin, Notice, TFile } from 'obsidian';
 import { CanvasRootsSettings, DEFAULT_SETTINGS, CanvasRootsSettingTab } from './src/settings';
 import { ControlCenterModal } from './src/ui/control-center';
 
@@ -44,6 +44,28 @@ export default class CanvasRootsPlugin extends Plugin {
 				this.relayoutCurrentCanvas();
 			}
 		});
+
+		// Add context menu item for person notes
+		this.registerEvent(
+			this.app.workspace.on('file-menu', (menu, file) => {
+				// Only show for markdown files with cr_id in frontmatter
+				if (file instanceof TFile && file.extension === 'md') {
+					const cache = this.app.metadataCache.getFileCache(file);
+					if (cache?.frontmatter?.cr_id) {
+						menu.addItem((item) => {
+							item
+								.setTitle('Generate Family Tree')
+								.setIcon('git-fork')
+								.onClick(async () => {
+									// Open Control Center with this person pre-selected
+									const modal = new ControlCenterModal(this.app, this);
+									await modal.openWithPerson(file);
+								});
+						});
+					}
+				}
+			})
+		);
 	}
 
 	async onunload() {
