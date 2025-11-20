@@ -492,10 +492,11 @@ export class ControlCenterModal extends Modal {
 			cls: 'crc-checkbox',
 			attr: {
 				type: 'checkbox',
-				id: 'auto-gen-uuid',
-				checked: true
+				id: 'auto-gen-uuid'
 			}
 		});
+		// Set initial state from plugin settings
+		autoGenCheckbox.checked = this.plugin.settings.autoGenerateCrId;
 		checkboxContainer.createEl('label', {
 			cls: 'crc-checkbox-label',
 			text: 'Auto-generate cr_id',
@@ -509,17 +510,25 @@ export class ControlCenterModal extends Modal {
 			cls: 'crc-form-input',
 			attr: {
 				type: 'text',
-				placeholder: 'abc-123-def-456',
-				readonly: true
+				placeholder: 'abc-123-def-456'
 			}
 		});
+		// Set initial readonly state based on plugin settings
+		if (this.plugin.settings.autoGenerateCrId) {
+			uuidInput.setAttribute('readonly', 'true');
+		}
 		uuidFieldGroup.createDiv({
 			cls: 'crc-form-help',
 			text: 'Unique identifier for this person'
 		});
 
 		// Toggle UUID field based on checkbox
-		autoGenCheckbox.addEventListener('change', () => {
+		autoGenCheckbox.addEventListener('change', async () => {
+			// Update plugin settings
+			this.plugin.settings.autoGenerateCrId = autoGenCheckbox.checked;
+			await this.plugin.saveSettings();
+
+			// Update UI state
 			if (autoGenCheckbox.checked) {
 				uuidInput.setAttribute('readonly', 'true');
 				uuidInput.value = '';
@@ -1200,10 +1209,10 @@ export class ControlCenterModal extends Modal {
 		clearButton.prepend(clearIcon);
 
 		clearButton.addEventListener('click', () => {
-			LoggerFactory.clearLogs();
 			logger.info('maintenance', 'Logs cleared from Control Center');
+			LoggerFactory.clearLogs();
 			new Notice('Logs cleared');
-			this.showAdvancedTab(); // Refresh the tab
+			this.showTab('advanced'); // Refresh the tab
 		});
 
 		container.appendChild(loggingCard);
