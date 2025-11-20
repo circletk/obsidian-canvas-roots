@@ -153,15 +153,27 @@ export class GedcomImporter {
 			deathDate: GedcomParser.gedcomDateToISO(individual.deathDate || '')
 		};
 
-		// Add relationship references (we'll use temporary GEDCOM IDs for now)
+		// Add relationship references with both GEDCOM IDs (temporary) and names
 		if (individual.fatherRef) {
-			personData.fatherCrId = individual.fatherRef; // Temporary
+			personData.fatherCrId = individual.fatherRef; // Temporary GEDCOM ID
+			const father = gedcomData.individuals.get(individual.fatherRef);
+			if (father) {
+				personData.fatherName = father.name || 'Unknown';
+			}
 		}
 		if (individual.motherRef) {
-			personData.motherCrId = individual.motherRef; // Temporary
+			personData.motherCrId = individual.motherRef; // Temporary GEDCOM ID
+			const mother = gedcomData.individuals.get(individual.motherRef);
+			if (mother) {
+				personData.motherName = mother.name || 'Unknown';
+			}
 		}
 		if (individual.spouseRefs.length > 0) {
-			personData.spouseCrId = individual.spouseRefs; // Temporary
+			personData.spouseCrId = individual.spouseRefs; // Temporary GEDCOM IDs
+			personData.spouseName = individual.spouseRefs.map(ref => {
+				const spouse = gedcomData.individuals.get(ref);
+				return spouse?.name || 'Unknown';
+			});
 		}
 
 		// Write person note using the createPersonNote function
@@ -202,46 +214,53 @@ export class GedcomImporter {
 		// Read the file
 		const content = await this.app.vault.read(file);
 
-		// Update frontmatter with real cr_ids
+		// Update frontmatter with real cr_ids (replacing temporary GEDCOM IDs)
 		let updatedContent = content;
 
-		// Replace father_id reference
+		// Replace father_id reference with real cr_id
 		if (individual.fatherRef) {
 			const fatherCrId = gedcomToCrId.get(individual.fatherRef);
 			if (fatherCrId) {
+				// Escape special regex characters in GEDCOM ID
+				const escapedRef = individual.fatherRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				updatedContent = updatedContent.replace(
-					new RegExp(`father_id: ${individual.fatherRef}`, 'g'),
+					new RegExp(`father_id: ${escapedRef}`, 'g'),
 					`father_id: ${fatherCrId}`
 				);
 			}
 		}
 
-		// Replace mother_id reference
+		// Replace mother_id reference with real cr_id
 		if (individual.motherRef) {
 			const motherCrId = gedcomToCrId.get(individual.motherRef);
 			if (motherCrId) {
+				// Escape special regex characters in GEDCOM ID
+				const escapedRef = individual.motherRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 				updatedContent = updatedContent.replace(
-					new RegExp(`mother_id: ${individual.motherRef}`, 'g'),
+					new RegExp(`mother_id: ${escapedRef}`, 'g'),
 					`mother_id: ${motherCrId}`
 				);
 			}
 		}
 
-		// Replace spouse_id references
+		// Replace spouse_id references with real cr_ids
 		if (individual.spouseRefs.length > 0) {
-			const spouseCrIds = individual.spouseRefs
-				.map(ref => gedcomToCrId.get(ref))
-				.filter(id => id !== undefined);
-
-			if (spouseCrIds.length > 0) {
-				// Find the spouse_id line in frontmatter and replace it
-				// Match spouse_id field and all its array items, stopping before the next field or closing ---
-				const spousePattern = /spouse_id:.*?(?=\n[a-z_]+:|\n---|\n\n|$)/s;
-				const spouseReplacement = spouseCrIds.length === 1
-					? `spouse_id: ${spouseCrIds[0]}`
-					: `spouse_id:\n${spouseCrIds.map(id => `  - ${id}`).join('\n')}`;
-
-				updatedContent = updatedContent.replace(spousePattern, spouseReplacement);
+			// Replace each GEDCOM ID with its corresponding cr_id in the spouse_id field
+			for (const spouseRef of individual.spouseRefs) {
+				const spouseCrId = gedcomToCrId.get(spouseRef);
+				if (spouseCrId) {
+					// Escape special regex characters in GEDCOM ID
+					const escapedRef = spouseRef.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+					updatedContent = updatedContent.replace(
+						new RegExp(`spouse_id: ${escapedRef}`, 'g'),
+						`spouse_id: ${spouseCrId}`
+					);
+					// Also replace in array format
+					updatedContent = updatedContent.replace(
+						new RegExp(`  - ${escapedRef}`, 'g'),
+						`  - ${spouseCrId}`
+					);
+				}
 			}
 		}
 
