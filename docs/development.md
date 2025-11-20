@@ -155,11 +155,11 @@ canvas-roots/
 | Command | Status | Purpose |
 |---------|--------|---------|
 | Open Control Center | ✅ Complete | Opens main Control Center modal |
-| Generate Tree for Current Note | 🟡 Partial | Opens Control Center to Tree Generation tab (stub implementation) |
+| Generate Tree for Current Note | ✅ Complete | Opens Control Center with current person pre-selected in Tree Generation tab |
+| Create Person Note | ✅ Complete | Opens Control Center to Data Entry tab for creating new person notes |
 | Re-Layout Canvas | 🟡 Partial | Placeholder for recalculating layout (stub implementation) |
 | **To Be Implemented** | | |
 | Open Tree View | 🔴 Needed | Opens D3 preview for collection/tree |
-| Create Person Note | 🔴 Needed | Quick person note creation |
 
 ### Context Menus
 
