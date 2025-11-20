@@ -1689,7 +1689,7 @@ export class ControlCenterModal extends Modal {
 		if (fieldData.crId) {
 			helpEl.appendText('Linked to: ');
 			const badge = helpEl.createEl('code', {
-				text: fieldData.crId,
+				text: fieldData.name,
 				cls: 'crc-help-badge'
 			});
 		} else {
