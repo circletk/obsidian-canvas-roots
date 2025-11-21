@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-11-21 16:21:22 UTC
+ * - Generated: 2025-11-21 16:42:12 UTC
  * - Components: 11 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -171,7 +171,7 @@
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 743 lines, 14.22 KB */
+/* Component Size: 773 lines, 14.76 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -781,6 +781,36 @@
   opacity: 0.8;
 }
 
+.crc-picker-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  background: var(--background-secondary);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.crc-picker-group-header:first-child {
+  margin-top: 0;
+}
+
+.crc-picker-group-header__text {
+  flex: 1;
+}
+
+.crc-picker-group-header__badge {
+  padding: 2px 8px;
+  background: var(--background-modifier-border);
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
 .crc-picker-empty {
   display: flex;
   flex-direction: column;
@@ -987,10 +1017,10 @@
    ========================================================================== */
 
 /*
- * Build completed: 2025-11-21 16:21:22 UTC
+ * Build completed: 2025-11-21 16:42:12 UTC
  * Components processed: 11
- * Total lines: 865
- * Total size: 16.32 KB
+ * Total lines: 895
+ * Total size: 16.87 KB
  * Build duration: 0.01 seconds
  *
  * Component breakdown:
@@ -1001,7 +1031,7 @@
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 4 lines, 0.07 KB
- * - modals.css: 743 lines, 14.22 KB
+ * - modals.css: 773 lines, 14.76 KB
  * - animations.css: 16 lines, 0.18 KB
  * - responsive.css: 9 lines, 0.13 KB
  * - theme.css: 11 lines, 0.19 KB

@@ -1,5 +1,6 @@
 import { App, Modal, TFile } from 'obsidian';
 import { createLucideIcon } from './lucide-icons';
+import { FamilyGraphService, PersonNode } from '../core/family-graph';
 
 /**
  * Person data extracted from note frontmatter
@@ -44,6 +45,8 @@ export class PersonPickerModal extends Modal {
 		hasBirthDate: 'all',
 		sex: 'all'
 	};
+	private familyComponents: Array<{ representative: PersonNode; size: number; people: PersonNode[] }> = [];
+	private componentMap: Map<string, number> = new Map(); // Maps cr_id to component index
 
 	constructor(app: App, onSelect: (person: PersonInfo) => void) {
 		super(app);
@@ -83,9 +86,35 @@ export class PersonPickerModal extends Modal {
 			}
 		}
 
+		// Load family components
+		await this.loadFamilyComponents();
+
 		// Initial sort by name
 		this.sortPeople();
 		this.filteredPeople = [...this.allPeople];
+	}
+
+	/**
+	 * Load family components and build component map
+	 */
+	private async loadFamilyComponents(): Promise<void> {
+		try {
+			const graphService = new FamilyGraphService(this.app);
+			this.familyComponents = await graphService.findAllFamilyComponents();
+
+			// Build component map (cr_id -> component index)
+			this.componentMap.clear();
+			this.familyComponents.forEach((component, index) => {
+				component.people.forEach(person => {
+					this.componentMap.set(person.crId, index);
+				});
+			});
+		} catch (error) {
+			console.error('Error loading family components:', error);
+			// Gracefully degrade - continue without component grouping
+			this.familyComponents = [];
+			this.componentMap.clear();
+		}
 	}
 
 	/**
@@ -351,42 +380,101 @@ export class PersonPickerModal extends Modal {
 			return;
 		}
 
-		// Render person cards
+		// Group by family component if multiple components exist
+		if (this.familyComponents.length > 1) {
+			this.renderGroupedResults();
+		} else {
+			this.renderFlatResults();
+		}
+	}
+
+	/**
+	 * Render results grouped by family component
+	 */
+	private renderGroupedResults(): void {
+		// Group filtered people by component
+		const peopleByComponent = new Map<number, PersonInfo[]>();
+
 		this.filteredPeople.forEach(person => {
-			const card = this.resultsContainer.createDiv({ cls: 'crc-picker-item' });
-
-			// Main info
-			const mainInfo = card.createDiv({ cls: 'crc-picker-item__main' });
-			mainInfo.createDiv({ cls: 'crc-picker-item__name', text: person.name });
-
-			// Meta info (birth date and cr_id)
-			const metaInfo = card.createDiv({ cls: 'crc-picker-item__meta' });
-
-			if (person.birthDate) {
-				const birthBadge = metaInfo.createDiv({ cls: 'crc-picker-badge' });
-				const birthIcon = createLucideIcon('calendar', 12);
-				birthBadge.appendChild(birthIcon);
-				birthBadge.appendText(person.birthDate);
+			const componentIndex = this.componentMap.get(person.crId);
+			if (componentIndex !== undefined) {
+				if (!peopleByComponent.has(componentIndex)) {
+					peopleByComponent.set(componentIndex, []);
+				}
+				peopleByComponent.get(componentIndex)!.push(person);
 			}
+		});
 
-			const idBadge = metaInfo.createDiv({ cls: 'crc-picker-badge crc-picker-badge--id' });
-			const idIcon = createLucideIcon('hash', 12);
-			idBadge.appendChild(idIcon);
-			idBadge.appendText(person.crId);
+		// Render each component group
+		const sortedComponents = Array.from(peopleByComponent.entries()).sort((a, b) => a[0] - b[0]);
 
-			// Click handler
-			card.addEventListener('click', () => {
-				this.onSelect(person);
-				this.close();
-			});
+		sortedComponents.forEach(([componentIndex, people]) => {
+			const component = this.familyComponents[componentIndex];
 
-			// Hover effect
-			card.addEventListener('mouseenter', () => {
-				card.addClass('crc-picker-item--hover');
+			// Family group header
+			const groupHeader = this.resultsContainer.createDiv({ cls: 'crc-picker-group-header' });
+			const headerIcon = createLucideIcon('users', 16);
+			groupHeader.appendChild(headerIcon);
+
+			const headerText = groupHeader.createSpan({ cls: 'crc-picker-group-header__text' });
+			headerText.setText(`Family group ${componentIndex + 1}`);
+
+			const headerBadge = groupHeader.createSpan({ cls: 'crc-picker-group-header__badge' });
+			headerBadge.setText(`${component.size} ${component.size === 1 ? 'person' : 'people'}`);
+
+			// Render people in this group
+			people.forEach(person => {
+				this.renderPersonCard(person);
 			});
-			card.addEventListener('mouseleave', () => {
-				card.removeClass('crc-picker-item--hover');
-			});
+		});
+	}
+
+	/**
+	 * Render results without grouping (single component or no components detected)
+	 */
+	private renderFlatResults(): void {
+		this.filteredPeople.forEach(person => {
+			this.renderPersonCard(person);
+		});
+	}
+
+	/**
+	 * Render a single person card
+	 */
+	private renderPersonCard(person: PersonInfo): void {
+		const card = this.resultsContainer.createDiv({ cls: 'crc-picker-item' });
+
+		// Main info
+		const mainInfo = card.createDiv({ cls: 'crc-picker-item__main' });
+		mainInfo.createDiv({ cls: 'crc-picker-item__name', text: person.name });
+
+		// Meta info (birth date and cr_id)
+		const metaInfo = card.createDiv({ cls: 'crc-picker-item__meta' });
+
+		if (person.birthDate) {
+			const birthBadge = metaInfo.createDiv({ cls: 'crc-picker-badge' });
+			const birthIcon = createLucideIcon('calendar', 12);
+			birthBadge.appendChild(birthIcon);
+			birthBadge.appendText(person.birthDate);
+		}
+
+		const idBadge = metaInfo.createDiv({ cls: 'crc-picker-badge crc-picker-badge--id' });
+		const idIcon = createLucideIcon('hash', 12);
+		idBadge.appendChild(idIcon);
+		idBadge.appendText(person.crId);
+
+		// Click handler
+		card.addEventListener('click', () => {
+			this.onSelect(person);
+			this.close();
+		});
+
+		// Hover effect
+		card.addEventListener('mouseenter', () => {
+			card.addClass('crc-picker-item--hover');
+		});
+		card.addEventListener('mouseleave', () => {
+			card.removeClass('crc-picker-item--hover');
 		});
 	}
 }
