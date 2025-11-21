@@ -261,6 +261,108 @@ export class ControlCenterModal extends Modal {
 		this.openToTab('tree-generation');
 	}
 
+	/**
+	 * Find all disconnected family components and generate a tree for each
+	 * Creates separate canvases for each family group found in the vault
+	 */
+	public async openAndGenerateAllTrees(): Promise<void> {
+		try {
+			// Initialize services
+			const graphService = new FamilyGraphService(this.app);
+
+			// Find all family components
+			logger.info('generate-all-trees', 'Finding all family components in vault');
+			const components = await graphService.findAllFamilyComponents();
+
+			if (components.length === 0) {
+				new Notice('No family trees found in vault. Please add some person notes first.');
+				return;
+			}
+
+			if (components.length === 1) {
+				new Notice('Only one family tree found. Use "Generate Tree" instead.');
+				return;
+			}
+
+			logger.info('generate-all-trees', `Found ${components.length} family groups`, {
+				sizes: components.map(c => c.size)
+			});
+
+			new Notice(`Found ${components.length} family groups. Generating trees...`);
+
+			// Generate a tree for each component
+			let successCount = 0;
+			for (let i = 0; i < components.length; i++) {
+				const component = components[i];
+				const rep = component.representative;
+
+				logger.info('generate-all-trees', `Generating tree ${i + 1}/${components.length}`, {
+					representative: rep.name,
+					size: component.size
+				});
+
+				try {
+					// Generate full family tree for this component
+					const treeOptions: TreeOptions = {
+						rootCrId: rep.crId,
+						treeType: 'full',
+						maxGenerations: 0, // unlimited
+						includeSpouses: true
+					};
+
+					const familyTree = await graphService.generateTree(treeOptions);
+
+					if (!familyTree) {
+						logger.error('generate-all-trees', `Failed to generate tree for ${rep.name}: root not found`);
+						continue;
+					}
+
+					// Generate canvas with a numbered name
+					const canvasGenerator = new CanvasGenerator();
+					const canvasOptions = {
+						nodeWidth: this.plugin.settings.defaultNodeWidth,
+						nodeHeight: this.plugin.settings.defaultNodeHeight,
+						showLabels: false
+					};
+
+					const canvasData = canvasGenerator.generateCanvas(familyTree, canvasOptions);
+
+					// Create canvas file
+					const fileName = `Family Tree ${i + 1} - ${rep.name}.canvas`;
+					const canvasContent = this.formatCanvasJson(canvasData);
+
+					let file: TFile;
+					const existingFile = this.app.vault.getAbstractFileByPath(fileName);
+					if (existingFile instanceof TFile) {
+						await this.app.vault.modify(existingFile, canvasContent);
+						file = existingFile;
+					} else {
+						file = await this.app.vault.create(fileName, canvasContent);
+					}
+
+					successCount++;
+
+					logger.info('generate-all-trees', `Successfully generated tree ${i + 1}`, {
+						fileName,
+						nodeCount: canvasData.nodes.length
+					});
+				} catch (error) {
+					logger.error('generate-all-trees', `Failed to generate tree for ${rep.name}`, error);
+					// Continue with next component even if one fails
+				}
+			}
+
+			if (successCount === components.length) {
+				new Notice(`Successfully generated ${successCount} family trees!`, 5000);
+			} else {
+				new Notice(`Generated ${successCount} of ${components.length} trees. Check console for errors.`, 5000);
+			}
+		} catch (error) {
+			logger.error('generate-all-trees', 'Failed to generate all trees', error);
+			throw error;
+		}
+	}
+
 	// ==========================================================================
 	// TAB CONTENT METHODS
 	// ==========================================================================

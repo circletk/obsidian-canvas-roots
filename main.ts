@@ -58,6 +58,15 @@ export default class CanvasRootsPlugin extends Plugin {
 			}
 		});
 
+		// Add command: Generate All Trees (for multi-family vaults)
+		this.addCommand({
+			id: 'generate-all-trees',
+			name: 'Generate All Trees',
+			callback: () => {
+				this.generateAllTrees();
+			}
+		});
+
 		// Add context menu item for person notes
 		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu, file) => {
@@ -135,5 +144,18 @@ export default class CanvasRootsPlugin extends Plugin {
 		// Open Control Center to the Data Entry tab
 		const modal = new ControlCenterModal(this.app, this);
 		modal.openToTab('data-entry');
+	}
+
+	private async generateAllTrees() {
+		new Notice('Finding all family groups...');
+
+		try {
+			// Open Control Center to generate all trees
+			const modal = new ControlCenterModal(this.app, this);
+			await modal.openAndGenerateAllTrees();
+		} catch (error) {
+			console.error('Error generating all trees:', error);
+			new Notice('Failed to generate all trees. Check console for details.');
+		}
 	}
 }

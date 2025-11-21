@@ -1,6 +1,6 @@
 # Canvas Roots Plugin - Technical Specification
 
-**Version:** 1.9
+**Version:** 2.0
 **Last Updated:** 2025-11-20
 **Status:** Draft
 
@@ -15,6 +15,7 @@
 5. [GEDCOM Integration](#5-gedcom-integration)
 6. [Enhanced Relationship Modeling](#6-enhanced-relationship-modeling)
 7. [World-Building and Organizational Features](#7-world-building-and-organizational-features)
+8. [Multi-Family Tree UX Enhancements](#8-multi-family-tree-ux-enhancements)
 
 ---
 
@@ -4437,6 +4438,264 @@ succession_plan:
 - **Control Center - Phase 6** (§3.4.9)
   - Advanced feature tabs as implemented
   - Progressive enhancement of existing tabs
+
+---
+
+## 8. Multi-Family Tree UX Enhancements
+
+### 8.1 Overview
+
+When a vault contains multiple disconnected family trees (common in multi-family GEDCOMs or research vaults), users need better tools to understand, navigate, and generate trees for all family groups.
+
+**Current Implementation (v0.1.0):**
+- Full Family Tree only shows people connected to selected root
+- Persistent notice informs user about disconnected families
+- Users must manually generate separate trees for each family group
+
+**Proposed Enhancements:** Improve discoverability and workflow for multi-family scenarios
+
+---
+
+### 8.2 Component Detection
+
+**Status:** ✅ Implemented (foundation)
+
+The `FamilyGraphService.findAllFamilyComponents()` method detects disconnected family groups using breadth-first traversal.
+
+**Returns:**
+```typescript
+Array<{
+  representative: PersonNode;  // Oldest person or first alphabetically
+  size: number;                // Number of people in component
+  people: PersonNode[];        // All people in component
+}>
+```
+
+**Use Cases:**
+- Power "Generate All Trees" command
+- Display family group indicators in person picker
+- Show component summary before tree generation
+
+---
+
+### 8.3 Generate All Trees Command
+
+**Status:** ✅ Implemented
+
+**Priority:** High
+**Complexity:** Moderate
+**Actual Effort:** ~45 minutes
+
+**Description:**
+Add a command that automatically generates separate canvas files for all disconnected family groups in one operation.
+
+**User Interface:**
+```
+Command Palette: "Canvas Roots: Generate all family trees"
+
+Workflow:
+1. Detect all family components
+2. For each component:
+   - Generate Full Family Tree from representative person
+   - Save as "Family Tree - {RepresentativeName}.canvas"
+3. Show summary notice: "Generated 6 family trees (48, 32, 28, 19, 18, 18 people)"
+```
+
+**Benefits:**
+- One-command workflow for multi-family GEDCOMs
+- Immediate visibility into all family groups
+- Saves manual effort of generating each tree
+
+**Implementation Notes:**
+- ✅ Reuses existing tree generation logic
+- ✅ Uses component representative (oldest person by birth date) as root for each tree
+- ✅ Applies naming convention: `Family Tree {N} - {Name}.canvas` (numbered for clarity)
+- ✅ Command added to main.ts with ID `generate-all-trees`
+- ✅ Handles errors gracefully, continues with remaining trees if one fails
+- ✅ Shows progress notices and final summary
+
+**Implementation Details:**
+- Location: [main.ts:149-160](../../main.ts#L149-L160) (command registration)
+- Location: [control-center.ts:268-364](../ui/control-center.ts#L268-L364) (implementation)
+- Validates vault has multiple components before proceeding
+- Generates full family tree (unlimited generations, includes spouses)
+- Creates/overwrites canvas files with numbered names
+
+---
+
+### 8.4 Family Group Indicator in Person Picker
+
+**Priority:** Medium
+**Complexity:** Moderate-High
+**Estimated Effort:** 45-60 minutes
+
+**Description:**
+Visually group people by family component in the person picker modal, helping users understand which people are connected.
+
+**User Interface:**
+```
+┌─────────────────────────────────────┐
+│ Select root person                  │
+├─────────────────────────────────────┤
+│ 🔍 Search...                        │
+├─────────────────────────────────────┤
+│ Family Group 1 (45 people)          │
+│   • William Anderson (1905-1982)    │
+│   • Margaret O'Brien (1908-1995)    │
+│   • Robert Anderson (1930-2010)     │
+│   ...                               │
+│                                     │
+│ Family Group 2 (15 people)          │
+│   • Carlos Johnson (1920-2001)      │
+│   • Maria Martinez (1925-2008)      │
+│   ...                               │
+└─────────────────────────────────────┘
+```
+
+**Benefits:**
+- Clear visual separation of disconnected families
+- Helps users select representative from correct family
+- Shows family sizes at a glance
+
+**Implementation Notes:**
+- Call `findAllFamilyComponents()` when opening picker
+- Group people by component
+- Add section headers with component size
+- Optional: Add color coding or icons per group
+
+---
+
+### 8.5 Post-Generation Action Button
+
+**Priority:** High
+**Complexity:** Low
+**Estimated Effort:** 15-20 minutes
+
+**Description:**
+Add an actionable button to the disconnected family notice that opens a picker for generating trees from remaining family groups.
+
+**User Interface:**
+```
+Current notice:
+┌──────────────────────────────────────────┐
+│ Full Family Tree shows 45 of 60 people. │
+│                                          │
+│ 15 people are not connected to William   │
+│ Anderson through family relationships.   │
+│                                          │
+│ This usually means your vault has        │
+│ multiple separate family trees...        │
+│                                          │
+│ [Generate Other Trees] [Dismiss]        │
+└──────────────────────────────────────────┘
+
+Clicking "Generate Other Trees":
+- Opens modal listing remaining components
+- User selects which to generate
+- Generates selected trees
+```
+
+**Benefits:**
+- Actionable next step from notice
+- Reduces friction for multi-family workflows
+- Complements existing notice
+
+**Implementation Notes:**
+- Modify Notice to include button (may need custom Notice)
+- Button triggers component picker modal
+- Generate trees for selected components
+
+---
+
+### 8.6 Pre-Generation Component Summary
+
+**Priority:** Medium
+**Complexity:** High
+**Estimated Effort:** 60-90 minutes
+
+**Description:**
+Show summary of family components before tree generation, allowing user to choose which to generate.
+
+**User Interface:**
+```
+When user selects "Generate Tree" from Control Center:
+
+┌────────────────────────────────────────────┐
+│ Family Trees in Vault                      │
+├────────────────────────────────────────────┤
+│ This vault contains 2 disconnected family  │
+│ trees. Select which to generate:           │
+│                                            │
+│ ☑ Anderson family (45 people)             │
+│   Root: William Anderson (1905-1982)      │
+│                                            │
+│ ☐ Martinez/Johnson family (15 people)     │
+│   Root: Carlos Johnson (1920-2001)        │
+│                                            │
+│ [Generate Selected] [Generate All] [Back] │
+└────────────────────────────────────────────┘
+```
+
+**Benefits:**
+- Proactive information before generation
+- User choice over which trees to create
+- Prevents surprise at partial results
+
+**Implementation Notes:**
+- Check components before tree generation
+- If multiple components exist, show picker
+- Allow multi-select or "Generate All" option
+- Skip picker if only one component
+
+---
+
+### 8.7 Settings Configuration
+
+**Priority:** Low
+**Complexity:** Low
+**Estimated Effort:** 20-30 minutes
+
+**Description:**
+Add setting for default behavior when encountering multi-family vaults.
+
+**User Interface:**
+```
+Settings > Canvas Roots > Multi-Family Handling
+
+When vault contains multiple family trees:
+( ) Show notice only (current)
+( ) Ask which families to generate
+( ) Auto-generate all families
+
+☐ Always show component summary before generation
+```
+
+**Benefits:**
+- User control over default behavior
+- Power users can auto-generate all trees
+- Casual users can keep notice-only approach
+
+**Implementation Notes:**
+- Add to CanvasRootsSettings interface
+- Check setting in tree generation workflow
+- Apply appropriate behavior based on setting
+
+---
+
+### 8.8 Implementation Priority
+
+**Completed:**
+- ✅ **§8.2 Component Detection** - Foundation for all multi-family features
+- ✅ **§8.3 Generate All Trees Command** - One-command workflow for multi-family GEDCOMs
+
+**Remaining (Recommended Order):**
+1. **§8.5 Post-Generation Action Button** (quick win, high value) - 15-20 min
+2. **§8.4 Family Group Indicator** (polish, medium value) - 45-60 min
+3. **§8.7 Settings Configuration** (quick, medium value) - 20-30 min
+4. **§8.6 Pre-Generation Summary** (complex, high value long-term) - 60-90 min
+
+**Rationale:**
+Start with §8.5 (action button) as the quickest high-impact improvement. This complements the existing notice and provides immediate next steps for users. Add visual polish with §8.4 (family group indicators) to help users understand component structure. Settings (§8.7) give power users control. Save complex modal flows (§8.6) for when user feedback validates the approach.
 
 ---
 

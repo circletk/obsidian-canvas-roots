@@ -150,6 +150,73 @@ export class FamilyGraphService {
 	}
 
 	/**
+	 * Finds all disconnected family components in the vault
+	 * Returns an array of components, each with representative person and size
+	 */
+	async findAllFamilyComponents(): Promise<Array<{ representative: PersonNode; size: number; people: PersonNode[] }>> {
+		// Ensure cache is loaded
+		if (this.personCache.size === 0) {
+			await this.loadPersonCache();
+		}
+
+		const visited = new Set<string>();
+		const components: Array<{ representative: PersonNode; size: number; people: PersonNode[] }> = [];
+
+		// BFS to find each connected component
+		for (const [crId, person] of this.personCache) {
+			if (visited.has(crId)) continue;
+
+			const component: PersonNode[] = [];
+			const queue: string[] = [crId];
+
+			while (queue.length > 0) {
+				const currentCrId = queue.shift()!;
+				if (visited.has(currentCrId)) continue;
+
+				visited.add(currentCrId);
+				const currentPerson = this.personCache.get(currentCrId);
+				if (!currentPerson) continue;
+
+				component.push(currentPerson);
+
+				// Add all connected people (parents, spouses, children)
+				const related: string[] = [];
+
+				if (currentPerson.fatherCrId) related.push(currentPerson.fatherCrId);
+				if (currentPerson.motherCrId) related.push(currentPerson.motherCrId);
+				if (currentPerson.spouseCrIds) related.push(...currentPerson.spouseCrIds);
+				if (currentPerson.childrenCrIds) related.push(...currentPerson.childrenCrIds);
+
+				for (const relatedCrId of related) {
+					if (!visited.has(relatedCrId) && this.personCache.has(relatedCrId)) {
+						queue.push(relatedCrId);
+					}
+				}
+			}
+
+			// Find representative (oldest person by birth date, or first alphabetically)
+			const representative = component.reduce((oldest, current) => {
+				if (!oldest.birthDate && current.birthDate) return current;
+				if (oldest.birthDate && !current.birthDate) return oldest;
+				if (oldest.birthDate && current.birthDate && current.birthDate < oldest.birthDate) return current;
+				if (oldest.birthDate === current.birthDate && current.name < oldest.name) return current;
+				return oldest;
+			});
+
+			components.push({
+				representative,
+				size: component.length,
+				people: component
+			});
+		}
+
+		// Sort by size (largest first)
+		components.sort((a, b) => b.size - a.size);
+
+		return components;
+	}
+
+	/**
 	 * Builds ancestor tree (parents, grandparents, etc.)
 	 */
 	private buildAncestorTree(
