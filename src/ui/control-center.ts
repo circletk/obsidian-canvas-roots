@@ -396,11 +396,11 @@ export class ControlCenterModal extends Modal {
 		});
 		const peopleContent = peopleCard.querySelector('.crc-card__content') as HTMLElement;
 
-		this.createStatRow(peopleContent, 'Total People', stats.people.totalPeople);
-		this.createStatRow(peopleContent, 'With Birth Date', stats.people.peopleWithBirthDate);
-		this.createStatRow(peopleContent, 'With Death Date', stats.people.peopleWithDeathDate);
+		this.createStatRow(peopleContent, 'Total people', stats.people.totalPeople);
+		this.createStatRow(peopleContent, 'With birth date', stats.people.peopleWithBirthDate);
+		this.createStatRow(peopleContent, 'With death date', stats.people.peopleWithDeathDate);
 		this.createStatRow(peopleContent, 'Living', stats.people.livingPeople, 'crc-text-success');
-		this.createStatRow(peopleContent, 'Orphaned (No Relationships)', stats.people.orphanedPeople,
+		this.createStatRow(peopleContent, 'Orphaned (no relationships)', stats.people.orphanedPeople,
 			stats.people.orphanedPeople > 0 ? 'crc-text-warning' : undefined);
 
 		container.appendChild(peopleCard);
@@ -412,13 +412,13 @@ export class ControlCenterModal extends Modal {
 		});
 		const relContent = relCard.querySelector('.crc-card__content') as HTMLElement;
 
-		this.createStatRow(relContent, 'Total Relationships', stats.relationships.totalRelationships);
-		this.createStatRow(relContent, 'Father Links', stats.relationships.totalFatherLinks);
-		this.createStatRow(relContent, 'Mother Links', stats.relationships.totalMotherLinks);
-		this.createStatRow(relContent, 'Spouse Links', stats.relationships.totalSpouseLinks);
-		this.createStatRow(relContent, 'People with Father', stats.people.peopleWithFather);
-		this.createStatRow(relContent, 'People with Mother', stats.people.peopleWithMother);
-		this.createStatRow(relContent, 'People with Spouse', stats.people.peopleWithSpouse);
+		this.createStatRow(relContent, 'Total relationships', stats.relationships.totalRelationships);
+		this.createStatRow(relContent, 'Father links', stats.relationships.totalFatherLinks);
+		this.createStatRow(relContent, 'Mother links', stats.relationships.totalMotherLinks);
+		this.createStatRow(relContent, 'Spouse links', stats.relationships.totalSpouseLinks);
+		this.createStatRow(relContent, 'People with father', stats.people.peopleWithFather);
+		this.createStatRow(relContent, 'People with mother', stats.people.peopleWithMother);
+		this.createStatRow(relContent, 'People with spouse', stats.people.peopleWithSpouse);
 
 		container.appendChild(relCard);
 
