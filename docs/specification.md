@@ -4525,9 +4525,11 @@ Workflow:
 
 ### 8.4 Family Group Indicator in Person Picker
 
+**Status:** ✅ Implemented
+
 **Priority:** Medium
 **Complexity:** Moderate-High
-**Estimated Effort:** 45-60 minutes
+**Actual Effort:** ~45 minutes
 
 **Description:**
 Visually group people by family component in the person picker modal, helping users understand which people are connected.
@@ -4558,10 +4560,17 @@ Visually group people by family component in the person picker modal, helping us
 - Shows family sizes at a glance
 
 **Implementation Notes:**
-- Call `findAllFamilyComponents()` when opening picker
-- Group people by component
-- Add section headers with component size
-- Optional: Add color coding or icons per group
+- ✅ Calls `findAllFamilyComponents()` when loading people
+- ✅ Builds component map (cr_id → component index) for fast lookups
+- ✅ Groups filtered people by component before rendering
+- ✅ Renders section headers with family group number and size
+- ✅ Gracefully degrades to flat list when only one component exists
+- ✅ Maintains all existing filtering and sorting functionality
+
+**Implementation Details:**
+- Location: [person-picker.ts:98-119](../ui/person-picker.ts#L98-L119) (component detection)
+- Location: [person-picker.ts:391-430](../ui/person-picker.ts#L391-L430) (grouped rendering)
+- CSS: [modals.css:609-637](../../styles/modals.css#L609-L637) (group header styles)
 
 ---
 
@@ -4687,12 +4696,12 @@ When vault contains multiple family trees:
 **Completed:**
 - ✅ **§8.2 Component Detection** - Foundation for all multi-family features
 - ✅ **§8.3 Generate All Trees Command** - One-command workflow for multi-family GEDCOMs
+- ✅ **§8.4 Family Group Indicator** - Visual grouping in person picker modal
 
 **Remaining (Recommended Order):**
-1. **§8.5 Post-Generation Action Button** (quick win, high value) - 15-20 min
-2. **§8.4 Family Group Indicator** (polish, medium value) - 45-60 min
-3. **§8.7 Settings Configuration** (quick, medium value) - 20-30 min
-4. **§8.6 Pre-Generation Summary** (complex, high value long-term) - 60-90 min
+1. **§8.5 Post-Generation Action Button** (adapted - command reference in notice) - ✅ Already addressed
+2. **§8.7 Settings Configuration** (quick, medium value) - 20-30 min
+3. **§8.6 Pre-Generation Summary** (complex, high value long-term) - 60-90 min
 
 **Rationale:**
 Start with §8.5 (action button) as the quickest high-impact improvement. This complements the existing notice and provides immediate next steps for users. Add visual polish with §8.4 (family group indicators) to help users understand component structure. Settings (§8.7) give power users control. Save complex modal flows (§8.6) for when user feedback validates the approach.
