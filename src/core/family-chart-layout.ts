@@ -324,22 +324,22 @@ export class FamilyChartLayoutEngine {
 				}
 			};
 
-			// Add parent relationships
-			if (person.fatherCrId) {
+			// Add parent relationships (only if parent exists in tree)
+			if (person.fatherCrId && familyTree.nodes.has(person.fatherCrId)) {
 				datum.rels.parents!.push(person.fatherCrId);
 			}
-			if (person.motherCrId) {
+			if (person.motherCrId && familyTree.nodes.has(person.motherCrId)) {
 				datum.rels.parents!.push(person.motherCrId);
 			}
 
-			// Add spouse relationships
+			// Add spouse relationships (only if spouse exists in tree)
 			if (person.spouseCrIds && person.spouseCrIds.length > 0) {
-				datum.rels.spouses = [...person.spouseCrIds];
+				datum.rels.spouses = person.spouseCrIds.filter(id => familyTree.nodes.has(id));
 			}
 
-			// Add children relationships
+			// Add children relationships (only if child exists in tree)
 			if (person.childrenCrIds && person.childrenCrIds.length > 0) {
-				datum.rels.children = [...person.childrenCrIds];
+				datum.rels.children = person.childrenCrIds.filter(id => familyTree.nodes.has(id));
 			}
 
 			data.push(datum);

@@ -11,6 +11,13 @@ export interface RecentTreeInfo {
 	timestamp: number;
 }
 
+export interface RecentImportInfo {
+	fileName: string;
+	recordsImported: number;
+	notesCreated: number;
+	timestamp: number;
+}
+
 export interface CanvasRootsSettings {
 	defaultNodeWidth: number;
 	defaultNodeHeight: number;
@@ -21,6 +28,7 @@ export interface CanvasRootsSettings {
 	logExportPath: string;
 	logLevel: LogLevel;
 	recentTrees: RecentTreeInfo[];
+	recentImports: RecentImportInfo[];
 }
 
 export const DEFAULT_SETTINGS: CanvasRootsSettings = {
@@ -31,10 +39,11 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	horizontalSpacing: 400,  // Base horizontal spacing (multiplied by 1.5x in layout engine)
 	verticalSpacing: 250,    // Vertical spacing between generations (used directly)
 	autoGenerateCrId: true,
-	peopleFolder: '',
+	peopleFolder: 'Canvas Roots',
 	logExportPath: '',
 	logLevel: 'debug',
-	recentTrees: []
+	recentTrees: [],
+	recentImports: []
 };
 
 export class CanvasRootsSettingTab extends PluginSettingTab {

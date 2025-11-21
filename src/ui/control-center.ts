@@ -9,7 +9,7 @@ import { CanvasGenerator, CanvasData, CanvasGenerationOptions } from '../core/ca
 import { getLogger, LoggerFactory, type LogLevel } from '../core/logging';
 import { GedcomImporter } from '../gedcom/gedcom-importer';
 import { BidirectionalLinker } from '../core/bidirectional-linker';
-import type { RecentTreeInfo } from '../settings';
+import type { RecentTreeInfo, RecentImportInfo } from '../settings';
 
 const logger = getLogger('ControlCenter');
 
@@ -414,6 +414,66 @@ export class ControlCenterModal extends Modal {
 			});
 
 			container.appendChild(recentTreesCard);
+		}
+
+		// Recent Imports Section
+		const recentImports = this.plugin.settings.recentImports;
+		if (recentImports.length > 0) {
+			const recentImportsCard = this.createCard({
+				title: 'Recent GEDCOM imports',
+				icon: 'upload'
+			});
+			const recentImportsContent = recentImportsCard.querySelector('.crc-card__content') as HTMLElement;
+
+			// Add clear history button to card header
+			const cardHeader = recentImportsCard.querySelector('.crc-card__header') as HTMLElement;
+			const clearButton = cardHeader.createEl('button', {
+				cls: 'crc-button crc-button--small',
+				text: 'Clear history'
+			});
+			clearButton.addEventListener('click', async () => {
+				this.plugin.settings.recentImports = [];
+				await this.plugin.saveSettings();
+				new Notice('Import history cleared');
+				this.showTab('status'); // Refresh the tab
+			});
+
+			recentImports.forEach((importInfo) => {
+				const importRow = recentImportsContent.createDiv({ cls: 'crc-recent-tree' });
+
+				// Import file name
+				const importHeader = importRow.createDiv({ cls: 'crc-recent-tree__header' });
+				importHeader.createEl('span', {
+					cls: 'crc-recent-tree__name',
+					text: importInfo.fileName
+				});
+
+				// Stats row
+				const statsRow = importRow.createDiv({ cls: 'crc-recent-tree__stats' });
+
+				// Records imported
+				const recordsCount = statsRow.createDiv({ cls: 'crc-recent-tree__stat' });
+				const recordsIcon = createLucideIcon('folder', 14);
+				recordsCount.appendChild(recordsIcon);
+				recordsCount.appendText(` ${importInfo.recordsImported} records`);
+
+				// Notes created
+				const notesCount = statsRow.createDiv({ cls: 'crc-recent-tree__stat' });
+				const notesIcon = createLucideIcon('file-text', 14);
+				notesCount.appendChild(notesIcon);
+				notesCount.appendText(` ${importInfo.notesCreated} notes`);
+
+				// Timestamp
+				const timestamp = statsRow.createDiv({ cls: 'crc-recent-tree__stat' });
+				const timeIcon = document.createElement('span');
+				timeIcon.classList.add('crc-icon');
+				setIcon(timeIcon, 'clock');
+				timestamp.appendChild(timeIcon);
+				const timeAgo = this.formatTimeAgo(importInfo.timestamp);
+				timestamp.appendText(` ${timeAgo}`);
+			});
+
+			container.appendChild(recentImportsCard);
 		}
 	}
 
@@ -1300,11 +1360,11 @@ export class ControlCenterModal extends Modal {
 			// Create importer
 			const importer = new GedcomImporter(this.app);
 
-			// Import with vault-sync mode (always create notes)
+			// Import GEDCOM file
 			const result = await importer.importFile(content, {
-				mode: 'vault-sync',
 				peopleFolder: this.plugin.settings.peopleFolder,
-				overwriteExisting: false
+				overwriteExisting: false,
+				fileName: file.name
 			});
 
 			// Log results
@@ -1313,6 +1373,22 @@ export class ControlCenterModal extends Modal {
 			if (result.errors.length > 0) {
 				logger.warn('gedcom', `Import had ${result.errors.length} errors`);
 				result.errors.forEach(error => logger.error('gedcom', error));
+			}
+
+			// Track import in recent imports history (limit to 10)
+			if (result.success && result.notesCreated > 0) {
+				const importInfo: RecentImportInfo = {
+					fileName: file.name,
+					recordsImported: result.individualsProcessed,
+					notesCreated: result.notesCreated,
+					timestamp: Date.now()
+				};
+
+				this.plugin.settings.recentImports.unshift(importInfo);
+				if (this.plugin.settings.recentImports.length > 10) {
+					this.plugin.settings.recentImports = this.plugin.settings.recentImports.slice(0, 10);
+				}
+				await this.plugin.saveSettings();
 			}
 
 			// Show summary

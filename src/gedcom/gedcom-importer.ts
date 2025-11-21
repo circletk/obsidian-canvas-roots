@@ -13,9 +13,9 @@ import { generateCrId } from '../core/uuid';
  * GEDCOM import options
  */
 export interface GedcomImportOptions {
-	mode: 'canvas-only' | 'vault-sync';
 	peopleFolder: string;
 	overwriteExisting: boolean;
+	fileName?: string;
 }
 
 /**
@@ -29,6 +29,7 @@ export interface GedcomImportResult {
 	notesSkipped: number;
 	errors: string[];
 	gedcomData?: GedcomData;
+	fileName?: string;
 }
 
 /**
@@ -54,7 +55,8 @@ export class GedcomImporter {
 			notesCreated: 0,
 			notesUpdated: 0,
 			notesSkipped: 0,
-			errors: []
+			errors: [],
+			fileName: options.fileName
 		};
 
 		try {
@@ -65,18 +67,7 @@ export class GedcomImporter {
 
 			new Notice(`Parsed ${gedcomData.individuals.size} individuals`);
 
-			// For canvas-only mode, we just return the parsed data
-			// TODO: Phase 3 - Implement canvas visualization from GEDCOM data
-			//       Should create a canvas with nodes for each individual and
-			//       edges for relationships (parent-child, spouse) without
-			//       creating person notes in the vault.
-			if (options.mode === 'canvas-only') {
-				result.success = true;
-				result.individualsProcessed = gedcomData.individuals.size;
-				return result;
-			}
-
-			// For vault-sync mode, create person notes
+			// Create person notes
 			new Notice('Creating person notes...');
 
 			// Ensure people folder exists
