@@ -63,6 +63,8 @@ died: 1952-08-20
 [Your biographical research, sources, and notes here...]
 ```
 
+**Note:** The plugin supports both `born`/`died` (standard) and `birth_date`/`death_date` (Gramps style) field names for compatibility with different genealogy tools.
+
 **Option B: Obsidian Bases (Recommended for Bulk Entry)**
 
 Use [Obsidian Bases](https://help.obsidian.md/bases) to manage multiple family members in a table view. Edit relationships, dates, and properties in a spreadsheet-like interface. See the [Bases Integration Guide](docs/bases-integration.md) for details and templates.
