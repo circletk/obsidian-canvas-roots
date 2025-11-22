@@ -5,6 +5,7 @@ import { RelayoutOptionsModal } from './src/ui/relayout-options-modal';
 import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
+import { BASE_TEMPLATE } from './src/constants/base-template';
 
 export default class CanvasRootsPlugin extends Plugin {
 	settings: CanvasRootsSettings;
@@ -75,6 +76,15 @@ export default class CanvasRootsPlugin extends Plugin {
 			name: 'Generate all trees',
 			callback: () => {
 				this.generateAllTrees();
+			}
+		});
+
+		// Add command: Create Base Template
+		this.addCommand({
+			id: 'create-base-template',
+			name: 'Create Base template',
+			callback: () => {
+				this.createBaseTemplate();
 			}
 		});
 
@@ -378,6 +388,37 @@ export default class CanvasRootsPlugin extends Plugin {
 		} catch (error) {
 			console.error('Error generating all trees:', error);
 			new Notice('Failed to generate all trees. Check console for details.');
+		}
+	}
+
+	private async createBaseTemplate() {
+		try {
+			// Suggest a filename
+			const defaultPath = 'family-members.base';
+
+			// Check if file already exists
+			const existingFile = this.app.vault.getAbstractFileByPath(defaultPath);
+			if (existingFile) {
+				new Notice('Base template already exists at family-members.base');
+				// Open the existing file
+				if (existingFile instanceof TFile) {
+					const leaf = this.app.workspace.getLeaf(false);
+					await leaf.openFile(existingFile);
+				}
+				return;
+			}
+
+			// Create the file with template content
+			const file = await this.app.vault.create(defaultPath, BASE_TEMPLATE);
+
+			new Notice('Base template created successfully!');
+
+			// Open the newly created file
+			const leaf = this.app.workspace.getLeaf(false);
+			await leaf.openFile(file);
+		} catch (error) {
+			console.error('Error creating Base template:', error);
+			new Notice('Failed to create Base template. Check console for details.');
 		}
 	}
 }

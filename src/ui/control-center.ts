@@ -1228,6 +1228,32 @@ export class ControlCenterModal extends Modal {
 
 		container.appendChild(personMgmtCard);
 
+		// Data Tools Card
+		const dataToolsCard = this.createCard({
+			title: 'Data tools',
+			icon: 'file-text'
+		});
+
+		const dataToolsContent = dataToolsCard.querySelector('.crc-card__content') as HTMLElement;
+
+		// Create Base template button
+		const createBaseBtn = dataToolsContent.createEl('button', {
+			cls: 'crc-btn crc-btn--primary crc-btn--block',
+			text: 'Create Base template'
+		});
+		const baseIcon = createLucideIcon('file-plus', 16);
+		createBaseBtn.prepend(baseIcon);
+		createBaseBtn.addEventListener('click', async () => {
+			this.close();
+			await (this.app as any).commands.executeCommandById('canvas-roots:create-base-template');
+		});
+		dataToolsContent.createEl('p', {
+			cls: 'crc-form-help',
+			text: 'Create a ready-to-use Obsidian Bases template for managing family members in table view'
+		});
+
+		container.appendChild(dataToolsCard);
+
 		// Recent Trees Card
 		const recentTrees = this.plugin.settings.recentTrees?.slice(0, 5) || [];
 		if (recentTrees.length > 0) {
