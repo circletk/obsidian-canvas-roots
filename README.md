@@ -11,23 +11,45 @@ The core approach is hybrid: the plugin uses specialized family tree layout algo
 
 ## ✨ Key Features
 
+### Available in Alpha (v0.1.0)
+
+- **GEDCOM Import:** Import family trees from standard GEDCOM (.ged) files with robust error handling. Handles malformed data gracefully with sensible defaults, preserving special characters and relationships. Supports files from popular genealogy software (Gramps, Ancestry, FamilySearch, etc.).
+
 - **Automated Layout:** Generate precise, non-overlapping pedigree (ancestor) and descendant charts using specialized genealogical layout algorithms from the [family-chart](https://github.com/donatso/family-chart) library, designed specifically for complex family relationships.
 
 - **Native Canvas Nodes:** Trees are built from Obsidian file nodes, making every person immediately linkable to research notes, images, and documents on the Canvas.
 
-- **Obsidian Bases Integration:** Seamlessly works with [Obsidian Bases](https://help.obsidian.md/bases) for efficient bulk data entry and management. Edit multiple family members in table view while Canvas Roots handles visualization.
+- **Multiple Tree Types:** Generate ancestor trees (pedigree charts), descendant trees, or full family trees. Configure generation limits, spouse inclusion, and layout direction (vertical or horizontal).
 
-- **Bi-Directional Linking (Optional):** Configure automatic two-way relationship synchronization (e.g., setting a father automatically sets the child) with flexible settings for manual or automatic sync.
+- **Multi-Family Detection:** Automatically detects disconnected family groups in your vault. Generate all family trees at once with the "Generate all trees" command, or work with individual families.
 
 - **Regenerate Canvas:** Update existing canvases with current relationship data and settings. Recalculate layout, apply new styling options, and preserve tree metadata—all with a single command or right-click menu.
 
 - **Canvas Styling:** Comprehensive styling options within the JSON Canvas spec: node coloring (gender-based, generation-based, or monochrome), arrow styles (directed, bidirectional, undirected), and edge colors. Configure parent-child and spouse relationships independently for clean, professional genealogical visualizations.
 
-- **Privacy & Obfuscation:** Optional data obfuscation for exports and canvas display. Protect PII when sharing family trees publicly, for demonstrations, or for research collaboration while preserving relationship structure. Selectively obfuscate all individuals, living persons only, minors only, or combine filters for maximum privacy protection.
+- **Obsidian Bases Integration:** Seamlessly works with [Obsidian Bases](https://help.obsidian.md/bases) for efficient bulk data entry and management. Edit multiple family members in table view while Canvas Roots handles visualization.
 
-- **World-Building & Organizations:** Beyond genealogy - track fantasy dynasties, corporate succession, institutional evolution, and historical kingdoms. Features include visual grouping by house/faction, dual relationship trees (biological vs. political), complex succession rules, co-ruling visualization, and organizational mergers/splits over time.
+- **Dual Storage System:** Combines human-friendly wikilinks with persistent `cr_id` references for robust relationship tracking that survives file renames and moves.
 
 - **YAML-First Data:** Uses native YAML frontmatter for maximum compatibility with Dataview, Bases, and other Obsidian tools.
+
+### Planned Features
+
+See [Known Limitations](docs/known-limitations.md) for full details on planned features.
+
+- **Collections Management:** Folder-based auto-discovery and organization of multiple family trees within one vault.
+
+- **GEDCOM Export:** Round-trip export back to .ged format for sharing with other genealogy software.
+
+- **Reference Numbering:** Support for Ahnentafel and Dollarhide-Cole genealogical numbering systems.
+
+- **Person Detail Panel:** Rich inline person information display with relationship visualization and quick editing.
+
+- **D3 Tree Preview:** Interactive tree preview with real-time layout configuration before canvas export.
+
+- **Privacy & Obfuscation:** Optional data obfuscation for exports and canvas display. Protect PII when sharing family trees publicly.
+
+- **World-Building Features:** Track fantasy dynasties, corporate succession, and historical kingdoms with visual grouping by house/faction, dual relationship trees (biological vs. political), and complex succession rules.
 
 
 ## 📸 Screenshots
