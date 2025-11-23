@@ -5,6 +5,8 @@ import { RegenerateOptionsModal } from './src/ui/regenerate-options-modal';
 import { TreeStatisticsModal } from './src/ui/tree-statistics-modal';
 import { PersonPickerModal } from './src/ui/person-picker';
 import { RelationshipManager } from './src/core/relationship-manager';
+import { RelationshipValidator } from './src/core/relationship-validator';
+import { ValidationResultsModal } from './src/ui/validation-results-modal';
 import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
@@ -237,6 +239,18 @@ export default class CanvasRootsPlugin extends Plugin {
 											picker.open();
 										});
 								});
+
+								// Validate relationships
+								submenu.addItem((subItem) => {
+									subItem
+										.setTitle('Validate relationships')
+										.setIcon('shield-check')
+										.onClick(async () => {
+											const validator = new RelationshipValidator(this.app);
+											const result = await validator.validatePersonNote(file);
+											new ValidationResultsModal(this.app, result).open();
+										});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -293,6 +307,17 @@ export default class CanvasRootsPlugin extends Plugin {
 											await relationshipMgr.addChildRelationship(file, selectedPerson.file);
 										});
 										picker.open();
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Validate relationships')
+									.setIcon('shield-check')
+									.onClick(async () => {
+										const validator = new RelationshipValidator(this.app);
+										const result = await validator.validatePersonNote(file);
+										new ValidationResultsModal(this.app, result).open();
 									});
 							});
 						}

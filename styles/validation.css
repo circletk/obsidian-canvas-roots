@@ -1,0 +1,83 @@
+/* Validation Results Modal */
+.cr-validation-results-modal {
+  max-width: 600px;
+}
+
+.cr-validation-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  padding: 1em;
+  margin-bottom: 1em;
+  border-radius: 6px;
+  background: var(--background-secondary);
+  font-weight: 500;
+}
+
+.cr-validation-summary__text {
+  font-size: 14px;
+}
+
+.cr-validation-issues {
+  display: flex;
+  flex-direction: column;
+  gap: 1em;
+  margin-top: 1em;
+}
+
+.cr-validation-issue {
+  padding: 1em;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+}
+
+.cr-validation-issue__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cr-validation-issue__number {
+  font-size: 13px;
+}
+
+.cr-validation-issue__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.cr-validation-issue__message {
+  font-size: 14px;
+  color: var(--text-normal);
+  font-weight: 500;
+}
+
+.cr-validation-issue__field,
+.cr-validation-issue__ref {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.cr-validation-issue__type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 0.25em;
+}
+
+.cr-modal-buttons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 1.5em;
+}
