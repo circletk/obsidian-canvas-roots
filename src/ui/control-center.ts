@@ -1,4 +1,4 @@
-import { App, Modal, Notice, TFile, setIcon, ToggleComponent } from 'obsidian';
+import { App, Modal, Notice, Setting, TFile, setIcon, ToggleComponent } from 'obsidian';
 import CanvasRootsPlugin from '../../main';
 import { TAB_CONFIGS, createLucideIcon, setLucideIcon, LucideIconName } from './lucide-icons';
 import { createPersonNote, PersonData } from '../core/person-note-writer';
@@ -1399,163 +1399,68 @@ export class ControlCenterModal extends Modal {
 		intro.innerHTML = 'Adjust canvas layout and arrow styling. Changes apply immediately to new tree generations. ' +
 			'<strong>To apply to existing canvases:</strong> right-click the canvas file and select "Re-layout family tree".';
 
-		// Layout Settings Card
-		const layoutCard = this.createCard({
-			title: 'Layout settings',
-			icon: 'layout'
-		});
-
-		const layoutContent = layoutCard.querySelector('.crc-card__content') as HTMLElement;
+		// Layout Settings Section
+		container.createEl('h3', { text: 'Layout settings', cls: 'crc-section-heading' });
 
 		// Horizontal Spacing
-		const horizSpacingGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const horizLabel = horizSpacingGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Horizontal spacing'
-		});
-		horizLabel.htmlFor = 'quick-horiz-spacing';
-
-		const horizInput = horizSpacingGroup.createEl('input', {
-			cls: 'crc-form-input',
-			type: 'number',
-			attr: {
-				id: 'quick-horiz-spacing',
-				min: '100',
-				max: '1000',
-				step: '50'
-			}
-		}) as HTMLInputElement;
-		horizInput.value = String(this.plugin.settings.horizontalSpacing);
-
-		horizSpacingGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Space between nodes horizontally (pixels). Default: 400'
-		});
-
-		horizInput.addEventListener('change', async () => {
-			const value = parseInt(horizInput.value);
-			if (!isNaN(value) && value >= 100 && value <= 1000) {
-				this.plugin.settings.horizontalSpacing = value;
-				await this.plugin.saveSettings();
-				new Notice('Horizontal spacing updated');
-			} else {
-				horizInput.value = String(this.plugin.settings.horizontalSpacing);
-				new Notice('Invalid value. Must be between 100 and 1000.');
-			}
-		});
+		new Setting(container)
+			.setName('Horizontal spacing')
+			.setDesc('Space between nodes horizontally (pixels)')
+			.addText(text => text
+				.setPlaceholder('400')
+				.setValue(String(this.plugin.settings.horizontalSpacing))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue >= 100 && numValue <= 1000) {
+						this.plugin.settings.horizontalSpacing = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
 
 		// Vertical Spacing
-		const vertSpacingGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const vertLabel = vertSpacingGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Vertical spacing'
-		});
-		vertLabel.htmlFor = 'quick-vert-spacing';
-
-		const vertInput = vertSpacingGroup.createEl('input', {
-			cls: 'crc-form-input',
-			type: 'number',
-			attr: {
-				id: 'quick-vert-spacing',
-				min: '100',
-				max: '1000',
-				step: '50'
-			}
-		}) as HTMLInputElement;
-		vertInput.value = String(this.plugin.settings.verticalSpacing);
-
-		vertSpacingGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Space between generations vertically (pixels). Default: 250'
-		});
-
-		vertInput.addEventListener('change', async () => {
-			const value = parseInt(vertInput.value);
-			if (!isNaN(value) && value >= 100 && value <= 1000) {
-				this.plugin.settings.verticalSpacing = value;
-				await this.plugin.saveSettings();
-				new Notice('Vertical spacing updated');
-			} else {
-				vertInput.value = String(this.plugin.settings.verticalSpacing);
-				new Notice('Invalid value. Must be between 100 and 1000.');
-			}
-		});
+		new Setting(container)
+			.setName('Vertical spacing')
+			.setDesc('Space between generations vertically (pixels)')
+			.addText(text => text
+				.setPlaceholder('250')
+				.setValue(String(this.plugin.settings.verticalSpacing))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue >= 100 && numValue <= 1000) {
+						this.plugin.settings.verticalSpacing = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
 
 		// Node Width
-		const nodeWidthGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const widthLabel = nodeWidthGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Node width'
-		});
-		widthLabel.htmlFor = 'quick-node-width';
-
-		const widthInput = nodeWidthGroup.createEl('input', {
-			cls: 'crc-form-input',
-			type: 'number',
-			attr: {
-				id: 'quick-node-width',
-				min: '100',
-				max: '500',
-				step: '10'
-			}
-		}) as HTMLInputElement;
-		widthInput.value = String(this.plugin.settings.defaultNodeWidth);
-
-		nodeWidthGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Width of person nodes (pixels). Default: 200'
-		});
-
-		widthInput.addEventListener('change', async () => {
-			const value = parseInt(widthInput.value);
-			if (!isNaN(value) && value >= 100 && value <= 500) {
-				this.plugin.settings.defaultNodeWidth = value;
-				await this.plugin.saveSettings();
-				new Notice('Node width updated');
-			} else {
-				widthInput.value = String(this.plugin.settings.defaultNodeWidth);
-				new Notice('Invalid value. Must be between 100 and 500.');
-			}
-		});
+		new Setting(container)
+			.setName('Node width')
+			.setDesc('Width of person nodes (pixels)')
+			.addText(text => text
+				.setPlaceholder('200')
+				.setValue(String(this.plugin.settings.defaultNodeWidth))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue >= 100 && numValue <= 500) {
+						this.plugin.settings.defaultNodeWidth = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
 
 		// Node Height
-		const nodeHeightGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const heightLabel = nodeHeightGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Node height'
-		});
-		heightLabel.htmlFor = 'quick-node-height';
-
-		const heightInput = nodeHeightGroup.createEl('input', {
-			cls: 'crc-form-input',
-			type: 'number',
-			attr: {
-				id: 'quick-node-height',
-				min: '50',
-				max: '300',
-				step: '10'
-			}
-		}) as HTMLInputElement;
-		heightInput.value = String(this.plugin.settings.defaultNodeHeight);
-
-		nodeHeightGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Height of person nodes (pixels). Default: 100'
-		});
-
-		heightInput.addEventListener('change', async () => {
-			const value = parseInt(heightInput.value);
-			if (!isNaN(value) && value >= 50 && value <= 300) {
-				this.plugin.settings.defaultNodeHeight = value;
-				await this.plugin.saveSettings();
-				new Notice('Node height updated');
-			} else {
-				heightInput.value = String(this.plugin.settings.defaultNodeHeight);
-				new Notice('Invalid value. Must be between 50 and 300.');
-			}
-		});
-
-		container.appendChild(layoutCard);
+		new Setting(container)
+			.setName('Node height')
+			.setDesc('Height of person nodes (pixels)')
+			.addText(text => text
+				.setPlaceholder('100')
+				.setValue(String(this.plugin.settings.defaultNodeHeight))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue >= 50 && numValue <= 300) {
+						this.plugin.settings.defaultNodeHeight = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
 
 		// Arrow Styling Card
 		const arrowCard = this.createCard({
@@ -1566,76 +1471,34 @@ export class ControlCenterModal extends Modal {
 		const arrowContent = arrowCard.querySelector('.crc-card__content') as HTMLElement;
 
 		// Parent-Child Arrow Style
-		const parentArrowGroup = arrowContent.createDiv({ cls: 'crc-form-group' });
-		const parentArrowLabel = parentArrowGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Parent → child arrows'
-		});
-		parentArrowLabel.htmlFor = 'quick-parent-arrow';
-
-		const parentArrowSelect = parentArrowGroup.createEl('select', {
-			cls: 'crc-form-input',
-			attr: { id: 'quick-parent-arrow' }
-		}) as HTMLSelectElement;
-
-		[
-			{ value: 'directed', label: 'Directed (→) - Single arrow pointing to child' },
-			{ value: 'bidirectional', label: 'Bidirectional (↔) - Arrows on both ends' },
-			{ value: 'undirected', label: 'Undirected (—) - No arrows' }
-		].forEach(opt => {
-			parentArrowSelect.createEl('option', {
-				value: opt.value,
-				text: opt.label
-			});
-		});
-		parentArrowSelect.value = this.plugin.settings.parentChildArrowStyle;
-
-		parentArrowGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Arrow style for parent-child relationships. Default: Directed'
-		});
-
-		parentArrowSelect.addEventListener('change', async () => {
-			this.plugin.settings.parentChildArrowStyle = parentArrowSelect.value as ArrowStyle;
-			await this.plugin.saveSettings();
-			new Notice('Parent-child arrow style updated');
-		});
+		new Setting(arrowContent)
+			.setName('Parent → child arrows')
+			.setDesc('Arrow style for parent-child relationships')
+			.addDropdown(dropdown => dropdown
+				.addOption('directed', 'Directed (→) - Single arrow pointing to child')
+				.addOption('bidirectional', 'Bidirectional (↔) - Arrows on both ends')
+				.addOption('undirected', 'Undirected (—) - No arrows')
+				.setValue(this.plugin.settings.parentChildArrowStyle)
+				.onChange(async (value) => {
+					this.plugin.settings.parentChildArrowStyle = value as ArrowStyle;
+					await this.plugin.saveSettings();
+					new Notice('Parent-child arrow style updated');
+				}));
 
 		// Spouse Arrow Style
-		const spouseArrowGroup = arrowContent.createDiv({ cls: 'crc-form-group' });
-		const spouseArrowLabel = spouseArrowGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Spouse arrows'
-		});
-		spouseArrowLabel.htmlFor = 'quick-spouse-arrow';
-
-		const spouseArrowSelect = spouseArrowGroup.createEl('select', {
-			cls: 'crc-form-input',
-			attr: { id: 'quick-spouse-arrow' }
-		}) as HTMLSelectElement;
-
-		[
-			{ value: 'directed', label: 'Directed (→) - Single arrow' },
-			{ value: 'bidirectional', label: 'Bidirectional (↔) - Arrows on both ends' },
-			{ value: 'undirected', label: 'Undirected (—) - No arrows' }
-		].forEach(opt => {
-			spouseArrowSelect.createEl('option', {
-				value: opt.value,
-				text: opt.label
-			});
-		});
-		spouseArrowSelect.value = this.plugin.settings.spouseArrowStyle;
-
-		spouseArrowGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Arrow style for spouse relationships. Default: Undirected (cleaner look)'
-		});
-
-		spouseArrowSelect.addEventListener('change', async () => {
-			this.plugin.settings.spouseArrowStyle = spouseArrowSelect.value as ArrowStyle;
-			await this.plugin.saveSettings();
-			new Notice('Spouse arrow style updated');
-		});
+		new Setting(arrowContent)
+			.setName('Spouse arrows')
+			.setDesc('Arrow style for spouse relationships')
+			.addDropdown(dropdown => dropdown
+				.addOption('directed', 'Directed (→) - Single arrow')
+				.addOption('bidirectional', 'Bidirectional (↔) - Arrows on both ends')
+				.addOption('undirected', 'Undirected (—) - No arrows')
+				.setValue(this.plugin.settings.spouseArrowStyle)
+				.onChange(async (value) => {
+					this.plugin.settings.spouseArrowStyle = value as ArrowStyle;
+					await this.plugin.saveSettings();
+					new Notice('Spouse arrow style updated');
+				}));
 
 		container.appendChild(arrowCard);
 
@@ -1648,40 +1511,19 @@ export class ControlCenterModal extends Modal {
 		const colorContent = colorCard.querySelector('.crc-card__content') as HTMLElement;
 
 		// Color Scheme Dropdown
-		const colorSchemeGroup = colorContent.createDiv({ cls: 'crc-form-group' });
-		const colorSchemeLabel = colorSchemeGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Color scheme'
-		});
-		colorSchemeLabel.htmlFor = 'quick-color-scheme';
-
-		const colorSchemeSelect = colorSchemeGroup.createEl('select', {
-			cls: 'crc-form-input',
-			attr: { id: 'quick-color-scheme' }
-		}) as HTMLSelectElement;
-
-		[
-			{ value: 'gender', label: 'Gender - Green for males, purple for females' },
-			{ value: 'generation', label: 'Generation - Color by generation level' },
-			{ value: 'monochrome', label: 'Monochrome - No coloring' }
-		].forEach(opt => {
-			colorSchemeSelect.createEl('option', {
-				value: opt.value,
-				text: opt.label
-			});
-		});
-		colorSchemeSelect.value = this.plugin.settings.nodeColorScheme;
-
-		colorSchemeGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'How to color person nodes in family trees. Default: Gender'
-		});
-
-		colorSchemeSelect.addEventListener('change', async () => {
-			this.plugin.settings.nodeColorScheme = colorSchemeSelect.value as ColorScheme;
-			await this.plugin.saveSettings();
-			new Notice('Node color scheme updated');
-		});
+		new Setting(colorContent)
+			.setName('Color scheme')
+			.setDesc('How to color person nodes in family trees')
+			.addDropdown(dropdown => dropdown
+				.addOption('gender', 'Gender - Green for males, purple for females')
+				.addOption('generation', 'Generation - Color by generation level')
+				.addOption('monochrome', 'Monochrome - No coloring')
+				.setValue(this.plugin.settings.nodeColorScheme)
+				.onChange(async (value) => {
+					this.plugin.settings.nodeColorScheme = value as ColorScheme;
+					await this.plugin.saveSettings();
+					new Notice('Node color scheme updated');
+				}));
 
 		container.appendChild(colorCard);
 
@@ -1694,62 +1536,32 @@ export class ControlCenterModal extends Modal {
 		const spouseEdgeContent = spouseEdgeCard.querySelector('.crc-card__content') as HTMLElement;
 
 		// Show Spouse Edges Toggle
-		const showSpouseEdgesGroup = spouseEdgeContent.createDiv({ cls: 'crc-form-group' });
-		showSpouseEdgesGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Show spouse edges'
-		});
-
-		const toggleContainer = showSpouseEdgesGroup.createDiv({ cls: 'crc-toggle-container' });
-		const showSpouseEdgesToggle = new ToggleComponent(toggleContainer);
-		showSpouseEdgesToggle.setValue(this.plugin.settings.showSpouseEdges);
-		showSpouseEdgesToggle.onChange(async (value) => {
-			this.plugin.settings.showSpouseEdges = value;
-			await this.plugin.saveSettings();
-			new Notice('Spouse edge display updated');
-		});
-
-		showSpouseEdgesGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Display edges between spouses with marriage metadata. When disabled (default), spouses are visually grouped by positioning only.'
-		});
+		new Setting(spouseEdgeContent)
+			.setName('Show spouse edges')
+			.setDesc('Display edges between spouses with marriage metadata. When disabled (default), spouses are visually grouped by positioning only.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.showSpouseEdges)
+				.onChange(async (value) => {
+					this.plugin.settings.showSpouseEdges = value;
+					await this.plugin.saveSettings();
+					new Notice('Spouse edge display updated');
+				}));
 
 		// Spouse Edge Label Format
-		const spouseEdgeLabelGroup = spouseEdgeContent.createDiv({ cls: 'crc-form-group' });
-		const spouseEdgeLabelLabel = spouseEdgeLabelGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Spouse edge label format'
-		});
-		spouseEdgeLabelLabel.htmlFor = 'quick-spouse-edge-label';
-
-		const spouseEdgeLabelSelect = spouseEdgeLabelGroup.createEl('select', {
-			cls: 'crc-form-input',
-			attr: { id: 'quick-spouse-edge-label' }
-		}) as HTMLSelectElement;
-
-		[
-			{ value: 'none', label: 'None - No labels' },
-			{ value: 'date-only', label: 'Date only - e.g., "m. 1985"' },
-			{ value: 'date-location', label: 'Date and location - e.g., "m. 1985 | Boston, MA"' },
-			{ value: 'full', label: 'Full details - e.g., "m. 1985 | Boston, MA | div. 1992"' }
-		].forEach(opt => {
-			spouseEdgeLabelSelect.createEl('option', {
-				value: opt.value,
-				text: opt.label
-			});
-		});
-		spouseEdgeLabelSelect.value = this.plugin.settings.spouseEdgeLabelFormat;
-
-		spouseEdgeLabelGroup.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'How to display marriage information on spouse edges (only applies when "Show spouse edges" is enabled)'
-		});
-
-		spouseEdgeLabelSelect.addEventListener('change', async () => {
-			this.plugin.settings.spouseEdgeLabelFormat = spouseEdgeLabelSelect.value as SpouseEdgeLabelFormat;
-			await this.plugin.saveSettings();
-			new Notice('Spouse edge label format updated');
-		});
+		new Setting(spouseEdgeContent)
+			.setName('Spouse edge label format')
+			.setDesc('How to display marriage information on spouse edges (only applies when "Show spouse edges" is enabled)')
+			.addDropdown(dropdown => dropdown
+				.addOption('none', 'None - No labels')
+				.addOption('date-only', 'Date only - e.g., "m. 1985"')
+				.addOption('date-location', 'Date and location - e.g., "m. 1985 | Boston, MA"')
+				.addOption('full', 'Full details - e.g., "m. 1985 | Boston, MA | div. 1992"')
+				.setValue(this.plugin.settings.spouseEdgeLabelFormat)
+				.onChange(async (value) => {
+					this.plugin.settings.spouseEdgeLabelFormat = value as SpouseEdgeLabelFormat;
+					await this.plugin.saveSettings();
+					new Notice('Spouse edge label format updated');
+				}));
 
 		container.appendChild(spouseEdgeCard);
 
@@ -1788,90 +1600,72 @@ export class ControlCenterModal extends Modal {
 		const content = card.querySelector('.crc-card__content') as HTMLElement;
 
 		// Name field
-		const nameGroup = content.createDiv({ cls: 'crc-form-group' });
-		nameGroup.createDiv({ cls: 'crc-form-label', text: 'Name' });
-		const nameInput = nameGroup.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'text',
-				placeholder: 'John Robert Smith'
-			}
-		});
-
-		// Auto-generate cr_id toggle
-		const uuidGroup = content.createDiv({ cls: 'crc-form-group' });
-		uuidGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Auto-generate cr_id'
-		});
-
-		const autoGenToggleContainer = uuidGroup.createDiv({ cls: 'crc-toggle-container' });
-		const autoGenToggle = new ToggleComponent(autoGenToggleContainer);
-		autoGenToggle.setValue(this.plugin.settings.autoGenerateCrId);
+		let nameInput: HTMLInputElement;
+		new Setting(content)
+			.setName('Name')
+			.addText(text => {
+				nameInput = text.inputEl;
+				text.setPlaceholder('John Robert Smith');
+			});
 
 		// cr_id field (read-only when auto-generate is checked)
-		const uuidFieldGroup = content.createDiv({ cls: 'crc-form-group' });
-		uuidFieldGroup.createDiv({ cls: 'crc-form-label', text: 'cr_id' });
-		const uuidInput = uuidFieldGroup.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'text',
-				placeholder: 'abc-123-def-456'
-			}
-		});
-		// Set initial readonly state based on plugin settings
-		if (this.plugin.settings.autoGenerateCrId) {
-			uuidInput.setAttribute('readonly', 'true');
-		}
-		uuidFieldGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Unique identifier for this person'
-		});
+		let uuidInput: HTMLInputElement;
+		new Setting(content)
+			.setName('cr_id')
+			.setDesc('Unique identifier for this person')
+			.addText(text => {
+				uuidInput = text.inputEl;
+				text.setPlaceholder('abc-123-def-456');
+				// Set initial readonly state based on plugin settings
+				if (this.plugin.settings.autoGenerateCrId) {
+					uuidInput.setAttribute('readonly', 'true');
+				}
+			});
 
-		// Toggle UUID field based on toggle
-		autoGenToggle.onChange(async (value) => {
-			// Update plugin settings
-			this.plugin.settings.autoGenerateCrId = value;
-			await this.plugin.saveSettings();
+		// Auto-generate cr_id toggle
+		let autoGenToggle: ToggleComponent;
+		new Setting(content)
+			.setName('Auto-generate cr_id')
+			.addToggle(toggle => {
+				autoGenToggle = toggle;
+				toggle
+					.setValue(this.plugin.settings.autoGenerateCrId)
+					.onChange(async (value) => {
+						// Update plugin settings
+						this.plugin.settings.autoGenerateCrId = value;
+						await this.plugin.saveSettings();
 
-			// Update UI state
-			if (value) {
-				uuidInput.setAttribute('readonly', 'true');
-				uuidInput.value = '';
-			} else {
-				uuidInput.removeAttribute('readonly');
-			}
-		});
+						// Update UI state
+						if (value) {
+							uuidInput.setAttribute('readonly', 'true');
+							uuidInput.value = '';
+						} else {
+							uuidInput.removeAttribute('readonly');
+						}
+					});
+			});
 
 		// Birth date field
-		const birthGroup = content.createDiv({ cls: 'crc-form-group' });
-		birthGroup.createDiv({ cls: 'crc-form-label', text: 'Birth date' });
-		const birthInput = birthGroup.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'date',
-				placeholder: 'YYYY-MM-DD'
-			}
-		});
-		birthGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Optional. Format: YYYY-MM-DD'
-		});
+		let birthInput: HTMLInputElement;
+		new Setting(content)
+			.setName('Birth date')
+			.setDesc('Optional. Format: YYYY-MM-DD')
+			.addText(text => {
+				birthInput = text.inputEl;
+				text.inputEl.type = 'date';
+				text.setPlaceholder('YYYY-MM-DD');
+			});
 
 		// Death date field
-		const deathGroup = content.createDiv({ cls: 'crc-form-group' });
-		deathGroup.createDiv({ cls: 'crc-form-label', text: 'Death date' });
-		const deathInput = deathGroup.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'date',
-				placeholder: 'YYYY-MM-DD'
-			}
-		});
-		deathGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Optional. Format: YYYY-MM-DD'
-		});
+		let deathInput: HTMLInputElement;
+		new Setting(content)
+			.setName('Death date')
+			.setDesc('Optional. Format: YYYY-MM-DD')
+			.addText(text => {
+				deathInput = text.inputEl;
+				text.inputEl.type = 'date';
+				text.setPlaceholder('YYYY-MM-DD');
+			});
 
 		// Relationship fields with person picker
 		const fatherResult = this.createRelationshipField(content, 'Father', 'Click "Link" to select father', this.fatherField);
@@ -2057,104 +1851,60 @@ export class ControlCenterModal extends Modal {
 		const configContent = configCard.createDiv({ cls: 'crc-card__content' });
 
 		// Tree type selection
-		const typeGroup = configContent.createDiv({ cls: 'crc-form-group' });
-		typeGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Tree type'
-		});
-
-		const typeSelect = typeGroup.createEl('select', { cls: 'crc-form-input' });
-		[
-			{ value: 'full', label: 'Full family tree (ancestors + descendants)' },
-			{ value: 'ancestors', label: 'Ancestors only (parents, grandparents, etc.)' },
-			{ value: 'descendants', label: 'Descendants only (children, grandchildren, etc.)' }
-		].forEach(option => {
-			typeSelect.createEl('option', {
-				value: option.value,
-				text: option.label
+		let typeSelect: HTMLSelectElement;
+		new Setting(configContent)
+			.setName('Tree type')
+			.setDesc('Choose which relatives to include in the tree')
+			.addDropdown(dropdown => {
+				typeSelect = dropdown.selectEl;
+				dropdown
+					.addOption('full', 'Full family tree (ancestors + descendants)')
+					.addOption('ancestors', 'Ancestors only (parents, grandparents, etc.)')
+					.addOption('descendants', 'Descendants only (children, grandchildren, etc.)')
+					.setValue('full');
 			});
-		});
-		// Set default to 'full'
-		typeSelect.value = 'full';
-
-		typeGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Choose which relatives to include in the tree'
-		});
 
 		// Max generations
-		const genGroup = configContent.createDiv({ cls: 'crc-form-group' });
-		const genLabel = genGroup.createEl('label', {
-			cls: 'crc-form-label'
-		});
-		genLabel.createSpan({ text: 'Maximum generations' });
-		const genValueDisplay = genLabel.createSpan({
-			cls: 'crc-form-label__value',
-			text: ' (5)'
-		});
-
-		const genSlider = genGroup.createEl('input', {
-			cls: 'crc-form-range',
-			attr: {
-				type: 'range',
-				min: '0',
-				max: '10',
-				value: '5',
-				step: '1'
-			}
-		}) as HTMLInputElement;
-
-		// Update display when slider changes
-		genSlider.addEventListener('input', () => {
-			const value = parseInt(genSlider.value);
-			genValueDisplay.setText(value === 0 ? ' (Unlimited)' : ` (${value})`);
-		});
-
-		genGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Limit the depth of the tree. Set to 0 for unlimited (use with caution on large trees)'
-		});
+		let genSlider: HTMLInputElement;
+		new Setting(configContent)
+			.setName('Maximum generations')
+			.setDesc('Limit the depth of the tree. Set to 0 for unlimited (use with caution on large trees)')
+			.addSlider(slider => {
+				genSlider = slider.sliderEl;
+				slider
+					.setLimits(0, 10, 1)
+					.setValue(5)
+					.setDynamicTooltip()
+					.onChange((value) => {
+						// Update the display to show "Unlimited" for 0
+						slider.showTooltip();
+					});
+			});
 
 		// Include spouses toggle
-		const spouseGroup = configContent.createDiv({ cls: 'crc-form-group' });
-		spouseGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Include spouses in tree'
-		});
-
-		const spouseToggleContainer = spouseGroup.createDiv({ cls: 'crc-toggle-container' });
-		const spouseToggle = new ToggleComponent(spouseToggleContainer);
-		spouseToggle.setValue(true);
+		let spouseToggle: ToggleComponent;
+		new Setting(configContent)
+			.setName('Include spouses in tree')
+			.addToggle(toggle => {
+				spouseToggle = toggle;
+				toggle.setValue(true);
+			});
 
 		// Collection filter dropdown
-		const collectionGroup = configContent.createDiv({ cls: 'crc-form-group' });
-		collectionGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Filter by collection'
-		});
-
-		const collectionSelect = collectionGroup.createEl('select', { cls: 'crc-form-input' });
-
-		// Add "All collections" option
-		collectionSelect.createEl('option', {
-			value: '',
-			text: 'All collections (no filter)'
-		});
-
-		// Load and populate collections
+		let collectionSelect: HTMLSelectElement;
 		const graphService = new FamilyGraphService(this.app);
 		const userCollections = await graphService.getUserCollections();
-		userCollections.forEach(collection => {
-			collectionSelect.createEl('option', {
-				value: collection.name,
-				text: collection.name
-			});
-		});
 
-		collectionGroup.createDiv({
-			cls: 'crc-form-help',
-			text: 'Limit tree to people in a specific collection (optional)'
-		});
+		new Setting(configContent)
+			.setName('Filter by collection')
+			.setDesc('Limit tree to people in a specific collection (optional)')
+			.addDropdown(dropdown => {
+				collectionSelect = dropdown.selectEl;
+				dropdown.addOption('', 'All collections (no filter)');
+				userCollections.forEach(collection => {
+					dropdown.addOption(collection.name, collection.name);
+				});
+			});
 
 		// Layout Options Card
 		const layoutCard = container.createDiv({ cls: 'crc-card' });
@@ -2169,67 +1919,43 @@ export class ControlCenterModal extends Modal {
 		const layoutContent = layoutCard.createDiv({ cls: 'crc-card__content' });
 
 		// Direction selection
-		const dirGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		dirGroup.createEl('label', {
-			cls: 'crc-form-label',
-			text: 'Tree direction'
-		});
-
-		const dirSelect = dirGroup.createEl('select', { cls: 'crc-form-input' });
-		[
-			{ value: 'vertical', label: 'Vertical (top to bottom)' },
-			{ value: 'horizontal', label: 'Horizontal (left to right)' }
-		].forEach(option => {
-			dirSelect.createEl('option', {
-				value: option.value,
-				text: option.label
+		let dirSelect: HTMLSelectElement;
+		new Setting(layoutContent)
+			.setName('Tree direction')
+			.addDropdown(dropdown => {
+				dirSelect = dropdown.selectEl;
+				dropdown
+					.addOption('vertical', 'Vertical (top to bottom)')
+					.addOption('horizontal', 'Horizontal (left to right)');
 			});
-		});
 
-		// Node spacing
-		const spacingXGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const spacingXLabelContainer = spacingXGroup.createDiv();
-		spacingXLabelContainer.createEl('div', {
-			cls: 'crc-form-label',
-			text: 'Horizontal spacing'
-		});
-		spacingXLabelContainer.createEl('div', {
-			cls: 'crc-form-help',
-			text: 'Space between nodes horizontally (pixels). Default: 400'
-		});
-		const spacingXControl = spacingXGroup.createDiv({ cls: 'crc-form-control' });
-		const spacingXInput = spacingXControl.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'number',
-				min: '100',
-				max: '1000',
-				value: '300',
-				step: '50'
-			}
-		});
+		// Horizontal spacing
+		let spacingXInput: HTMLInputElement;
+		new Setting(layoutContent)
+			.setName('Horizontal spacing')
+			.setDesc('Space between nodes horizontally (pixels). Default: 400')
+			.addText(text => {
+				spacingXInput = text.inputEl;
+				text.inputEl.type = 'number';
+				text.inputEl.min = '100';
+				text.inputEl.max = '1000';
+				text.inputEl.step = '50';
+				text.setValue('300');
+			});
 
-		const spacingYGroup = layoutContent.createDiv({ cls: 'crc-form-group' });
-		const spacingYLabelContainer = spacingYGroup.createDiv();
-		spacingYLabelContainer.createEl('div', {
-			cls: 'crc-form-label',
-			text: 'Vertical spacing'
-		});
-		spacingYLabelContainer.createEl('div', {
-			cls: 'crc-form-help',
-			text: 'Space between nodes vertically (pixels). Default: 200'
-		});
-		const spacingYControl = spacingYGroup.createDiv({ cls: 'crc-form-control' });
-		const spacingYInput = spacingYControl.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'number',
-				min: '100',
-				max: '1000',
-				value: '200',
-				step: '50'
-			}
-		});
+		// Vertical spacing
+		let spacingYInput: HTMLInputElement;
+		new Setting(layoutContent)
+			.setName('Vertical spacing')
+			.setDesc('Space between nodes vertically (pixels). Default: 200')
+			.addText(text => {
+				spacingYInput = text.inputEl;
+				text.inputEl.type = 'number';
+				text.inputEl.min = '100';
+				text.inputEl.max = '1000';
+				text.inputEl.step = '50';
+				text.setValue('200');
+			});
 
 		// Wire up the Generate button (in Root person card)
 		this.treeGenerateBtn?.addEventListener('click', async () => {
@@ -2689,35 +2415,21 @@ export class ControlCenterModal extends Modal {
 
 		const browseContent = browseCard.createDiv({ cls: 'crc-card__content' });
 
-		// Browse mode selection
-		const browseModes = [
-			{ id: 'all', label: 'All people', description: 'Show everyone in the vault' },
-			{ id: 'families', label: 'Detected families', description: 'Auto-detected family groups' },
-			{ id: 'collections', label: 'My collections', description: 'User-defined collections' }
-		];
-
+		// Browse mode selection using dropdown
 		let selectedMode = 'families'; // Default to families
 
-		browseModes.forEach(mode => {
-			const modeOption = browseContent.createDiv({ cls: 'crc-radio-option' });
-
-			const radio = modeOption.createEl('input', {
-				type: 'radio',
-				attr: { name: 'browse-mode', value: mode.id }
-			});
-			radio.checked = mode.id === selectedMode;
-
-			const label = modeOption.createEl('label');
-			label.createEl('div', { cls: 'crc-radio-label', text: mode.label });
-			label.createEl('div', { cls: 'crc-radio-description', text: mode.description });
-
-			radio.addEventListener('change', async () => {
-				if (radio.checked) {
-					selectedMode = mode.id;
+		new Setting(browseContent)
+			.setName('View')
+			.setDesc('Choose how to organize and view people')
+			.addDropdown(dropdown => dropdown
+				.addOption('all', 'All people - Show everyone in the vault')
+				.addOption('families', 'Detected families - Auto-detected family groups')
+				.addOption('collections', 'My collections - User-defined collections')
+				.setValue(selectedMode)
+				.onChange(async (value) => {
+					selectedMode = value;
 					await this.updateCollectionsList(container, selectedMode);
-				}
-			});
-		});
+				}));
 
 		container.appendChild(browseCard);
 
@@ -2781,7 +2493,7 @@ export class ControlCenterModal extends Modal {
 
 					const familyName = component.collectionName || `Family ${index + 1}`;
 					const familyHeader = familyItem.createDiv({ cls: 'crc-collection-header' });
-					familyHeader.createEl('strong', { text: familyName });
+					familyHeader.createEl('strong', { text: `${familyName} ` }); // Added space after name
 					familyHeader.createEl('span', {
 						cls: 'crc-badge',
 						text: `${component.size} ${component.size === 1 ? 'person' : 'people'}`
@@ -2819,7 +2531,7 @@ export class ControlCenterModal extends Modal {
 					const collectionItem = listContent.createDiv({ cls: 'crc-collection-item' });
 
 					const collectionHeader = collectionItem.createDiv({ cls: 'crc-collection-header' });
-					collectionHeader.createEl('strong', { text: collection.name });
+					collectionHeader.createEl('strong', { text: `${collection.name} ` }); // Added space after name
 					collectionHeader.createEl('span', {
 						cls: 'crc-badge',
 						text: `${collection.size} ${collection.size === 1 ? 'person' : 'people'}`
@@ -2848,7 +2560,7 @@ export class ControlCenterModal extends Modal {
 
 						const connectionHeader = connectionItem.createDiv({ cls: 'crc-collection-header' });
 						connectionHeader.createEl('strong', {
-							text: `${connection.fromCollection} ↔ ${connection.toCollection}`
+							text: `${connection.fromCollection} ↔ ${connection.toCollection} ` // Added space
 						});
 						connectionHeader.createEl('span', {
 							cls: 'crc-badge',
@@ -2966,94 +2678,63 @@ export class ControlCenterModal extends Modal {
 		const loggingContent = loggingCard.querySelector('.crc-card__content') as HTMLElement;
 
 		// Log Level Selector
-		const logLevelGroup = loggingContent.createDiv({ cls: 'crc-form-group' });
-		logLevelGroup.createEl('label', {
-			text: 'Log level',
-			cls: 'crc-form-label'
-		});
-
-		const logLevelSelect = logLevelGroup.createEl('select', {
-			cls: 'crc-form-input'
-		});
-
-		const logLevels: LogLevel[] = ['off', 'error', 'warn', 'info', 'debug'];
-		logLevels.forEach(level => {
-			const option = logLevelSelect.createEl('option', {
-				text: level.toUpperCase(),
-				value: level
+		new Setting(loggingContent)
+			.setName('Log level')
+			.setDesc('Controls console output verbosity. Logs are always collected for export.')
+			.addDropdown(dropdown => {
+				const logLevels: LogLevel[] = ['off', 'error', 'warn', 'info', 'debug'];
+				logLevels.forEach(level => {
+					dropdown.addOption(level, level.toUpperCase());
+				});
+				dropdown
+					.setValue(LoggerFactory.getLogLevel())
+					.onChange((value) => {
+						const newLevel = value as LogLevel;
+						LoggerFactory.setLogLevel(newLevel);
+						logger.info('settings', 'Log level changed from Control Center', {
+							level: newLevel
+						});
+						new Notice(`Log level set to ${newLevel.toUpperCase()}`);
+					});
 			});
-			if (level === LoggerFactory.getLogLevel()) {
-				option.selected = true;
-			}
-		});
-
-		logLevelSelect.addEventListener('change', () => {
-			const newLevel = logLevelSelect.value as LogLevel;
-			LoggerFactory.setLogLevel(newLevel);
-			logger.info('settings', 'Log level changed from Control Center', {
-				level: newLevel
-			});
-			new Notice(`Log level set to ${newLevel.toUpperCase()}`);
-		});
-
-		const helpText = logLevelGroup.createEl('div', {
-			cls: 'crc-form-help'
-		});
-		helpText.createEl('p', {
-			text: 'Controls console output verbosity. Logs are always collected for export.'
-		});
 
 		// Export Path Display
-		const exportPathGroup = loggingContent.createDiv({ cls: 'crc-form-group crc-mt-4' });
-		exportPathGroup.createEl('label', {
-			text: 'Export directory',
-			cls: 'crc-form-label'
-		});
-
-		const exportPathDisplay = exportPathGroup.createEl('div', {
-			cls: 'crc-input-with-button'
-		});
-
-		const pathInput = exportPathDisplay.createEl('input', {
-			cls: 'crc-form-input',
-			attr: {
-				type: 'text',
-				readonly: 'true',
-				placeholder: 'No directory selected (will prompt on export)'
-			}
-		});
-
-		if (this.plugin.settings.logExportPath) {
-			pathInput.value = this.plugin.settings.logExportPath;
-		}
-
-		const changePathBtn = exportPathDisplay.createEl('button', {
-			text: 'Change',
-			cls: 'crc-btn crc-btn--secondary crc-input-button'
-		});
-
-		changePathBtn.addEventListener('click', async () => {
-			try {
-				// Access Electron dialog (Obsidian provides this via require)
-				const { remote } = require('electron');
-				const result = await remote.dialog.showOpenDialog({
-					properties: ['openDirectory', 'createDirectory'],
-					title: 'Select Log Export Directory',
-					buttonLabel: 'Select Directory'
-				});
-
-				if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-					this.plugin.settings.logExportPath = result.filePaths[0];
-					await this.plugin.saveSettings();
-					pathInput.value = result.filePaths[0];
-					logger.info('settings', 'Log export path changed', { path: result.filePaths[0] });
-					new Notice('Export directory updated');
+		let pathInput: HTMLInputElement;
+		new Setting(loggingContent)
+			.setName('Export directory')
+			.setDesc('Directory for exported log files')
+			.addText(text => {
+				pathInput = text.inputEl;
+				text.inputEl.readOnly = true;
+				text.setPlaceholder('No directory selected (will prompt on export)');
+				if (this.plugin.settings.logExportPath) {
+					text.setValue(this.plugin.settings.logExportPath);
 				}
-			} catch (error) {
-				console.error('Error selecting directory:', error);
-				new Notice('Could not open directory picker');
-			}
-		});
+			})
+			.addButton(button => button
+				.setButtonText('Change')
+				.onClick(async () => {
+					try {
+						// Access Electron dialog (Obsidian provides this via require)
+						const { remote } = require('electron');
+						const result = await remote.dialog.showOpenDialog({
+							properties: ['openDirectory', 'createDirectory'],
+							title: 'Select Log Export Directory',
+							buttonLabel: 'Select Directory'
+						});
+
+						if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+							this.plugin.settings.logExportPath = result.filePaths[0];
+							await this.plugin.saveSettings();
+							pathInput.value = result.filePaths[0];
+							logger.info('settings', 'Log export path changed', { path: result.filePaths[0] });
+							new Notice('Export directory updated');
+						}
+					} catch (error) {
+						console.error('Error selecting directory:', error);
+						new Notice('Could not open directory picker');
+					}
+				}));
 
 		// Log Statistics
 		const statsGroup = loggingContent.createDiv({ cls: 'crc-form-group crc-mt-4' });
