@@ -1,6 +1,6 @@
 # Canvas Roots: Genealogical Family Tree Plugin for Obsidian
 
-> **⚠️ Alpha Status (v0.1.3):** Canvas Roots is in early alpha release. Core features are stable and well-tested (GEDCOM import, tree generation, canvas styling), but some advanced features are not yet implemented. See [Roadmap](docs/roadmap.md) for details.
+> **⚠️ Alpha Status (v0.1.4):** Canvas Roots is in early alpha release. Core features are stable and well-tested (GEDCOM import/export, tree generation, canvas styling), but some advanced features are not yet implemented. See [Roadmap](docs/roadmap.md) for details.
 
 **Canvas Roots** is an Obsidian plugin that automatically generates complex family trees directly onto the Canvas using specialized genealogical layout algorithms for non-overlapping, relationship-aware positioning.
 
@@ -9,9 +9,9 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 
 ## ✨ Key Features
 
-### Available in Alpha (v0.1.3)
+### Available in Alpha (v0.1.4)
 
-- **GEDCOM Import:** Import family trees from standard GEDCOM (.ged) files with robust error handling. Supports files from popular genealogy software (Gramps, Ancestry, FamilySearch, etc.).
+- **GEDCOM Import/Export:** Full round-trip support for GEDCOM 5.5.1 format. Import family trees from popular genealogy software (Gramps, Ancestry, FamilySearch) and export back to .ged format with UUID preservation, collection codes, and marriage metadata.
 
 - **Automated Layout:** Generate precise, non-overlapping pedigree (ancestor) and descendant charts using specialized genealogical layout algorithms designed for complex family relationships.
 
@@ -33,14 +33,13 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 
 - **YAML-First Data:** Uses native YAML frontmatter for maximum compatibility with Dataview, Bases, and other Obsidian tools.
 
-- **Context Menu Actions:** Right-click person notes to add relationships, validate data integrity, or find canvases. Right-click folders to scan for relationship issues or import GEDCOM files. Right-click canvas files to regenerate or view statistics. Full desktop and mobile support.
+- **Context Menu Actions:** Right-click person notes to add relationships, validate data integrity, or find canvases. Right-click folders to scan for relationship issues, import GEDCOM files, or export folder contents to GEDCOM. Right-click canvas files to regenerate or view statistics. Full desktop and mobile support.
 
 - **Collections & Groups:** Organize and browse people using auto-detected family groups (with customizable group names) or user-defined collections. Filter tree generation by collection and view cross-collection connections to identify bridge people connecting different parts of your family network.
 
 ### Planned Features
 
 See [Roadmap](docs/roadmap.md) for detailed feature descriptions and development priorities.
-- **GEDCOM Export:** Round-trip export back to .ged format
 - **Reference Numbering:** Ahnentafel and Dollarhide-Cole genealogical numbering systems
 - **Person Detail Panel:** Rich inline person information with relationship visualization
 - **Tree Preview:** Interactive preview with real-time layout configuration before canvas generation
@@ -100,7 +99,7 @@ Once approved for the Community Plugins directory:
 
 **Option A: Import GEDCOM**
 1. Open Control Center (`Ctrl/Cmd + P` → "Canvas Roots: Open Control Center")
-2. Go to Data Entry tab → Import GEDCOM
+2. Go to GEDCOM tab → Import section
 3. Select your `.ged` file and configure import options
 
 **Option B: Create Individual Notes**
