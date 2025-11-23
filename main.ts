@@ -13,6 +13,7 @@ import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
 import { BASE_TEMPLATE } from './src/constants/base-template';
+import { ExcalidrawExporter } from './src/excalidraw/excalidraw-exporter';
 
 export default class CanvasRootsPlugin extends Plugin {
 	settings: CanvasRootsSettings;
@@ -147,6 +148,15 @@ export default class CanvasRootsPlugin extends Plugin {
 										new CanvasStyleModal(this.app, this, file).open();
 									});
 							});
+
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Export to Excalidraw')
+									.setIcon('pencil')
+									.onClick(async () => {
+										await this.exportCanvasToExcalidraw(file);
+									});
+							});
 						});
 					} else {
 						// Mobile: flat menu with prefix
@@ -178,6 +188,15 @@ export default class CanvasRootsPlugin extends Plugin {
 								.onClick(async () => {
 									const { CanvasStyleModal } = await import('./src/ui/canvas-style-modal');
 									new CanvasStyleModal(this.app, this, file).open();
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Export to Excalidraw')
+								.setIcon('pencil')
+								.onClick(async () => {
+									await this.exportCanvasToExcalidraw(file);
 								});
 						});
 					}
@@ -1017,6 +1036,44 @@ export default class CanvasRootsPlugin extends Plugin {
 		} catch (error) {
 			console.error('Error generating all trees:', error);
 			new Notice('Failed to generate all trees. Check console for details.');
+		}
+	}
+
+	private async exportCanvasToExcalidraw(canvasFile: TFile) {
+		try {
+			new Notice('Exporting to Excalidraw...');
+
+			// Initialize exporter
+			const exporter = new ExcalidrawExporter(this.app);
+
+			// Export canvas
+			const result = await exporter.exportToExcalidraw({
+				canvasFile,
+				preserveColors: true,
+				fontSize: 16,
+				strokeWidth: 2
+			});
+
+			if (!result.success) {
+				new Notice(`Export failed: ${result.errors.join(', ')}`);
+				return;
+			}
+
+			// Save Excalidraw file
+			const outputPath = `${canvasFile.parent?.path || ''}/${result.fileName}.excalidraw.md`;
+			await this.app.vault.create(outputPath, result.excalidrawContent!);
+
+			new Notice(`Exported ${result.elementsExported} elements to ${result.fileName}.excalidraw.md`);
+
+			// Open the newly created file
+			const excalidrawFile = this.app.vault.getAbstractFileByPath(outputPath);
+			if (excalidrawFile instanceof TFile) {
+				const leaf = this.app.workspace.getLeaf(false);
+				await leaf.openFile(excalidrawFile);
+			}
+		} catch (error) {
+			console.error('Error exporting to Excalidraw:', error);
+			new Notice(`Failed to export to Excalidraw: ${error.message}`);
 		}
 	}
 

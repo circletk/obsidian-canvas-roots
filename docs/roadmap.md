@@ -17,6 +17,15 @@ Canvas Roots is in beta with core functionality complete and stable. Advanced fe
 - All essential genealogical workflows fully functional
 - Foundation established for advanced feature development
 
+**Excalidraw Export:**
+- Export canvas family trees to Excalidraw format (.excalidraw.md)
+- Preserves node positions, dimensions, and colors
+- Converts Canvas nodes to Excalidraw rectangles with text labels
+- Converts edges to Excalidraw arrows with proper bindings
+- Context menu integration on canvas files (desktop and mobile)
+- Enables manual annotation, drawing, and customization in Excalidraw
+- Full compatibility with Obsidian Excalidraw plugin
+
 ### v0.1.4-alpha
 
 **GEDCOM Export:**
@@ -127,14 +136,6 @@ No features currently in active development. See Planned Features below for road
 ---
 
 ## 📋 Planned Features
-
-### Export & Interoperability
-
-**Excalidraw Integration:**
-- Export family trees to Excalidraw format
-- Preserve node styling and layout
-- Enable manual annotation and customization
-- Support for Excalidraw's drawing tools and features
 
 ### Reference Numbering Systems
 
