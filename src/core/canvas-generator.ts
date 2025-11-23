@@ -11,6 +11,8 @@ import { FamilyChartLayoutEngine } from './family-chart-layout';
 import { getLogger } from './logging';
 import type { ArrowStyle, SpouseEdgeLabelFormat } from '../settings';
 import type { SpouseRelationship } from '../models/person';
+import type { StyleOverrides } from './canvas-style-overrides';
+import { mergeStyleSettings } from './canvas-style-overrides';
 
 const logger = getLogger('CanvasGenerator');
 
@@ -82,6 +84,13 @@ export interface CanvasRootsMetadata {
 		nodeSpacingX: number;
 		nodeSpacingY: number;
 	};
+
+	/**
+	 * Canvas-specific style overrides (optional)
+	 * If present, these override global plugin style settings for this canvas.
+	 * Preserved during canvas regeneration.
+	 */
+	styleOverrides?: StyleOverrides;
 }
 
 /**
@@ -158,16 +167,14 @@ export class CanvasGenerator {
 		const nodeColorScheme = options.nodeColorScheme ??
 			(options.colorByGender === false ? 'monochrome' : 'gender');
 
-		const opts = {
-			nodeSpacingX: options.nodeSpacingX ?? 300,
-			nodeSpacingY: options.nodeSpacingY ?? 200,
-			nodeWidth: options.nodeWidth ?? 250,
-			nodeHeight: options.nodeHeight ?? 120,
-			direction: options.direction ?? 'vertical' as const,
-			treeType: options.treeType ?? 'descendant' as const,
+		// Extract metadata and style overrides
+		const metadata = options.canvasRootsMetadata;
+		const styleOverrides = metadata?.styleOverrides;
+
+		// Apply style overrides from metadata if present
+		// This allows per-canvas style settings to override global settings
+		const globalStyleSettings = {
 			nodeColorScheme,
-			showLabels: options.showLabels ?? true,
-			useFamilyChartLayout: options.useFamilyChartLayout ?? true,
 			parentChildArrowStyle: options.parentChildArrowStyle ?? 'directed' as const,
 			spouseArrowStyle: options.spouseArrowStyle ?? 'undirected' as const,
 			parentChildEdgeColor: options.parentChildEdgeColor ?? 'none' as const,
@@ -175,12 +182,34 @@ export class CanvasGenerator {
 			showSpouseEdges: options.showSpouseEdges ?? false,
 			spouseEdgeLabelFormat: options.spouseEdgeLabelFormat ?? 'date-only' as const
 		};
-		const metadata = options.canvasRootsMetadata;
+
+		const effectiveStyles = mergeStyleSettings(globalStyleSettings, styleOverrides);
+
+		const opts = {
+			nodeSpacingX: options.nodeSpacingX ?? 300,
+			nodeSpacingY: options.nodeSpacingY ?? 200,
+			nodeWidth: options.nodeWidth ?? 250,
+			nodeHeight: options.nodeHeight ?? 120,
+			direction: options.direction ?? 'vertical' as const,
+			treeType: options.treeType ?? 'descendant' as const,
+			showLabels: options.showLabels ?? true,
+			useFamilyChartLayout: options.useFamilyChartLayout ?? true,
+			// Use effective styles (global settings merged with per-canvas overrides)
+			nodeColorScheme: effectiveStyles.nodeColorScheme,
+			parentChildArrowStyle: effectiveStyles.parentChildArrowStyle,
+			spouseArrowStyle: effectiveStyles.spouseArrowStyle,
+			parentChildEdgeColor: effectiveStyles.parentChildEdgeColor,
+			spouseEdgeColor: effectiveStyles.spouseEdgeColor,
+			showSpouseEdges: effectiveStyles.showSpouseEdges,
+			spouseEdgeLabelFormat: effectiveStyles.spouseEdgeLabelFormat
+		};
 
 		logger.debug('canvas-generation', 'Canvas generation options', {
 			useFamilyChartLayout: opts.useFamilyChartLayout,
 			hasMetadata: !!metadata,
-			metadataKeys: metadata ? Object.keys(metadata) : null
+			metadataKeys: metadata ? Object.keys(metadata) : null,
+			hasStyleOverrides: !!styleOverrides,
+			effectiveNodeColorScheme: effectiveStyles.nodeColorScheme
 		});
 
 		// Choose layout engine based on option

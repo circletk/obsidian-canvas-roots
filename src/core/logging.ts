@@ -268,3 +268,97 @@ export function getLogger(component: string): ILogger {
  * Export factory for configuration and log access
  */
 export { loggerFactory, LoggerFactoryClass as LoggerFactory };
+
+/**
+ * Obfuscation utilities for protecting PII in log exports
+ */
+
+// Pattern matching for common PII in genealogical logs
+const NAME_PATTERN = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g; // Capitalized names (e.g., "John Smith")
+const DATE_PATTERN = /\b\d{4}-\d{2}-\d{2}\b/g; // ISO dates (YYYY-MM-DD)
+const YEAR_PATTERN = /\b(1[0-9]{3}|20[0-2][0-9])\b/g; // Years 1000-2029
+const PATH_PATTERN = /(?:\/|\\)[^\/\\]+\.md/g; // File paths ending in .md
+const CRID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi; // UUIDs/cr_ids
+
+/**
+ * Obfuscate a string by replacing PII with placeholder tokens
+ */
+function obfuscateString(str: string): string {
+	if (!str || typeof str !== 'string') return str;
+
+	let obfuscated = str;
+
+	// Replace names with tokens
+	const names = new Set<string>();
+	obfuscated = obfuscated.replace(NAME_PATTERN, (match) => {
+		names.add(match);
+		return `[NAME-${Array.from(names).indexOf(match) + 1}]`;
+	});
+
+	// Replace full dates with [DATE]
+	obfuscated = obfuscated.replace(DATE_PATTERN, '[DATE]');
+
+	// Replace standalone years with [YEAR]
+	obfuscated = obfuscated.replace(YEAR_PATTERN, '[YEAR]');
+
+	// Replace file paths with generic pattern
+	obfuscated = obfuscated.replace(PATH_PATTERN, '/[FILE].md');
+
+	// Replace cr_ids/UUIDs with [ID]
+	obfuscated = obfuscated.replace(CRID_PATTERN, '[ID]');
+
+	return obfuscated;
+}
+
+/**
+ * Recursively obfuscate data objects
+ */
+function obfuscateData(data: unknown): unknown {
+	if (data === null || data === undefined) return data;
+
+	if (typeof data === 'string') {
+		return obfuscateString(data);
+	}
+
+	if (typeof data === 'number' || typeof data === 'boolean') {
+		return data; // Numbers and booleans are safe
+	}
+
+	if (Array.isArray(data)) {
+		return data.map(item => obfuscateData(item));
+	}
+
+	if (typeof data === 'object') {
+		const obfuscated: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(data)) {
+			// Obfuscate both keys and values
+			const obfuscatedKey = obfuscateString(key);
+			obfuscated[obfuscatedKey] = obfuscateData(value);
+		}
+		return obfuscated;
+	}
+
+	return data;
+}
+
+/**
+ * Obfuscate a log entry to protect PII
+ */
+export function obfuscateLogEntry(entry: LogEntry): LogEntry {
+	return {
+		timestamp: entry.timestamp,
+		level: entry.level,
+		component: entry.component, // Component names are safe (technical)
+		category: entry.category,   // Category names are safe (technical)
+		message: obfuscateString(entry.message),
+		data: entry.data ? obfuscateData(entry.data) : undefined,
+		context: entry.context ? obfuscateData(entry.context) as Record<string, unknown> : undefined
+	};
+}
+
+/**
+ * Obfuscate an array of log entries
+ */
+export function obfuscateLogs(logs: LogEntry[]): LogEntry[] {
+	return logs.map(entry => obfuscateLogEntry(entry));
+}

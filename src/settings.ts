@@ -65,6 +65,7 @@ export interface CanvasRootsSettings {
 	peopleFolder: string;
 	logExportPath: string;
 	logLevel: LogLevel;
+	obfuscateLogExports: boolean;
 	recentTrees: RecentTreeInfo[];
 	recentImports: RecentImportInfo[];
 	// Arrow styling
@@ -91,6 +92,7 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	peopleFolder: 'Canvas Roots',
 	logExportPath: '',
 	logLevel: 'debug',
+	obfuscateLogExports: true,  // Secure by default - protect PII in log exports
 	recentTrees: [],
 	recentImports: [],
 	// Arrow styling defaults

@@ -2014,8 +2014,207 @@ export class ControlCenterModal extends Modal {
 				text.setValue('200');
 			});
 
+		// Style Customization Card
+		const styleCard = container.createDiv({ cls: 'crc-card' });
+		const styleHeader = styleCard.createDiv({ cls: 'crc-card__header' });
+		const styleTitle = styleHeader.createEl('h3', {
+			cls: 'crc-card__title',
+			text: 'Style customization (optional)'
+		});
+		const styleIcon = createLucideIcon('layout', 20);
+		styleTitle.prepend(styleIcon);
+
+		const styleContent = styleCard.createDiv({ cls: 'crc-card__content' });
+
+		// Add description
+		styleContent.createEl('p', {
+			text: 'Override global style settings for this canvas only. Leave options unchecked to use global settings.',
+			cls: 'setting-item-description'
+		});
+
+		// Style override toggles and controls
+		let useCustomNodeColor = false;
+		let useCustomParentChildArrow = false;
+		let useCustomSpouseArrow = false;
+		let useCustomParentChildColor = false;
+		let useCustomSpouseColor = false;
+		let useCustomSpouseEdges = false;
+		let useCustomSpouseLabels = false;
+
+		let customNodeColorSelect: HTMLSelectElement;
+		let customParentChildArrowSelect: HTMLSelectElement;
+		let customSpouseArrowSelect: HTMLSelectElement;
+		let customParentChildColorSelect: HTMLSelectElement;
+		let customSpouseColorSelect: HTMLSelectElement;
+		let customSpouseEdgesToggle: ToggleComponent;
+		let customSpouseLabelsSelect: HTMLSelectElement;
+
+		// Node color scheme override
+		const nodeColorSetting = new Setting(styleContent)
+			.setName('Node coloring')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomNodeColor = value;
+					customNodeColorSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customNodeColorSelect = dropdown.selectEl;
+				dropdown
+					.addOption('gender', 'Gender (green/purple)')
+					.addOption('generation', 'Generation (gradient)')
+					.addOption('collection', 'Collection (multi-color)')
+					.addOption('monochrome', 'Monochrome (neutral)')
+					.setValue(this.plugin.settings.nodeColorScheme);
+				customNodeColorSelect.disabled = true;
+			});
+
+		// Parent-child arrow style override
+		const parentChildArrowSetting = new Setting(styleContent)
+			.setName('Parent-child arrows')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomParentChildArrow = value;
+					customParentChildArrowSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customParentChildArrowSelect = dropdown.selectEl;
+				dropdown
+					.addOption('directed', 'Directed (→)')
+					.addOption('bidirectional', 'Bidirectional (↔)')
+					.addOption('undirected', 'Undirected (—)')
+					.setValue(this.plugin.settings.parentChildArrowStyle);
+				customParentChildArrowSelect.disabled = true;
+			});
+
+		// Spouse arrow style override
+		const spouseArrowSetting = new Setting(styleContent)
+			.setName('Spouse arrows')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomSpouseArrow = value;
+					customSpouseArrowSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customSpouseArrowSelect = dropdown.selectEl;
+				dropdown
+					.addOption('directed', 'Directed (→)')
+					.addOption('bidirectional', 'Bidirectional (↔)')
+					.addOption('undirected', 'Undirected (—)')
+					.setValue(this.plugin.settings.spouseArrowStyle);
+				customSpouseArrowSelect.disabled = true;
+			});
+
+		// Parent-child edge color override
+		const parentChildColorSetting = new Setting(styleContent)
+			.setName('Parent-child edge color')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomParentChildColor = value;
+					customParentChildColorSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customParentChildColorSelect = dropdown.selectEl;
+				dropdown
+					.addOption('none', 'Theme default')
+					.addOption('1', 'Red')
+					.addOption('2', 'Orange')
+					.addOption('3', 'Yellow')
+					.addOption('4', 'Green')
+					.addOption('5', 'Cyan')
+					.addOption('6', 'Purple')
+					.setValue(this.plugin.settings.parentChildEdgeColor);
+				customParentChildColorSelect.disabled = true;
+			});
+
+		// Spouse edge color override
+		const spouseColorSetting = new Setting(styleContent)
+			.setName('Spouse edge color')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomSpouseColor = value;
+					customSpouseColorSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customSpouseColorSelect = dropdown.selectEl;
+				dropdown
+					.addOption('none', 'Theme default')
+					.addOption('1', 'Red')
+					.addOption('2', 'Orange')
+					.addOption('3', 'Yellow')
+					.addOption('4', 'Green')
+					.addOption('5', 'Cyan')
+					.addOption('6', 'Purple')
+					.setValue(this.plugin.settings.spouseEdgeColor);
+				customSpouseColorSelect.disabled = true;
+			});
+
+		// Show spouse edges override
+		const spouseEdgesSetting = new Setting(styleContent)
+			.setName('Show spouse edges')
+			.setDesc('Enable/disable marriage relationship edges')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomSpouseEdges = value;
+					(customSpouseEdgesToggle.toggleEl as HTMLInputElement).disabled = !value;
+				});
+			})
+			.addToggle(toggle => {
+				customSpouseEdgesToggle = toggle;
+				toggle.setValue(this.plugin.settings.showSpouseEdges);
+				(toggle.toggleEl as HTMLInputElement).disabled = true;
+			});
+
+		// Spouse label format override
+		const spouseLabelsSetting = new Setting(styleContent)
+			.setName('Spouse edge labels')
+			.addToggle(toggle => {
+				toggle.setValue(false).onChange(value => {
+					useCustomSpouseLabels = value;
+					customSpouseLabelsSelect.disabled = !value;
+				});
+			})
+			.addDropdown(dropdown => {
+				customSpouseLabelsSelect = dropdown.selectEl;
+				dropdown
+					.addOption('none', 'None')
+					.addOption('date-only', 'Date only')
+					.addOption('date-location', 'Date + location')
+					.addOption('full', 'Full (date + location + status)')
+					.setValue(this.plugin.settings.spouseEdgeLabelFormat);
+				customSpouseLabelsSelect.disabled = true;
+			});
+
 		// Wire up the Generate button (in Root person card)
 		this.treeGenerateBtn?.addEventListener('click', async () => {
+			// Build style overrides object (only include enabled overrides)
+			const styleOverrides: import('../core/canvas-style-overrides').StyleOverrides = {};
+			if (useCustomNodeColor) {
+				styleOverrides.nodeColorScheme = customNodeColorSelect.value as import('../settings').ColorScheme;
+			}
+			if (useCustomParentChildArrow) {
+				styleOverrides.parentChildArrowStyle = customParentChildArrowSelect.value as import('../settings').ArrowStyle;
+			}
+			if (useCustomSpouseArrow) {
+				styleOverrides.spouseArrowStyle = customSpouseArrowSelect.value as import('../settings').ArrowStyle;
+			}
+			if (useCustomParentChildColor) {
+				styleOverrides.parentChildEdgeColor = customParentChildColorSelect.value as import('../settings').CanvasColor;
+			}
+			if (useCustomSpouseColor) {
+				styleOverrides.spouseEdgeColor = customSpouseColorSelect.value as import('../settings').CanvasColor;
+			}
+			if (useCustomSpouseEdges) {
+				styleOverrides.showSpouseEdges = customSpouseEdgesToggle.getValue();
+			}
+			if (useCustomSpouseLabels) {
+				styleOverrides.spouseEdgeLabelFormat = customSpouseLabelsSelect.value as import('../settings').SpouseEdgeLabelFormat;
+			}
+
 			await this.handleTreeGeneration(
 				rootPersonField,
 				typeSelect.value as 'ancestors' | 'descendants' | 'full',
@@ -2025,7 +2224,8 @@ export class ControlCenterModal extends Modal {
 				parseInt(spacingXInput.value),
 				parseInt(spacingYInput.value),
 				this.treeCanvasNameInput?.value || '',
-				collectionSelect.value || undefined
+				collectionSelect.value || undefined,
+				Object.keys(styleOverrides).length > 0 ? styleOverrides : undefined
 			);
 		});
 	}
@@ -2042,7 +2242,8 @@ export class ControlCenterModal extends Modal {
 		spacingX: number,
 		spacingY: number,
 		canvasFileName: string,
-		collectionFilter?: string
+		collectionFilter?: string,
+		styleOverrides?: import('../core/canvas-style-overrides').StyleOverrides
 	): Promise<void> {
 		// Validate root person
 		if (!rootPersonField.crId) {
@@ -2092,7 +2293,9 @@ export class ControlCenterModal extends Modal {
 						nodeHeight: this.plugin.settings.defaultNodeHeight,
 						nodeSpacingX: spacingX,
 						nodeSpacingY: spacingY
-					}
+					},
+					// Include style overrides if provided
+					styleOverrides: styleOverrides
 				}
 			};
 
@@ -3005,6 +3208,23 @@ export class ControlCenterModal extends Modal {
 					}
 				}));
 
+		// Obfuscation Toggle
+		new Setting(loggingContent)
+			.setName('Obfuscate log exports')
+			.setDesc('Replace personally identifiable information (names, dates, paths) with placeholders when exporting logs. Recommended for sharing logs publicly.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.obfuscateLogExports)
+				.onChange(async (value) => {
+					this.plugin.settings.obfuscateLogExports = value;
+					await this.plugin.saveSettings();
+					logger.info('settings', 'Log export obfuscation changed', { enabled: value });
+					if (value) {
+						new Notice('Log exports will be obfuscated (secure)');
+					} else {
+						new Notice('⚠️ Warning: Log exports will contain unobfuscated personal information!', 5000);
+					}
+				}));
+
 		// Log Statistics
 		const statsGroup = loggingContent.createDiv({ cls: 'crc-form-group crc-mt-4' });
 		const logs = LoggerFactory.getLogs();
@@ -3060,9 +3280,21 @@ export class ControlCenterModal extends Modal {
 
 			const now = new Date();
 			const pad = (n: number) => n.toString().padStart(2, '0');
-			const filename = `canvas-roots-logs-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
+			const obfuscated = this.plugin.settings.obfuscateLogExports ? '-obfuscated' : '';
+			const filename = `canvas-roots-logs${obfuscated}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
 
-			const logs = LoggerFactory.getLogs();
+			let logs = LoggerFactory.getLogs();
+
+			// Obfuscate logs if setting is enabled (secure by default)
+			if (this.plugin.settings.obfuscateLogExports) {
+				const { obfuscateLogs } = await import('../core/logging');
+				logs = obfuscateLogs(logs);
+				logger.info('export', 'Logs obfuscated for PII protection', { logCount: logs.length });
+			} else {
+				// Warn user about exporting unobfuscated logs
+				new Notice('⚠️ Warning: Exporting logs WITHOUT obfuscation may expose personal information!', 5000);
+			}
+
 			const logData = JSON.stringify(logs, null, 2);
 
 			// Prompt for directory if not set

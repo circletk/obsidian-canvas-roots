@@ -98,7 +98,15 @@ Canvas Roots is in active alpha development with core functionality in place and
 
 ## 🚧 In Active Development
 
-None - all planned features for v0.1.3 are complete.
+**Per-Canvas Style Settings:**
+- ✅ Core infrastructure with StyleOverrides interface and merge utilities
+- ✅ Canvas metadata integration for storing style overrides
+- ✅ Canvas generation updated to apply style overrides
+- ✅ Canvas regeneration preserves custom styles
+- ✅ Tree Generation UI with optional style customization controls
+- ✅ Canvas Style Modal for editing existing canvas styles
+- ✅ Context menu integration ("Customize canvas styles")
+- 🔄 Testing and documentation in progress
 
 ---
 

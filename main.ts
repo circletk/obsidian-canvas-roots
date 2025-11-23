@@ -137,6 +137,16 @@ export default class CanvasRootsPlugin extends Plugin {
 										new TreeStatisticsModal(this.app, file).open();
 									});
 							});
+
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Customize canvas styles')
+									.setIcon('layout')
+									.onClick(async () => {
+										const { CanvasStyleModal } = await import('./src/ui/canvas-style-modal');
+										new CanvasStyleModal(this.app, this, file).open();
+									});
+							});
 						});
 					} else {
 						// Mobile: flat menu with prefix
@@ -158,6 +168,16 @@ export default class CanvasRootsPlugin extends Plugin {
 								.setIcon('bar-chart')
 								.onClick(async () => {
 									new TreeStatisticsModal(this.app, file).open();
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Customize canvas styles')
+								.setIcon('layout')
+								.onClick(async () => {
+									const { CanvasStyleModal } = await import('./src/ui/canvas-style-modal');
+									new CanvasStyleModal(this.app, this, file).open();
 								});
 						});
 					}
@@ -841,6 +861,9 @@ export default class CanvasRootsPlugin extends Plugin {
 				treeType === 'descendants' ? 'descendant' :
 				'full';
 
+			// Preserve style overrides from stored metadata if present
+			const styleOverrides = storedMetadata?.styleOverrides;
+
 			const newCanvasData = canvasGenerator.generateCanvas(familyTree, {
 				nodeSpacingX,
 				nodeSpacingY,
@@ -855,6 +878,8 @@ export default class CanvasRootsPlugin extends Plugin {
 				spouseArrowStyle: this.settings.spouseArrowStyle,
 				parentChildEdgeColor: this.settings.parentChildEdgeColor,
 				spouseEdgeColor: this.settings.spouseEdgeColor,
+				showSpouseEdges: this.settings.showSpouseEdges,
+				spouseEdgeLabelFormat: this.settings.spouseEdgeLabelFormat,
 				canvasRootsMetadata: {
 					plugin: 'canvas-roots',
 					generation: {
@@ -871,7 +896,9 @@ export default class CanvasRootsPlugin extends Plugin {
 						nodeHeight,
 						nodeSpacingX,
 						nodeSpacingY
-					}
+					},
+					// Preserve style overrides during regeneration
+					styleOverrides: styleOverrides
 				}
 			});
 
