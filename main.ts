@@ -1,4 +1,4 @@
-import { Plugin, Notice, TFile, TFolder } from 'obsidian';
+import { Plugin, Notice, TFile, TFolder, Menu, Platform } from 'obsidian';
 import { CanvasRootsSettings, DEFAULT_SETTINGS, CanvasRootsSettingTab } from './src/settings';
 import { ControlCenterModal } from './src/ui/control-center';
 import { RelayoutOptionsModal } from './src/ui/relayout-options-modal';
@@ -88,72 +88,129 @@ export default class CanvasRootsPlugin extends Plugin {
 			}
 		});
 
-		// Add context menu item for person notes and canvas files
+		// Add context menu items for person notes, canvas files, and folders
 		this.registerEvent(
 			this.app.workspace.on('file-menu', (menu, file) => {
-				// Add regenerate canvas option for canvas files FIRST (appears higher in menu)
-				// This appears when right-clicking:
-				// - On a .canvas file in the file explorer
-				// - On a canvas tab in the tab bar
-				// - In the three-dot menu of an open canvas pane
+				// Only show submenus on desktop (mobile doesn't support them)
+				const useSubmenu = Platform.isDesktop && !Platform.isMobile;
+
+				// Canvas files: Regenerate canvas
 				if (file instanceof TFile && file.extension === 'canvas') {
-					// Add separator before our item for visual grouping
 					menu.addSeparator();
 
-					menu.addItem((item) => {
-						item
-							.setTitle('Regenerate canvas')
-							.setIcon('refresh-cw')
-							.onClick(async () => {
-								// Open the canvas file first
-								const leaf = this.app.workspace.getLeaf(false);
-								await leaf.openFile(file);
+					if (useSubmenu) {
+						menu.addItem((item) => {
+							const submenu: Menu = item
+								.setTitle('Canvas Roots')
+								.setIcon('git-fork')
+								.setSubmenu();
 
-								// Give canvas a moment to load
-								await new Promise(resolve => setTimeout(resolve, 100));
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Regenerate canvas')
+									.setIcon('refresh-cw')
+									.onClick(async () => {
+										// Open the canvas file first
+										const leaf = this.app.workspace.getLeaf(false);
+										await leaf.openFile(file);
 
-								// Show options modal
-								new RelayoutOptionsModal(this.app, this, file).open();
+										// Give canvas a moment to load
+										await new Promise(resolve => setTimeout(resolve, 100));
+
+										// Show options modal
+										new RelayoutOptionsModal(this.app, this, file).open();
+									});
 							});
-					});
-				}
-
-				// Add menu item for person notes (markdown files with cr_id)
-				if (file instanceof TFile && file.extension === 'md') {
-					const cache = this.app.metadataCache.getFileCache(file);
-					if (cache?.frontmatter?.cr_id) {
-						menu.addSeparator();
-
+						});
+					} else {
+						// Mobile: flat menu with prefix
 						menu.addItem((item) => {
 							item
-								.setTitle('Generate family tree')
-								.setIcon('git-fork')
+								.setTitle('Canvas Roots: Regenerate canvas')
+								.setIcon('refresh-cw')
 								.onClick(async () => {
-									// Open Control Center with this person pre-selected
-									const modal = new ControlCenterModal(this.app, this);
-									await modal.openWithPerson(file);
+									const leaf = this.app.workspace.getLeaf(false);
+									await leaf.openFile(file);
+									await new Promise(resolve => setTimeout(resolve, 100));
+									new RelayoutOptionsModal(this.app, this, file).open();
 								});
 						});
 					}
 				}
 
-				// Add menu item for folders
+				// Person notes: Generate family tree
+				if (file instanceof TFile && file.extension === 'md') {
+					const cache = this.app.metadataCache.getFileCache(file);
+					if (cache?.frontmatter?.cr_id) {
+						menu.addSeparator();
+
+						if (useSubmenu) {
+							menu.addItem((item) => {
+								const submenu: Menu = item
+									.setTitle('Canvas Roots')
+									.setIcon('git-fork')
+									.setSubmenu();
+
+								submenu.addItem((subItem) => {
+									subItem
+										.setTitle('Generate family tree')
+										.setIcon('git-fork')
+										.onClick(async () => {
+											const modal = new ControlCenterModal(this.app, this);
+											await modal.openWithPerson(file);
+										});
+								});
+							});
+						} else {
+							// Mobile: flat menu with prefix
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Generate family tree')
+									.setIcon('git-fork')
+									.onClick(async () => {
+										const modal = new ControlCenterModal(this.app, this);
+										await modal.openWithPerson(file);
+									});
+							});
+						}
+					}
+				}
+
+				// Folders: Set as people folder
 				if (file instanceof TFolder) {
 					menu.addSeparator();
 
-					menu.addItem((item) => {
-						item
-							.setTitle('Set as people folder')
-							.setIcon('users')
-							.onClick(async () => {
-								// Update settings
-								this.settings.peopleFolder = file.path;
-								await this.saveSettings();
+					if (useSubmenu) {
+						menu.addItem((item) => {
+							const submenu: Menu = item
+								.setTitle('Canvas Roots')
+								.setIcon('git-fork')
+								.setSubmenu();
 
-								// Show confirmation
-								new Notice(`People folder set to: ${file.path}`);
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Set as people folder')
+									.setIcon('users')
+									.onClick(async () => {
+										this.settings.peopleFolder = file.path;
+										await this.saveSettings();
+										new Notice(`People folder set to: ${file.path}`);
+									});
 							});
-					});
+						});
+					} else {
+						// Mobile: flat menu with prefix
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Set as people folder')
+								.setIcon('users')
+								.onClick(async () => {
+									this.settings.peopleFolder = file.path;
+									await this.saveSettings();
+									new Notice(`People folder set to: ${file.path}`);
+								});
+						});
+					}
 				}
 			})
 		);
