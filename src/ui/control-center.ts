@@ -3030,26 +3030,6 @@ export class ControlCenterModal extends Modal {
 		});
 
 		container.appendChild(loggingCard);
-
-		// Debug Card
-		const debugCard = this.createCard({
-			title: 'Debug information',
-			icon: 'info'
-		});
-
-		const debugContent = debugCard.querySelector('.crc-card__content') as HTMLElement;
-
-		debugContent.createEl('p', {
-			text: `Plugin Version: ${this.plugin.manifest.version}`,
-			cls: 'crc-text-muted'
-		});
-
-		debugContent.createEl('p', {
-			text: `Obsidian Version: ${(this.app as any).appVersion || 'Unknown'}`,
-			cls: 'crc-text-muted'
-		});
-
-		container.appendChild(debugCard);
 	}
 
 	/**
