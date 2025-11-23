@@ -1052,6 +1052,83 @@ export class ControlCenterModal extends Modal {
 
 		container.appendChild(frontmatterCard);
 
+		// Groups and Collections Card
+		const organizationCard = this.createCard({
+			title: 'Understanding groups and collections',
+			icon: 'folder'
+		});
+		const organizationContent = organizationCard.querySelector('.crc-card__content') as HTMLElement;
+
+		organizationContent.createEl('p', {
+			text: 'Canvas Roots offers two complementary ways to organize your people:',
+			cls: 'crc-mb-3'
+		});
+
+		// Group Names section
+		const groupSection = organizationContent.createDiv({ cls: 'crc-mb-4' });
+		const groupHeader = groupSection.createDiv({ cls: 'crc-flex crc-items-center crc-mb-2' });
+		const groupIcon = groupHeader.createDiv({ cls: 'crc-mr-2' });
+		setLucideIcon(groupIcon, 'users', 18);
+		groupHeader.createEl('h4', { text: 'Group names', cls: 'crc-mb-0' });
+
+		groupSection.createEl('p', {
+			text: 'Names for auto-detected connected groups (families, factions, organizations).',
+			cls: 'crc-text-muted crc-mb-2'
+		});
+
+		const groupDetails = groupSection.createEl('ul', { cls: 'crc-mb-2' });
+		groupDetails.createEl('li', { text: 'Set via: Right-click person note → "Set group name"' });
+		groupDetails.createEl('li', { text: 'Property: collection_name in YAML frontmatter' });
+		groupDetails.createEl('li', { text: 'Auto-detected: Based on relationship connections' });
+		groupDetails.createEl('li', { text: 'Examples: "Smith Family", "House Stark", "The Council"' });
+
+		groupSection.createEl('p', {
+			text: 'When to use: Name each connected family/faction/organization for clear canvas filenames.',
+			cls: 'crc-text-muted crc-font-italic'
+		});
+
+		// Collections section
+		const collectionSection = organizationContent.createDiv({ cls: 'crc-mb-4' });
+		const collectionHeader = collectionSection.createDiv({ cls: 'crc-flex crc-items-center crc-mb-2' });
+		const collectionIcon = collectionHeader.createDiv({ cls: 'crc-mr-2' });
+		setLucideIcon(collectionIcon, 'folder', 18);
+		collectionHeader.createEl('h4', { text: 'Collections', cls: 'crc-mb-0' });
+
+		collectionSection.createEl('p', {
+			text: 'User-defined groups for organizing people across family boundaries.',
+			cls: 'crc-text-muted crc-mb-2'
+		});
+
+		const collectionDetails = collectionSection.createEl('ul', { cls: 'crc-mb-2' });
+		collectionDetails.createEl('li', { text: 'Set via: Right-click person note → "Add to collection"' });
+		collectionDetails.createEl('li', { text: 'Property: collection in YAML frontmatter' });
+		collectionDetails.createEl('li', { text: 'Manual assignment: You decide who belongs' });
+		collectionDetails.createEl('li', { text: 'Examples: "Paternal Line", "First Generation", "Main Characters"' });
+
+		collectionSection.createEl('p', {
+			text: 'When to use: Organize by lineage, time period, story role, or research focus.',
+			cls: 'crc-text-muted crc-font-italic'
+		});
+
+		// Quick comparison
+		const comparisonSection = organizationContent.createDiv({ cls: 'crc-info-box' });
+		comparisonSection.createEl('strong', { text: 'Quick comparison:' });
+		const comparisonList = comparisonSection.createEl('ul', { cls: 'crc-mt-2' });
+		comparisonList.createEl('li', { text: 'Group name = "What is this connected group called?" (auto-detected)' });
+		comparisonList.createEl('li', { text: 'Collection = "How do I want to organize people?" (manual)' });
+
+		const actionLink = organizationContent.createEl('a', {
+			text: 'Browse your collections →',
+			cls: 'crc-link crc-mt-3'
+		});
+		actionLink.style.display = 'inline-block';
+		actionLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			this.switchTab('collections');
+		});
+
+		container.appendChild(organizationCard);
+
 		// Common Tasks Card
 		const tasksCard = this.createCard({
 			title: 'Common tasks',
