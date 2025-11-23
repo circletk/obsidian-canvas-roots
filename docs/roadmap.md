@@ -84,12 +84,12 @@ See [architecture/collections.md](architecture/collections.md) for complete ADR.
 ### Phase 1.5: Context Menu Actions (v0.1.2-alpha)
 
 **Person Notes (Right-click):**
-- "Add relationship..." - Quick submenu to add parent, spouse, or child using person picker
+- "Add relationship..." - Quick submenu to add parent, spouse, or child using person picker (✅ Implemented)
 - "Validate relationships" - Check for broken cr_id references and orphaned links
 - "Find on canvas" - Jump to this person on any canvas where they appear
 
 **Folders (Right-click):**
-- "Set as people folder" - One-click configuration of settings.peopleFolder
+- "Set as people folder" - One-click configuration of settings.peopleFolder (✅ Implemented)
 - "Import GEDCOM to this folder" - Pre-select folder for GEDCOM import
 - "Scan for relationship issues" - Batch validation of all person notes in folder
 

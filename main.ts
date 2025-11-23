@@ -1,8 +1,10 @@
-import { Plugin, Notice, TFile, TFolder, Menu, Platform } from 'obsidian';
+import { Plugin, Notice, TFile, TFolder, Menu, Platform, Modal } from 'obsidian';
 import { CanvasRootsSettings, DEFAULT_SETTINGS, CanvasRootsSettingTab } from './src/settings';
 import { ControlCenterModal } from './src/ui/control-center';
 import { RegenerateOptionsModal } from './src/ui/regenerate-options-modal';
 import { TreeStatisticsModal } from './src/ui/tree-statistics-modal';
+import { PersonPickerModal } from './src/ui/person-picker';
+import { RelationshipManager } from './src/core/relationship-manager';
 import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
@@ -179,6 +181,62 @@ export default class CanvasRootsPlugin extends Plugin {
 											await modal.openWithPerson(file);
 										});
 								});
+
+								// Add relationship submenu
+								const relationshipSubmenu = submenu.addItem((subItem) => {
+									return subItem
+										.setTitle('Add relationship...')
+										.setIcon('user-plus')
+										.setSubmenu();
+								});
+
+								relationshipSubmenu.addItem((relItem) => {
+									relItem
+										.setTitle('Add parent')
+										.setIcon('user')
+										.onClick(() => {
+											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+												const relationshipMgr = new RelationshipManager(this.app);
+
+												// Ask which parent type
+												const parentType = await this.promptParentType();
+												if (parentType) {
+													await relationshipMgr.addParentRelationship(
+														file,
+														selectedPerson.file,
+														parentType
+													);
+												}
+											});
+											picker.open();
+										});
+								});
+
+								relationshipSubmenu.addItem((relItem) => {
+									relItem
+										.setTitle('Add spouse')
+										.setIcon('heart')
+										.onClick(() => {
+											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+												const relationshipMgr = new RelationshipManager(this.app);
+												await relationshipMgr.addSpouseRelationship(file, selectedPerson.file);
+											});
+											picker.open();
+										});
+								});
+
+								relationshipSubmenu.addItem((relItem) => {
+									relItem
+										.setTitle('Add child')
+										.setIcon('baby')
+										.onClick(() => {
+											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+												const relationshipMgr = new RelationshipManager(this.app);
+												await relationshipMgr.addChildRelationship(file, selectedPerson.file);
+											});
+											picker.open();
+										});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -189,6 +247,52 @@ export default class CanvasRootsPlugin extends Plugin {
 									.onClick(async () => {
 										const modal = new ControlCenterModal(this.app, this);
 										await modal.openWithPerson(file);
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Add parent')
+									.setIcon('user')
+									.onClick(() => {
+										const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+											const relationshipMgr = new RelationshipManager(this.app);
+											const parentType = await this.promptParentType();
+											if (parentType) {
+												await relationshipMgr.addParentRelationship(
+													file,
+													selectedPerson.file,
+													parentType
+												);
+											}
+										});
+										picker.open();
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Add spouse')
+									.setIcon('heart')
+									.onClick(() => {
+										const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+											const relationshipMgr = new RelationshipManager(this.app);
+											await relationshipMgr.addSpouseRelationship(file, selectedPerson.file);
+										});
+										picker.open();
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Add child')
+									.setIcon('baby')
+									.onClick(() => {
+										const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
+											const relationshipMgr = new RelationshipManager(this.app);
+											await relationshipMgr.addChildRelationship(file, selectedPerson.file);
+										});
+										picker.open();
 									});
 							});
 						}
@@ -245,6 +349,55 @@ export default class CanvasRootsPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	/**
+	 * Prompt user to select parent type (father or mother)
+	 * Returns 'father', 'mother', or null if cancelled
+	 */
+	private async promptParentType(): Promise<'father' | 'mother' | null> {
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Select parent type');
+
+			modal.contentEl.createEl('p', {
+				text: 'Is this person the father or mother?'
+			});
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'modal-button-container' });
+			buttonContainer.style.display = 'flex';
+			buttonContainer.style.gap = '8px';
+			buttonContainer.style.justifyContent = 'flex-end';
+			buttonContainer.style.marginTop = '16px';
+
+			const fatherBtn = buttonContainer.createEl('button', {
+				text: 'Father',
+				cls: 'mod-cta'
+			});
+			fatherBtn.addEventListener('click', () => {
+				modal.close();
+				resolve('father');
+			});
+
+			const motherBtn = buttonContainer.createEl('button', {
+				text: 'Mother',
+				cls: 'mod-cta'
+			});
+			motherBtn.addEventListener('click', () => {
+				modal.close();
+				resolve('mother');
+			});
+
+			const cancelBtn = buttonContainer.createEl('button', {
+				text: 'Cancel'
+			});
+			cancelBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(null);
+			});
+
+			modal.open();
+		});
 	}
 
 	private async generateTreeForCurrentNote() {
