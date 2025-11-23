@@ -53,6 +53,9 @@ export interface TreeOptions {
 
 	/** Include spouses */
 	includeSpouses?: boolean;
+
+	/** Filter tree to only include people in this collection */
+	collectionFilter?: string;
 }
 
 /**
@@ -373,6 +376,16 @@ export class FamilyGraphService {
 	}
 
 	/**
+	 * Checks if a person should be included based on collection filter
+	 */
+	private shouldIncludePerson(person: PersonNode, collectionFilter?: string): boolean {
+		if (!collectionFilter) {
+			return true; // No filter, include everyone
+		}
+		return person.collection === collectionFilter;
+	}
+
+	/**
 	 * Builds ancestor tree (parents, grandparents, etc.)
 	 */
 	private buildAncestorTree(
@@ -382,7 +395,11 @@ export class FamilyGraphService {
 		options: TreeOptions,
 		currentGeneration: number
 	): void {
-		// Add current node
+		// Add current node if it passes collection filter
+		if (!this.shouldIncludePerson(node, options.collectionFilter)) {
+			return;
+		}
+
 		nodes.set(node.crId, node);
 
 		// Check generation limit
@@ -393,7 +410,7 @@ export class FamilyGraphService {
 		// Add father
 		if (node.fatherCrId) {
 			const father = this.personCache.get(node.fatherCrId);
-			if (father) {
+			if (father && this.shouldIncludePerson(father, options.collectionFilter)) {
 				edges.push({ from: father.crId, to: node.crId, type: 'parent' });
 				this.buildAncestorTree(father, nodes, edges, options, currentGeneration + 1);
 			}
@@ -402,7 +419,7 @@ export class FamilyGraphService {
 		// Add mother
 		if (node.motherCrId) {
 			const mother = this.personCache.get(node.motherCrId);
-			if (mother) {
+			if (mother && this.shouldIncludePerson(mother, options.collectionFilter)) {
 				edges.push({ from: mother.crId, to: node.crId, type: 'parent' });
 				this.buildAncestorTree(mother, nodes, edges, options, currentGeneration + 1);
 			}
@@ -434,7 +451,11 @@ export class FamilyGraphService {
 		options: TreeOptions,
 		currentGeneration: number
 	): void {
-		// Add current node
+		// Add current node if it passes collection filter
+		if (!this.shouldIncludePerson(node, options.collectionFilter)) {
+			return;
+		}
+
 		nodes.set(node.crId, node);
 
 		// Check generation limit
@@ -446,7 +467,7 @@ export class FamilyGraphService {
 		if (options.includeSpouses) {
 			for (const spouseCrId of node.spouseCrIds) {
 				const spouse = this.personCache.get(spouseCrId);
-				if (spouse) {
+				if (spouse && this.shouldIncludePerson(spouse, options.collectionFilter)) {
 					nodes.set(spouse.crId, spouse);
 					edges.push({ from: node.crId, to: spouse.crId, type: 'spouse' });
 				}
@@ -456,7 +477,7 @@ export class FamilyGraphService {
 		// Add children
 		for (const childCrId of node.childrenCrIds) {
 			const child = this.personCache.get(childCrId);
-			if (child) {
+			if (child && this.shouldIncludePerson(child, options.collectionFilter)) {
 				edges.push({ from: node.crId, to: child.crId, type: 'child' });
 				this.buildDescendantTree(child, nodes, edges, options, currentGeneration + 1);
 			}
@@ -487,6 +508,11 @@ export class FamilyGraphService {
 			const currentPerson = this.personCache.get(currentCrId);
 
 			if (!currentPerson) {
+				continue;
+			}
+
+			// Skip person if they don't pass collection filter
+			if (!this.shouldIncludePerson(currentPerson, options.collectionFilter)) {
 				continue;
 			}
 

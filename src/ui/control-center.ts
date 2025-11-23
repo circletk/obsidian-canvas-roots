@@ -2126,6 +2126,36 @@ export class ControlCenterModal extends Modal {
 		const spouseToggle = new ToggleComponent(spouseToggleContainer);
 		spouseToggle.setValue(true);
 
+		// Collection filter dropdown
+		const collectionGroup = configContent.createDiv({ cls: 'crc-form-group' });
+		collectionGroup.createEl('label', {
+			cls: 'crc-form-label',
+			text: 'Filter by collection'
+		});
+
+		const collectionSelect = collectionGroup.createEl('select', { cls: 'crc-form-input' });
+
+		// Add "All collections" option
+		collectionSelect.createEl('option', {
+			value: '',
+			text: 'All collections (no filter)'
+		});
+
+		// Load and populate collections
+		const graphService = new FamilyGraphService(this.app);
+		const userCollections = await graphService.getUserCollections();
+		userCollections.forEach(collection => {
+			collectionSelect.createEl('option', {
+				value: collection.name,
+				text: collection.name
+			});
+		});
+
+		collectionGroup.createDiv({
+			cls: 'crc-form-help',
+			text: 'Limit tree to people in a specific collection (optional)'
+		});
+
 		// Layout Options Card
 		const layoutCard = container.createDiv({ cls: 'crc-card' });
 		const layoutHeader = layoutCard.createDiv({ cls: 'crc-card__header' });
@@ -2211,7 +2241,8 @@ export class ControlCenterModal extends Modal {
 				dirSelect.value as 'vertical' | 'horizontal',
 				parseInt(spacingXInput.value),
 				parseInt(spacingYInput.value),
-				this.treeCanvasNameInput?.value || ''
+				this.treeCanvasNameInput?.value || '',
+				collectionSelect.value || undefined
 			);
 		});
 	}
@@ -2227,7 +2258,8 @@ export class ControlCenterModal extends Modal {
 		direction: 'vertical' | 'horizontal',
 		spacingX: number,
 		spacingY: number,
-		canvasFileName: string
+		canvasFileName: string,
+		collectionFilter?: string
 	): Promise<void> {
 		// Validate root person
 		if (!rootPersonField.crId) {
@@ -2243,7 +2275,8 @@ export class ControlCenterModal extends Modal {
 				rootCrId: rootPersonField.crId,
 				treeType,
 				maxGenerations: maxGenerations || undefined,
-				includeSpouses
+				includeSpouses,
+				collectionFilter
 			};
 
 			// Create canvas generation options with embedded metadata
