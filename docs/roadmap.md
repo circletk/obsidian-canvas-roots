@@ -106,7 +106,8 @@ Canvas Roots is in active alpha development with core functionality in place and
 - ✅ Tree Generation UI with optional style customization controls
 - ✅ Canvas Style Modal for editing existing canvas styles
 - ✅ Context menu integration ("Customize canvas styles")
-- 🔄 Testing and documentation in progress
+- ✅ Guide tab documentation with comprehensive usage instructions
+- 🔄 Ready for end-to-end testing and user feedback
 
 ---
 
