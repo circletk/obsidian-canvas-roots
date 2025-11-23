@@ -268,6 +268,16 @@ export default class CanvasRootsPlugin extends Plugin {
 											}
 										});
 								});
+
+								// Set collection name
+								submenu.addItem((subItem) => {
+									subItem
+										.setTitle('Set collection name')
+										.setIcon('tag')
+										.onClick(async () => {
+											await this.promptSetCollectionName(file);
+										});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -349,6 +359,15 @@ export default class CanvasRootsPlugin extends Plugin {
 										if (crId) {
 											new FindOnCanvasModal(this.app, personName, crId).open();
 										}
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Set collection name')
+									.setIcon('tag')
+									.onClick(async () => {
+										await this.promptSetCollectionName(file);
 									});
 							});
 						}
@@ -501,6 +520,94 @@ export default class CanvasRootsPlugin extends Plugin {
 			});
 
 			modal.open();
+		});
+	}
+
+	private async promptSetCollectionName(file: TFile): Promise<void> {
+		// Get current collection_name if it exists
+		const cache = this.app.metadataCache.getFileCache(file);
+		const currentCollectionName = cache?.frontmatter?.collection_name || '';
+
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Set collection name');
+
+			modal.contentEl.createEl('p', {
+				text: 'Enter a collection name to group this person with related family members:'
+			});
+
+			const inputContainer = modal.contentEl.createDiv({ cls: 'setting-item-control' });
+			const input = inputContainer.createEl('input', {
+				type: 'text',
+				placeholder: 'e.g., "Smith Family", "Johnson Line"',
+				value: currentCollectionName
+			});
+			input.style.width = '100%';
+			input.style.marginTop = '8px';
+
+			const helpText = modal.contentEl.createEl('p', {
+				text: 'Leave empty to remove the collection name.',
+				cls: 'setting-item-description'
+			});
+			helpText.style.marginTop = '8px';
+			helpText.style.fontSize = '0.9em';
+			helpText.style.color = 'var(--text-muted)';
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'modal-button-container' });
+			buttonContainer.style.display = 'flex';
+			buttonContainer.style.gap = '8px';
+			buttonContainer.style.justifyContent = 'flex-end';
+			buttonContainer.style.marginTop = '16px';
+
+			const saveBtn = buttonContainer.createEl('button', {
+				text: 'Save',
+				cls: 'mod-cta'
+			});
+			saveBtn.addEventListener('click', async () => {
+				const collectionName = input.value.trim();
+
+				// Update or remove collection_name in frontmatter
+				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					if (collectionName) {
+						frontmatter.collection_name = collectionName;
+					} else {
+						delete frontmatter.collection_name;
+					}
+				});
+
+				new Notice(collectionName
+					? `Collection name set to "${collectionName}"`
+					: 'Collection name removed'
+				);
+
+				modal.close();
+				resolve();
+			});
+
+			const cancelBtn = buttonContainer.createEl('button', {
+				text: 'Cancel'
+			});
+			cancelBtn.addEventListener('click', () => {
+				modal.close();
+				resolve();
+			});
+
+			// Allow Enter key to save
+			input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					saveBtn.click();
+				} else if (e.key === 'Escape') {
+					cancelBtn.click();
+				}
+			});
+
+			modal.open();
+
+			// Focus the input
+			setTimeout(() => {
+				input.focus();
+				input.select();
+			}, 50);
 		});
 	}
 
