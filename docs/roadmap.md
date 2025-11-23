@@ -95,7 +95,7 @@ See [architecture/collections.md](architecture/collections.md) for complete ADR.
 
 **Canvas Files (Right-click on tab/file):**
 - "Regenerate canvas" - Re-run layout algorithm with current relationship data (✅ Implemented)
-- "Show tree statistics" - Quick modal with person count, generation depth, edge count
+- "Show tree statistics" - Quick modal with person count, generation depth, edge count (✅ Implemented)
 
 > **Note:** Canvas views don't currently support context menus inside the canvas editor itself (Obsidian API limitation). All canvas actions must be accessed by right-clicking the canvas file tab or in the file explorer.
 

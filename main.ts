@@ -1,7 +1,8 @@
 import { Plugin, Notice, TFile, TFolder, Menu, Platform } from 'obsidian';
 import { CanvasRootsSettings, DEFAULT_SETTINGS, CanvasRootsSettingTab } from './src/settings';
 import { ControlCenterModal } from './src/ui/control-center';
-import { RelayoutOptionsModal } from './src/ui/relayout-options-modal';
+import { RegenerateOptionsModal } from './src/ui/regenerate-options-modal';
+import { TreeStatisticsModal } from './src/ui/tree-statistics-modal';
 import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
@@ -57,7 +58,7 @@ export default class CanvasRootsPlugin extends Plugin {
 				}
 
 				// Show options modal
-				new RelayoutOptionsModal(this.app, this, activeFile).open();
+				new RegenerateOptionsModal(this.app, this, activeFile).open();
 			}
 		});
 
@@ -118,7 +119,16 @@ export default class CanvasRootsPlugin extends Plugin {
 										await new Promise(resolve => setTimeout(resolve, 100));
 
 										// Show options modal
-										new RelayoutOptionsModal(this.app, this, file).open();
+										new RegenerateOptionsModal(this.app, this, file).open();
+									});
+							});
+
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Show tree statistics')
+									.setIcon('bar-chart')
+									.onClick(async () => {
+										new TreeStatisticsModal(this.app, file).open();
 									});
 							});
 						});
@@ -132,7 +142,16 @@ export default class CanvasRootsPlugin extends Plugin {
 									const leaf = this.app.workspace.getLeaf(false);
 									await leaf.openFile(file);
 									await new Promise(resolve => setTimeout(resolve, 100));
-									new RelayoutOptionsModal(this.app, this, file).open();
+									new RegenerateOptionsModal(this.app, this, file).open();
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Show tree statistics')
+								.setIcon('bar-chart')
+								.onClick(async () => {
+									new TreeStatisticsModal(this.app, file).open();
 								});
 						});
 					}

@@ -34,6 +34,7 @@ const CONFIG = {
     'edges.css',         // Relationship edge styling
     'settings.css',      // Settings interface
     'modals.css',        // Modal dialogs
+    'tree-statistics.css', // Tree statistics modal
     'animations.css',    // Keyframes and transitions
     'responsive.css',    // Responsive breakpoints
     'theme.css'          // Theme compatibility (last)

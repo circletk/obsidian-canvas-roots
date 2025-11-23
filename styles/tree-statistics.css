@@ -1,0 +1,40 @@
+/* Tree Statistics Modal */
+.cr-tree-statistics-modal {
+  max-width: 500px;
+}
+
+.cr-tree-statistics {
+  padding: 1em 0;
+}
+
+.cr-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5em 0;
+  gap: 1em;
+}
+
+.cr-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.cr-stat-icon {
+  opacity: 0.7;
+}
+
+.cr-stat-value {
+  font-weight: 600;
+  color: var(--text-normal);
+  text-align: right;
+}
+
+.cr-tree-statistics hr {
+  margin: 0.75em 0;
+  border: none;
+  border-top: 1px solid var(--background-modifier-border);
+}

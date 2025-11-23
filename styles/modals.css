@@ -19,11 +19,11 @@
   overflow: hidden;
 }
 
-.crc-relayout-options-modal {
+.crc-regenerate-options-modal {
   max-width: 450px;
 }
 
-.crc-relayout-options-modal .modal-content {
+.crc-regenerate-options-modal .modal-content {
   padding: 24px;
 }
 

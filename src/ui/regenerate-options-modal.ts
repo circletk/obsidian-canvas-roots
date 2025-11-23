@@ -4,7 +4,7 @@ import CanvasRootsPlugin from '../../main';
 /**
  * Modal for selecting canvas regeneration options
  */
-export class RelayoutOptionsModal extends Modal {
+export class RegenerateOptionsModal extends Modal {
 	plugin: CanvasRootsPlugin;
 	canvasFile: TFile;
 	private directionSelect?: HTMLSelectElement;
@@ -20,7 +20,7 @@ export class RelayoutOptionsModal extends Modal {
 		contentEl.empty();
 
 		// Add modal class for styling
-		this.modalEl.addClass('crc-relayout-options-modal');
+		this.modalEl.addClass('crc-regenerate-options-modal');
 
 		// Title
 		contentEl.createEl('h2', {
