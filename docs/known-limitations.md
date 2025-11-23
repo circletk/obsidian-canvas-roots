@@ -1,39 +1,41 @@
-# Known Limitations - Alpha Release v0.1.0
+# Known Limitations - Alpha Release
 
-**Last Updated:** 2025-11-22
+**Last Updated:** 2025-11-23
+**Current Version:** v0.1.4-alpha
 
-This document outlines features that are planned but not yet implemented in the alpha release of Canvas Roots. The plugin's core functionality (GEDCOM import, tree generation, and canvas styling) is stable and well-tested.
+This document outlines features that are planned but not yet implemented in the alpha release of Canvas Roots. The plugin's core functionality (GEDCOM import/export, tree generation, canvas styling, and collections) is stable and well-tested.
 
 ---
 
 ## Features Not Yet Implemented
 
-### Collections Management
+### Collections Management ✅ IMPLEMENTED
 
-**Status:** Planned for future release
+**Status:** Fully implemented (v0.1.3-alpha)
 
-**Current Limitation:**
-- No folder-based collection auto-discovery
-- All person notes in the vault are treated as one large collection
-- No collection-level organization or browsing interface
+**Features Working:**
+- Dual organization system: auto-detected family groups + user-defined collections
+- Auto-detected groups with customizable group names (`collection_name` property)
+- User collections for manual organization (`collection` property)
+- Context menu actions: "Set group name" and "Add to collection"
+- Collections tab with three browse modes: All people, Detected families, My collections
+- Cross-collection connection detection showing bridge people
+- Collection filtering in tree generation (all tree types)
+- Collection-based node coloring with hash-based color assignment
+- Collection overview canvas generation with grid layout and connection edges
+- Analytics dashboard with comprehensive statistics and data quality metrics
 
-**Impact:**
-- Users with multiple family trees in one vault must manage them manually
-- No automatic grouping by folder structure
-
-**Workarounds:**
-1. Use folder names as prefixes in person note titles (e.g., "Smith Family - John Smith")
-2. Use tags to identify different families (e.g., `#family/smith`, `#family/jones`)
-3. Use the "Generate all trees" command to automatically create separate canvases for each disconnected family group
-4. Keep different families in separate Obsidian vaults if strict separation is needed
-
-**Related Specification:** See [docs/specification.md](specification.md) §3.4 Collections and Dataset Management
+**How to Use:**
+1. Open Control Center → Collections tab
+2. Browse by detected families or create custom collections
+3. Filter tree generation by collection
+4. Generate collection overview canvases
 
 ---
 
 ### Multi-Family Detection UI ✅ IMPLEMENTED
 
-**Status:** Fully implemented (v0.1.1)
+**Status:** Fully implemented (v0.1.1-alpha)
 
 **Features Working:**
 - Multi-family detection works correctly (backend detects disconnected family components)
@@ -54,31 +56,35 @@ This document outlines features that are planned but not yet implemented in the 
 **Alternative:**
 - Use "Generate all trees" command to automatically create canvases for all family groups at once
 
-**Testing Results:** Malformed GEDCOM test showed this works correctly - detected 8 of 13 disconnected people, displayed family groups in sidebar, and showed appropriate notice after generation.
-
 ---
 
-### GEDCOM Export (Round-Trip)
+### GEDCOM Export (Round-Trip) ✅ IMPLEMENTED
 
-**Status:** Planned for future release
+**Status:** Fully implemented (v0.1.4-alpha)
 
-**Current Limitation:**
-- Import-only in alpha release
-- No export from Canvas Roots format back to `.ged` format
-- No round-trip data integrity validation
+**Features Working:**
+- GEDCOM 5.5.1 format generation with complete header and trailer
+- Individual record export with name, sex, birth/death dates
+- Family record extraction from parent-child and spouse relationships
+- UUID preservation using custom _UID tags for round-trip compatibility
+- Collection code preservation (_COLL and _COLLN tags)
+- Marriage metadata export (dates, locations from SpouseRelationship)
+- Sex inference from father/mother relationships
+- Collection filtering for selective export
+- Control Center UI with export configuration
+- Context menu integration on folders ("Export GEDCOM from this folder")
+- Browser download with .ged file extension
 
-**Impact:**
-- Cannot share your Canvas Roots research with users of other genealogy software
-- Cannot create backup `.ged` files from your Obsidian vault
-- Data portability is one-way (import only)
+**How to Use:**
+1. Open Control Center → GEDCOM tab → Export section
+2. Configure export options (filename, collection filter, etc.)
+3. Click "Export to GEDCOM"
+4. Or right-click any folder → "Export GEDCOM from this folder"
 
-**Workarounds:**
-1. Keep original `.ged` files as backups
-2. Use Obsidian Bases (table view) to export person data to CSV if needed
-3. Maintain parallel data in genealogy software if round-trip is critical
-4. Use Obsidian's native export features (copy-paste, file export) for data sharing
-
-**Related Specification:** See [docs/specification.md](specification.md) §5.3 Export (Round-Trip)
+**Round-Trip Compatibility:**
+- Export → import → export maintains same UUIDs
+- Collection codes preserved for re-import
+- Marriage metadata preserved
 
 ---
 
@@ -328,33 +334,37 @@ Include:
 
 ## Planned Release Timeline
 
-**Current:** v0.1.0-alpha (core features stable)
+**Current:** v0.1.4-alpha (core features complete and stable)
 
 **Future Releases:**
-- **v0.2.0-beta:** Collections management, GEDCOM export, reference numbering
-- **v0.3.0-beta:** Person detail panel, D3 tree view
-- **v1.0.0:** Full feature set from specification
+- **v0.2.0-beta:** Reference numbering systems, stability improvements
+- **v0.3.0-beta:** Person detail panel, interactive tree preview
+- **v1.0.0:** Privacy/obfuscation features, full feature set from specification
 - **v1.x.x:** Advanced relationship features, world-building support
 
 Timeline is subject to change based on user feedback and development priorities.
+
+**Beta Transition:** Moving to beta status after user testing confirms stability of v0.1.4 features.
 
 ---
 
 ## Summary
 
-Canvas Roots v0.1.0-alpha provides a **solid foundation** for genealogical research in Obsidian:
+Canvas Roots v0.1.4-alpha provides a **feature-complete core** for genealogical research in Obsidian:
 
 **Strengths:**
-- ✅ Exceptional GEDCOM import with robust error handling
+- ✅ Exceptional GEDCOM import/export with round-trip compatibility
 - ✅ Zero-overlap tree layouts with proper genealogical positioning
 - ✅ Comprehensive canvas styling options
 - ✅ Non-destructive canvas regeneration
 - ✅ Multi-family detection and handling
+- ✅ Collections management with auto-detection and custom organization
+- ✅ Context menu integration for all common operations
 
 **Limitations:**
-- ❌ No collections management (single vault-wide collection)
-- ❌ No GEDCOM export (import-only)
-- ❌ No reference numbering systems
+- ❌ No reference numbering systems (Ahnentafel, etc.)
+- ❌ No person detail panel or interactive preview
 - ❌ No advanced relationship features (medical genograms, etc.)
+- ❌ No privacy/obfuscation features for living people
 
-**Recommendation:** Ideal for users who want automated family tree visualization in Obsidian Canvas. Best suited for single-family research or users comfortable with manual family group management.
+**Recommendation:** Canvas Roots v0.1.4-alpha is feature-complete for core genealogical workflows. Ideal for users who want automated family tree visualization in Obsidian Canvas with full data portability via GEDCOM. Remaining features are enhancements rather than critical functionality.

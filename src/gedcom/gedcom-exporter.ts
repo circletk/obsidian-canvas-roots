@@ -88,6 +88,10 @@ export class GedcomExporter {
 			await this.graphService['loadPersonCache']();
 			const allPeople = Array.from(this.graphService['personCache'].values());
 
+			if (allPeople.length === 0) {
+				throw new Error(`No person notes found in folder: ${options.peopleFolder}`);
+			}
+
 			logger.info('export', `Loaded ${allPeople.length} people`);
 
 			// Apply collection filter if specified
@@ -98,10 +102,10 @@ export class GedcomExporter {
 				});
 
 				logger.info('export', `Filtered to ${filteredPeople.length} people in collection: ${options.collectionFilter}`);
-			}
 
-			if (filteredPeople.length === 0) {
-				throw new Error('No people to export after filtering');
+				if (filteredPeople.length === 0) {
+					throw new Error(`No people found in collection "${options.collectionFilter}". Found ${allPeople.length} total people, but none match this collection.`);
+				}
 			}
 
 			// Build GEDCOM content
@@ -406,10 +410,20 @@ export class GedcomExporter {
 	 * Format name for GEDCOM (surname in slashes)
 	 */
 	private formatNameForGedcom(name: string): string {
-		const parts = name.trim().split(/\s+/);
+		if (!name || typeof name !== 'string') {
+			logger.warn('name-format', 'Invalid or missing name, using "Unknown"');
+			return 'Unknown //';
+		}
 
-		if (parts.length === 0) {
-			return 'Unknown';
+		const trimmed = name.trim();
+		if (trimmed.length === 0) {
+			return 'Unknown //';
+		}
+
+		const parts = trimmed.split(/\s+/);
+
+		if (parts.length === 0 || parts[0].length === 0) {
+			return 'Unknown //';
 		}
 
 		if (parts.length === 1) {
@@ -476,7 +490,10 @@ export class GedcomExporter {
 
 		// Parse ISO date (YYYY-MM-DD or variations)
 		const match = isoDate.match(/^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$/);
-		if (!match) return undefined;
+		if (!match) {
+			logger.warn('date-format', `Invalid date format for GEDCOM: ${isoDate}`);
+			return undefined;
+		}
 
 		const year = match[1];
 		const month = match[2];
@@ -487,15 +504,27 @@ export class GedcomExporter {
 			return year;
 		}
 
-		const monthAbbr = this.getMonthAbbreviation(parseInt(month) - 1);
+		const monthNum = parseInt(month);
+		if (monthNum < 1 || monthNum > 12) {
+			logger.warn('date-format', `Invalid month value: ${month} in date ${isoDate}`);
+			return year; // Fallback to year only
+		}
+
+		const monthAbbr = this.getMonthAbbreviation(monthNum - 1);
 
 		if (!day) {
 			// Month and year
 			return `${monthAbbr} ${year}`;
 		}
 
+		const dayNum = parseInt(day);
+		if (dayNum < 1 || dayNum > 31) {
+			logger.warn('date-format', `Invalid day value: ${day} in date ${isoDate}`);
+			return `${monthAbbr} ${year}`; // Fallback to month and year
+		}
+
 		// Full date
-		return `${parseInt(day)} ${monthAbbr} ${year}`;
+		return `${dayNum} ${monthAbbr} ${year}`;
 	}
 
 	/**
