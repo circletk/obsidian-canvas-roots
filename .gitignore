@@ -75,3 +75,6 @@ gedcom-testing/testing-results.md
 gedcom-testing/gedcom-sample-xlarge.ged
 gedcom-testing/gedcom-sample-large.ged
 gedcom-testing/gedcom-sample-medium.ged
+
+# Release packages
+canvas-roots-v*.zip
