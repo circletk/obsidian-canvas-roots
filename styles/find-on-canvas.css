@@ -1,0 +1,113 @@
+/* Find on Canvas Modal */
+.cr-find-on-canvas-modal {
+  max-width: 500px;
+}
+
+.cr-find-loading {
+  padding: 2em;
+  text-align: center;
+}
+
+.cr-find-summary {
+  padding: 1em;
+  margin-bottom: 1em;
+  border-radius: 6px;
+  background: var(--background-secondary);
+}
+
+.cr-find-summary__text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.cr-find-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.cr-find-result {
+  padding: 1em;
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  transition: all 0.2s ease;
+}
+
+.cr-find-result--clickable {
+  cursor: pointer;
+}
+
+.cr-find-result--clickable:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cr-find-result__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.cr-find-result__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cr-find-result__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.cr-find-result__badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.cr-find-result__badge--tree-type {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  opacity: 0.8;
+}
+
+.cr-find-result__root {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.cr-find-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3em 2em;
+  text-align: center;
+}
+
+.cr-find-empty__title {
+  margin: 1em 0 0.5em 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cr-find-empty__description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}

@@ -7,6 +7,7 @@ import { PersonPickerModal } from './src/ui/person-picker';
 import { RelationshipManager } from './src/core/relationship-manager';
 import { RelationshipValidator } from './src/core/relationship-validator';
 import { ValidationResultsModal } from './src/ui/validation-results-modal';
+import { FindOnCanvasModal } from './src/ui/find-on-canvas-modal';
 import { LoggerFactory } from './src/core/logging';
 import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
@@ -251,6 +252,21 @@ export default class CanvasRootsPlugin extends Plugin {
 											new ValidationResultsModal(this.app, result).open();
 										});
 								});
+
+								// Find on canvas
+								submenu.addItem((subItem) => {
+									subItem
+										.setTitle('Find on canvas')
+										.setIcon('search')
+										.onClick(async () => {
+											const cache = this.app.metadataCache.getFileCache(file);
+											const crId = cache?.frontmatter?.cr_id;
+											const personName = cache?.frontmatter?.name || file.basename;
+											if (crId) {
+												new FindOnCanvasModal(this.app, personName, crId).open();
+											}
+										});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -318,6 +334,20 @@ export default class CanvasRootsPlugin extends Plugin {
 										const validator = new RelationshipValidator(this.app);
 										const result = await validator.validatePersonNote(file);
 										new ValidationResultsModal(this.app, result).open();
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Find on canvas')
+									.setIcon('search')
+									.onClick(async () => {
+										const cache = this.app.metadataCache.getFileCache(file);
+										const crId = cache?.frontmatter?.cr_id;
+										const personName = cache?.frontmatter?.name || file.basename;
+										if (crId) {
+											new FindOnCanvasModal(this.app, personName, crId).open();
+										}
 									});
 							});
 						}

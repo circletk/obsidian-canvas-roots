@@ -36,6 +36,7 @@ const CONFIG = {
     'modals.css',        // Modal dialogs
     'tree-statistics.css', // Tree statistics modal
     'validation.css',    // Validation results modal
+    'find-on-canvas.css', // Find on canvas modal
     'animations.css',    // Keyframes and transitions
     'responsive.css',    // Responsive breakpoints
     'theme.css'          // Theme compatibility (last)

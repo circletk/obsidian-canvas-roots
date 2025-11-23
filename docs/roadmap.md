@@ -86,7 +86,7 @@ See [architecture/collections.md](architecture/collections.md) for complete ADR.
 **Person Notes (Right-click):**
 - "Add relationship..." - Quick submenu to add parent, spouse, or child using person picker (✅ Implemented)
 - "Validate relationships" - Check for broken cr_id references and orphaned links (✅ Implemented)
-- "Find on canvas" - Jump to this person on any canvas where they appear
+- "Find on canvas" - Jump to this person on any canvas where they appear (✅ Implemented)
 
 **Folders (Right-click):**
 - "Set as people folder" - One-click configuration of settings.peopleFolder (✅ Implemented)
