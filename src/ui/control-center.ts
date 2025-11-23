@@ -357,6 +357,8 @@ export class ControlCenterModal extends Modal {
 						spouseArrowStyle: this.plugin.settings.spouseArrowStyle,
 						parentChildEdgeColor: this.plugin.settings.parentChildEdgeColor,
 						spouseEdgeColor: this.plugin.settings.spouseEdgeColor,
+						showSpouseEdges: this.plugin.settings.showSpouseEdges,
+						spouseEdgeLabelFormat: this.plugin.settings.spouseEdgeLabelFormat,
 						canvasRootsMetadata: {
 							plugin: 'canvas-roots' as const,
 							generation: {
@@ -2199,6 +2201,8 @@ export class ControlCenterModal extends Modal {
 				spouseArrowStyle: this.plugin.settings.spouseArrowStyle,
 				parentChildEdgeColor: this.plugin.settings.parentChildEdgeColor,
 				spouseEdgeColor: this.plugin.settings.spouseEdgeColor,
+			showSpouseEdges: this.plugin.settings.showSpouseEdges,
+			spouseEdgeLabelFormat: this.plugin.settings.spouseEdgeLabelFormat,
 				canvasRootsMetadata: {
 					plugin: 'canvas-roots',
 					generation: {
