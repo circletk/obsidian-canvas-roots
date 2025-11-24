@@ -11,6 +11,13 @@ Canvas Roots is in beta with core functionality complete and stable. Advanced fe
 
 ### v0.2.3-beta (Current)
 
+**Interactive Tree Preview:**
+- Real-time SVG preview with pan/zoom controls
+- Color scheme options (Gender, Generation, Monochrome)
+- Hover tooltips with person details
+- PNG/SVG export functionality
+- Integrated into Tree Output tab
+
 **Alternative Layout Algorithms:**
 - Standard, Compact, Timeline, and Hourglass layout algorithms
 - Auto-generated canvas filenames with layout type suffix
@@ -219,10 +226,6 @@ Compute and track multi-generational lineages from marked root persons to enable
 - Person Detail Panel with relationship visualization
 - Rich inline person information display
 - Quick editing capabilities
-- Interactive tree preview with real-time layout configuration using family-chart
-- Multiple preview modes (family-chart, D3 layouts)
-- Zoomed-out tree previews in analytics dashboard
-- Preview before canvas generation
 - Canvas export as image/PDF
 
 ### Privacy & Obfuscation
@@ -385,7 +388,6 @@ See [known-limitations.md](known-limitations.md) for a complete list of current 
 - No reference numbering systems
 - Living person privacy not yet implemented
 - Single vault only (no multi-vault merging)
-- No interactive tree previews yet
 - No undo/redo for Bases edits (Bases platform limitation)
 - No bulk operations from Bases multi-select (Bases platform limitation)
 

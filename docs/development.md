@@ -115,10 +115,9 @@ canvas-roots/
 | `control-center.ts` | ✅ Complete | Main Control Center modal with Status, Tree Output, Quick Actions, and Data Entry tabs |
 | `person-picker.ts` | ✅ Complete | Person search modal with fuzzy matching |
 | `lucide-icons.ts` | ✅ Complete | Lucide icon integration helpers |
+| `tree-preview.ts` | ✅ Complete | Interactive SVG tree preview with pan/zoom, color schemes, tooltips, and PNG/SVG export |
 | **To Be Implemented** | | |
-| `tree-view.ts` | 🔴 Needed | D3 interactive preview view |
 | `material-components.ts` | 🔴 Needed | Reusable Material Design components |
-| `d3-renderer.ts` | 🔴 Needed | D3 SVG tree rendering |
 
 ### Data Models (src/models/)
 
@@ -497,6 +496,71 @@ collection: "Paternal Line"  # or "House Stark", etc.
 - Self-healing architecture prevents data staleness
 
 **Architecture:** See [docs/architecture/collections.md](architecture/collections.md) for complete implementation details
+
+---
+
+### Interactive Tree Preview (2025-11-24)
+
+**Decision:** Implemented SVG-based interactive preview in the Control Center's Tree Output tab, enabling users to visualize and verify family tree layouts before canvas generation.
+
+**Rationale:**
+- **Layout verification:** Large trees (50+ people) require visual inspection before committing to canvas generation
+- **Early feedback:** Users can catch layout issues, missing relationships, or configuration problems before creating the canvas
+- **Color scheme testing:** Preview color schemes (Gender, Generation, Monochrome) before applying to canvas
+- **Export flexibility:** Generate standalone PNG/SVG exports without creating canvas files
+- **Streamlined workflow:** Integrated into existing Tree Output tab, no modal switching required
+
+**Implementation:**
+- Created [src/ui/tree-preview.ts](../src/ui/tree-preview.ts) - 502 lines, complete SVG preview renderer
+- Uses same layout engines as canvas generation (FamilyChartLayoutEngine, TimelineLayoutEngine, HourglassLayoutEngine)
+- SVG-based rendering with native pan/zoom interactions
+- Responsive design: Preview scales to 40% of canvas node size for better overview
+- Integrated into [src/ui/control-center.ts](../src/ui/control-center.ts) Tree Output tab
+
+**Features:**
+- **Interactive controls:**
+  - Mouse wheel zoom (0.1x to 5x range)
+  - Click-and-drag panning
+  - Zoom in/out buttons
+  - Zoom-to-fit button
+  - Label visibility toggle
+- **Color schemes:**
+  - Gender: Green (male), Purple (female), Gray (unknown)
+  - Generation: Multi-color layers cycling through 6 colors
+  - Monochrome: Neutral gray for all nodes
+- **Hover tooltips:**
+  - Person name, birth/death dates, generation number
+  - Fixed positioning with 15px offset from cursor
+  - Styled with theme-aware CSS custom properties
+- **Export functionality:**
+  - PNG export: 2x resolution rasterization using Canvas API
+  - SVG export: Inline computed styles for portability
+  - Download triggers with blob URLs
+
+**Technical Details:**
+- **Pan/Zoom:** SVG `transform` attribute with translate/scale
+- **Color application:** Dynamic fill/stroke attributes on rect elements
+- **Tooltip system:** Fixed-position div with mouseenter/mouseleave events
+- **PNG export:** SVG → Image → Canvas → PNG blob pipeline
+- **SVG export:** Recursive style inlining for external compatibility
+- **Layout reuse:** Calls same `calculateLayout()` as canvas generation
+- **Memory management:** `dispose()` method cleans up tooltip element
+
+**CSS Styling:**
+- Added `.crc-preview-color-scheme` selector and dropdown styles (lines 1499-1525, styles/modals.css)
+- Added `.crc-preview-export` dropdown menu styles (lines 1527-1565, styles/modals.css)
+- Added `.crc-preview-tooltip` with theme-aware styling (lines 1567-1585, styles/modals.css)
+
+**Files Modified:**
+- `src/ui/tree-preview.ts` - New file, complete implementation
+- `src/ui/control-center.ts` - Integrated preview renderer, added color scheme and export controls
+- `styles/modals.css` - Added preview control and tooltip styles
+
+**Impact:**
+- Reduces trial-and-error in canvas generation workflow
+- Enables quick layout algorithm comparison without creating multiple canvases
+- Provides standalone export option for users who don't need full canvas files
+- Improves UX for large family trees by making layout verification instant and visual
 
 ---
 

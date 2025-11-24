@@ -13,6 +13,8 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 
 - **GEDCOM Import/Export:** Full round-trip support for GEDCOM 5.5.1 format with pre-import validation and comprehensive import results modal. Import family trees from popular genealogy software (Gramps, Ancestry, FamilySearch) with birth/death places, occupation, and gender data. Export back to .ged format with UUID preservation, collection codes, and marriage metadata.
 
+- **Interactive Tree Preview:** Real-time visual preview of family trees before canvas generation. Pan, zoom, and explore layouts with interactive controls. Switch between color schemes (Gender, Generation, Monochrome) to visualize different data aspects. Hover over nodes to view person details (name, birth/death dates, generation). Export previews as high-resolution PNG or vector SVG for external use. Particularly useful for large trees (50+ people) to verify layout before generating the final canvas.
+
 - **Alternative Layout Algorithms:** Choose from four layout algorithms to visualize your family tree in different ways:
   - **Standard:** Traditional family-chart layout with proper spouse handling
   - **Compact:** 50% tighter spacing for large trees (50+ people)
@@ -54,7 +56,6 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 See [Roadmap](docs/roadmap.md) for detailed feature descriptions and development priorities.
 - **Reference Numbering:** Ahnentafel and Dollarhide-Cole genealogical numbering systems
 - **Person Detail Panel:** Rich inline person information with relationship visualization
-- **Tree Preview:** Interactive preview with real-time layout configuration before canvas generation
 - **Privacy & Obfuscation:** Optional data obfuscation for exports and canvas display
 - **World-Building Features:** Track fantasy dynasties, corporate succession, and historical kingdoms
 

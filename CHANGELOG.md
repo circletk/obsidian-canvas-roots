@@ -11,6 +11,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Interactive Tree Preview**: Real-time visual preview of family trees before canvas generation
+  - SVG-based preview with pan/zoom controls (mouse wheel zoom, drag to pan)
+  - Interactive controls: Zoom in/out buttons, zoom-to-fit, label visibility toggle
+  - Color scheme options: Gender (green/purple), Generation (multi-color layers), Monochrome (neutral)
+  - Hover tooltips: View person details (name, birth/death dates, generation) on hover
+  - Export functionality: Save preview as high-resolution PNG or vector SVG
+  - Integrated into Tree Output tab for seamless workflow
+  - Particularly useful for large trees (50+ people) to verify layout before canvas generation
+
 - **UI Consolidation**: Streamlined tree generation and export workflows
   - Renamed "Tree Generation" tab to "Tree Output" to reflect both generation and export capabilities
   - Added "Export Tree" section with Excalidraw export instructions
