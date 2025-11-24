@@ -83,6 +83,7 @@ export interface CanvasRootsMetadata {
 		nodeHeight: number;
 		nodeSpacingX: number;
 		nodeSpacingY: number;
+		layoutType?: import('../settings').LayoutType;
 	};
 
 	/**

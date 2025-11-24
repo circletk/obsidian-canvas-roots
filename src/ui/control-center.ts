@@ -2227,6 +2227,27 @@ export class ControlCenterModal extends Modal {
 					.addOption('horizontal', 'Horizontal (left to right)');
 			});
 
+		// Layout type selection
+		let layoutTypeSelect: HTMLSelectElement;
+		new Setting(layoutContent)
+			.setName('Layout algorithm')
+			.setDesc('Choose the layout style for your tree')
+			.addDropdown(dropdown => {
+				layoutTypeSelect = dropdown.selectEl;
+				dropdown
+					.addOption('standard', 'Standard (default spacing)')
+					.addOption('compact', 'Compact (50% tighter for large trees)')
+					.addOption('timeline', 'Timeline (coming soon)')
+					.addOption('hourglass', 'Hourglass (coming soon)')
+					.setValue(this.plugin.settings.defaultLayoutType);
+				// Disable upcoming layouts
+				Array.from(dropdown.selectEl.options).forEach(option => {
+					if (option.value === 'timeline' || option.value === 'hourglass') {
+						option.disabled = true;
+					}
+				});
+			});
+
 		// Horizontal spacing
 		let spacingXInput: HTMLInputElement;
 		new Setting(layoutContent)
@@ -2464,6 +2485,7 @@ export class ControlCenterModal extends Modal {
 				dirSelect.value as 'vertical' | 'horizontal',
 				parseInt(spacingXInput.value),
 				parseInt(spacingYInput.value),
+				layoutTypeSelect.value as import('../settings').LayoutType,
 				this.treeCanvasNameInput?.value || '',
 				collectionSelect.value || undefined,
 				Object.keys(styleOverrides).length > 0 ? styleOverrides : undefined
@@ -2482,6 +2504,7 @@ export class ControlCenterModal extends Modal {
 		direction: 'vertical' | 'horizontal',
 		spacingX: number,
 		spacingY: number,
+		layoutType: import('../settings').LayoutType,
 		canvasFileName: string,
 		collectionFilter?: string,
 		styleOverrides?: import('../core/canvas-style-overrides').StyleOverrides
@@ -2509,6 +2532,7 @@ export class ControlCenterModal extends Modal {
 				direction,
 				nodeSpacingX: spacingX,
 				nodeSpacingY: spacingY,
+				layoutType: layoutType,
 				nodeColorScheme: this.plugin.settings.nodeColorScheme,
 				showLabels: true,
 				useFamilyChartLayout: true,  // Use family-chart for proper spouse handling
@@ -2533,7 +2557,8 @@ export class ControlCenterModal extends Modal {
 						nodeWidth: this.plugin.settings.defaultNodeWidth,
 						nodeHeight: this.plugin.settings.defaultNodeHeight,
 						nodeSpacingX: spacingX,
-						nodeSpacingY: spacingY
+						nodeSpacingY: spacingY,
+						layoutType: layoutType
 					},
 					// Include style overrides if provided
 					styleOverrides: styleOverrides
