@@ -231,6 +231,93 @@ Compute and track multi-generational lineages from marked root persons to enable
 - Fantasy dynasties and corporate succession tracking
 - Geographic grouping and timeline support
 
+### Relationship Calculator
+
+- "How is Person A related to Person B?" relationship calculator
+- Show all paths between any two people
+- Degree of relationship display (2nd cousin once removed, etc.)
+- Common ancestor identification
+- Relationship path visualization
+
+### Family Statistics Dashboard
+
+- Longevity analysis (average lifespan by generation, time period)
+- Geographic distribution analysis and maps
+- Most common names, occupations, places
+- Generation gap analysis (parent age at child birth)
+- Marriage patterns (age differences, remarriage frequency)
+- Timeline views: "Who was alive in [year]?" queries
+- Historical event correlation
+
+### Smart Duplicate Detection
+
+- Find potential duplicate people by name similarity and date proximity
+- Merge wizard to consolidate duplicate records
+- GEDCOM import duplicate detection before creating new notes
+- Fuzzy matching for name variations
+- Confidence scoring for duplicate suggestions
+
+### Geographic Features
+
+- Place name standardization and geocoding
+- Map view showing birth/death locations
+- Migration pattern visualization
+- Place hierarchy (City → County → State → Country)
+- Location-based filtering and analysis
+- Historical place name support
+
+### Research Tracking
+
+- Mark people as "needs research" with specific to-dos
+- Track confidence levels for relationships (verified, probable, possible)
+- Source documentation per fact (birth date source, death place source)
+- Research progress indicators in Bases views
+- DNA match tracking and ethnicity data
+- "DNA confirmed" relationship tagging
+
+### Interactive Canvas Features
+
+- Hover tooltips showing birth/death info without opening notes
+- Minimap for large trees
+- Zoom to person/generation controls
+- Highlight lineage paths between two people
+- Collapsible branches for large trees
+- Click-to-focus navigation
+
+### Alternative Layout Algorithms
+
+- Compact layout option for space-constrained trees
+- Fan chart (circular ancestor view)
+- Hourglass chart (ancestors + descendants of focus person)
+- Timeline-based layout (horizontal by birth year)
+- Bow-tie layout for showing connections between families
+
+### Dynasty Management
+
+- Succession tracking (line of succession calculator)
+- Title/position inheritance
+- Royal/noble house visualization
+- Coat of arms and heraldry support
+- Regnal numbering (King Henry VIII, etc.)
+- Crown succession rules (primogeniture, ultimogeniture, etc.)
+
+### Faction Relationships
+
+- Alliance and conflict tracking between groups
+- Political marriage networks
+- Power structure hierarchies
+- Faction-based coloring and visualization
+- Inter-faction relationship mapping
+
+### Import/Export Enhancements
+
+- FamilySearch GEDCOM X format support
+- Gramps XML import
+- CSV bulk import/export
+- Selective export (specific branches only)
+- Privacy filters (exclude living people)
+- Redacted exports for sharing
+
 ---
 
 ## 🔮 Future Considerations
