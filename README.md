@@ -7,6 +7,13 @@
 This plugin is designed for genealogists, historians, and world-builders. It transforms structured data in your Markdown notes (relationships, dates, locations) into perfectly laid-out family trees directly on the Obsidian Canvas, powered by the [family-chart](https://github.com/donatso/family-chart) library.
 
 
+## 🎥 Demo Video
+
+[![Canvas Roots v0.2.3 Demo - GEDCOM Import to Canvas Generation](https://img.youtube.com/vi/oiEjFsNI7pI/maxresdefault.jpg)](https://youtu.be/oiEjFsNI7pI)
+
+**Watch the complete workflow:** Import GEDCOM → Create Base → Generate tree with interactive preview → Export to Excalidraw
+
+
 ## ✨ Key Features
 
 ### Available in Beta (v0.2.3)
