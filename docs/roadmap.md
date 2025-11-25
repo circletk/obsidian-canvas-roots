@@ -253,26 +253,66 @@ Compute and track multi-generational lineages from marked root persons to enable
 
 ### Interactive Family Chart View
 
-A dedicated Obsidian leaf view that renders the full family-chart library interactively, complementing the static canvas output.
+A dedicated Obsidian leaf view that renders the full family-chart library interactively, complementing the static canvas output. Leverages the complete [family-chart](https://github.com/donatso/family-chart) API for rich genealogical visualization.
 
 **Core Features:**
 - Persistent leaf view (sidebar, new tab, or split pane)
-- Full family-chart interactivity: pan, zoom, click-to-focus, node expansion/collapse
+- Full family-chart interactivity: pan, zoom, click-to-focus, smooth animated transitions
 - Bidirectional sync with markdown notes (chart edits update frontmatter, frontmatter changes reflect in chart)
-- Click node to open person note
+- Click node to open person note in editor
 - Auto-save edits (consistent with Obsidian behavior)
+- D3.js-powered rendering with configurable transition times
 
-**Editing Capabilities:**
-- Right-click node for quick actions (add parent, add child, add spouse, remove relationship)
-- Inline editing of basic fields (name, dates) with sync back to notes
-- Drag-and-drop rearrangement (where family-chart supports it)
+**Editing Capabilities (via EditTree API):**
+- Built-in edit forms with configurable field sets
+- Add relationships: parent, child, spouse with gender inference
+- Delete person with automatic relationship cleanup (converts to "unknown" if relatives still connected)
+- Inline editing of basic fields (name, dates, custom properties) with sync back to notes
+- Form validation and data submission handling
+- `exportData()` for clean JSON export on every change
 
-**Visualization Options:**
-- All layout algorithms (standard, compact, timeline, hourglass)
-- Color schemes (gender, generation, monochrome, collection-based)
-- Node detail level (minimal, standard, detailed)
-- Filtering by collection, generation range, or living/deceased status
-- Search and highlight within the chart
+**Card Display Options:**
+- SVG cards (default) or HTML cards for advanced styling
+- Configurable card dimensions (width, height, image size/position)
+- Custom card display fields (e.g., `[["first name", "last name"], ["birthday"]]`)
+- Avatar/image support with customizable positioning
+- Mini-tree indicators showing hidden relatives
+- Gender-based styling (male/female/unknown colors)
+- Main person highlight with scale and shadow effects
+- Hover effects and click interactions
+
+**Navigation & View Controls:**
+- `cardToMiddle()` - Animate to center on specific person
+- `treeFit()` - Fit entire tree in viewport
+- `manualZoom()` - Programmatic zoom in/out
+- `zoomTo()` - Set specific zoom level
+- Tree trimming with `ancestry_depth` and `progeny_depth` limits
+- Horizontal or vertical tree orientation
+
+**Built-in Kinship Display:**
+- Kinship calculation showing relationship labels (parent, uncle, 1st cousin 2x removed, etc.)
+- Kinship info popup with mini-tree visualization
+- In-law relationship support
+- Half-sibling detection
+- Toggle between kinship labels and person names
+
+**History & Undo (native family-chart feature):**
+- Built-in history tracking with back/forward navigation
+- History controls UI with back/forward buttons
+- State snapshots on each change
+- Could integrate with Canvas Roots' planned Relationship History feature
+
+**Search & Filtering:**
+- Person search with autocomplete dropdown
+- Filter by any data property
+- Random person navigation (useful for large trees)
+
+**Layout Configuration:**
+- `node_separation` - Horizontal spacing between nodes
+- `level_separation` - Vertical spacing between generations
+- Single parent empty card toggle
+- Link break styling options
+- Custom sort function for children ordering
 
 **Integration:**
 - Command: "Open family chart view"
@@ -280,10 +320,13 @@ A dedicated Obsidian leaf view that renders the full family-chart library intera
 - Link from canvas nodes to focus in chart view
 - Export (PNG, SVG) directly from the view
 - Settings for default view configuration
+- WikiData-style large tree support (tested with British Royal Family data)
 
 **Potential Enhancements:**
 - Multiple chart views open simultaneously (different root persons)
 - Linked views that stay synchronized
+- Custom card components with Obsidian-specific actions
+- Info popup integration showing person note preview
 
 ### Privacy & Obfuscation
 
