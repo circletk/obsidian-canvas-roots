@@ -238,11 +238,29 @@ Compute and track multi-generational lineages from marked root persons to enable
 
 ### Reference Numbering Systems
 
-- Ahnentafel numbering system support
-- Dollarhide-Cole numbering system support
-- d'Aboville descendant numbering
-- Automatic number assignment and display
-- Integration with Obsidian Properties panel
+Genealogical numbering systems for systematic identification of ancestors and descendants. Numbers stored in YAML frontmatter properties, automatically available in Bases views.
+
+**Supported Systems:**
+- **Ahnentafel** (ancestor numbering): Self=1, Father=2, Mother=3, paternal grandfather=4, etc. Pattern: person N's father=2N, mother=2N+1
+- **d'Aboville** (descendant numbering): Root=1, children=1.1/1.2/1.3, grandchildren=1.1.1/1.1.2, etc. Dots indicate generations, numbers show birth order
+- **Henry System** (compact descendant): Similar to d'Aboville without dots (1, 11, 12, 111, 112...)
+
+**Primary: On-demand commands**
+- "Assign Ahnentafel numbers from [person]" - writes `ahnentafel` property to all ancestors
+- "Assign d'Aboville numbers from [person]" - writes `daboville` property to all descendants
+- User explicitly chooses root person and numbering system
+- Can re-run when tree structure changes
+- Context menu on person notes: "Assign Ahnentafel from here" / "Assign d'Aboville from here"
+
+**Secondary: GEDCOM import option**
+- Optional checkbox during import: "Assign reference numbers"
+- Prompt for root person selection after import completes
+
+**Storage:**
+- `ahnentafel` property in frontmatter (integer)
+- `daboville` property in frontmatter (string, e.g., "1.2.3")
+- `henry` property in frontmatter (string, e.g., "123")
+- Automatically visible in Bases views (users opt-in by adding column)
 
 ### Advanced UI
 
