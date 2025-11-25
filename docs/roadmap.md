@@ -263,6 +263,14 @@ A dedicated Obsidian leaf view that renders the full family-chart library intera
 - Auto-save edits (consistent with Obsidian behavior)
 - D3.js-powered rendering with configurable transition times
 
+**Toolbar UI (consistent with Obsidian Graph View pattern):**
+- Layout dropdown: Standard | Compact | Timeline | Hourglass
+- Color scheme dropdown: Gender | Generation | Monochrome | Collection
+- Depth controls: Ancestors ▾ | Descendants ▾
+- Toggle buttons: Edit mode | Kinship labels | Fit to view
+- Search icon (opens command palette-style overlay)
+- Chart dominates the view; rarely-changed settings in plugin settings
+
 **Editing Capabilities (via EditTree API):**
 - Built-in edit forms with configurable field sets
 - Add relationships: parent, child, spouse with gender inference
