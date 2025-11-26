@@ -53,7 +53,13 @@ export type LucideIconName =
 	| 'arrow-down'     // Direction down
 	| 'arrow-right'    // Direction right/lateral
 	| 'copy'           // Copy to clipboard
-	| 'circle';        // Neutral/dot indicator
+	| 'circle'         // Neutral/dot indicator
+	| 'home'           // Family/home
+	| 'baby'           // Child icon
+	| 'bar-chart'      // Statistics
+	| 'bar-chart-2'    // Folder statistics
+	| 'maximize-2'     // Largest
+	| 'minimize-2';    // Smallest
 
 /**
  * Tab configuration for Control Center navigation

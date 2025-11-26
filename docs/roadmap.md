@@ -204,29 +204,22 @@ No features currently in active development. See Planned Features below for road
 - Enhanced error handling and validation for Base operations
 - Collection management UI improvements in Bases views
 
-### Ancestor/Descendant Lineage Tracking (Advanced Feature)
+### Ancestor/Descendant Lineage Tracking
 
-**Status**: Under consideration - requires design discussion
+**Status**: ✅ Completed in v0.2.9
 
 Compute and track multi-generational lineages from marked root persons to enable filtering and analysis of ancestor/descendant lines in Bases.
 
-**Potential Approaches to Explore**:
-- Generation number computation (command that traverses graph and writes properties)
-- Lineage path tagging (mark people belonging to specific ancestral lines)
-- Dynamic computation vs. stored properties tradeoffs
-- Support for multiple root persons with overlapping lineages
-- Integration with Bases filtering and views
-
-**Questions to Address**:
-- Property storage: How to handle multiple root persons per person?
-- Update triggers: When to recompute (manual command, automatic sync, relationship changes)?
-- Performance: Large trees with thousands of people
-- User experience: Discoverability, configuration, maintenance
-- Alternative approaches: Could reference numbering systems solve this differently?
-
-**Related Features**:
-- Reference numbering systems (Ahnentafel, d'Aboville) may provide overlapping functionality
-- Canvas navigation features (ancestor/descendant canvas linking)
+**Implemented Features**:
+- ✅ Lineage path tagging (mark people belonging to specific ancestral lines)
+- ✅ Support for multiple root persons per person (stored as `lineage` array property)
+- ✅ Patrilineal tracking (father's line only)
+- ✅ Matrilineal tracking (mother's line only)
+- ✅ All descendants tracking
+- ✅ Commands: "Assign lineage from root person", "Remove lineage tags"
+- ✅ Context menu integration (right-click on person note)
+- ✅ Suggested lineage names based on surname
+- ✅ Integration with Bases filtering (lineage property visible in views)
 
 ### Relationship History & Undo
 
@@ -238,28 +231,28 @@ Compute and track multi-generational lineages from marked root persons to enable
 
 ### Reference Numbering Systems
 
+**Status**: ✅ Completed in v0.2.9
+
 Genealogical numbering systems for systematic identification of ancestors and descendants. Numbers stored in YAML frontmatter properties, automatically available in Bases views.
 
-**Supported Systems:**
-- **Ahnentafel** (ancestor numbering): Self=1, Father=2, Mother=3, paternal grandfather=4, etc. Pattern: person N's father=2N, mother=2N+1
-- **d'Aboville** (descendant numbering): Root=1, children=1.1/1.2/1.3, grandchildren=1.1.1/1.1.2, etc. Dots indicate generations, numbers show birth order
-- **Henry System** (compact descendant): Similar to d'Aboville without dots (1, 11, 12, 111, 112...)
+**Implemented Systems:**
+- ✅ **Ahnentafel** (ancestor numbering): Self=1, Father=2, Mother=3, paternal grandfather=4, etc. Pattern: person N's father=2N, mother=2N+1
+- ✅ **d'Aboville** (descendant numbering): Root=1, children=1.1/1.2/1.3, grandchildren=1.1.1/1.1.2, etc. Dots indicate generations, numbers show birth order
+- ✅ **Henry System** (compact descendant): Similar to d'Aboville without dots (1, 11, 12, 111, 112...)
+- ✅ **Generation numbering**: 0=self, -1=parents, -2=grandparents, +1=children, etc.
 
-**Primary: On-demand commands**
-- "Assign Ahnentafel numbers from [person]" - writes `ahnentafel` property to all ancestors
-- "Assign d'Aboville numbers from [person]" - writes `daboville` property to all descendants
-- User explicitly chooses root person and numbering system
-- Can re-run when tree structure changes
-- Context menu on person notes: "Assign Ahnentafel from here" / "Assign d'Aboville from here"
-
-**Secondary: GEDCOM import option**
-- Optional checkbox during import: "Assign reference numbers"
-- Prompt for root person selection after import completes
+**Implemented Features:**
+- ✅ Commands for each numbering system (command palette)
+- ✅ Context menu on person notes with submenu for all systems
+- ✅ "Clear reference numbers" command to remove specific numbering type
+- ✅ GEDCOM import integration ("Assign reference numbers" button in import results)
+- ✅ Mobile-friendly flat menu structure
 
 **Storage:**
 - `ahnentafel` property in frontmatter (integer)
 - `daboville` property in frontmatter (string, e.g., "1.2.3")
 - `henry` property in frontmatter (string, e.g., "123")
+- `generation` property in frontmatter (integer, negative for ancestors)
 - Automatically visible in Bases views (users opt-in by adding column)
 
 ### Advanced UI
@@ -363,9 +356,9 @@ A dedicated Obsidian leaf view that renders the full family-chart library intera
 
 ### Batch Operations
 
-- "Generate all family trees" folder action
-- Batch tree generation with progress tracking
-- Folder-level statistics and health reports
+- ✅ "Generate all family trees" folder action (Completed v0.2.9)
+- ✅ Batch tree generation with progress tracking (Completed v0.2.9)
+- ✅ Folder-level statistics and health reports (Completed v0.2.9)
 
 ### Canvas Navigation & Organization
 

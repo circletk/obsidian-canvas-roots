@@ -1697,3 +1697,153 @@
   align-items: center;
   justify-content: center;
 }
+
+/* =====================================================
+   Folder Statistics Modal
+   ===================================================== */
+
+.cr-folder-statistics-modal {
+  max-width: 600px;
+}
+
+.cr-stats-section {
+  margin-bottom: 1.5em;
+}
+
+.cr-stats-section h3 {
+  margin: 0 0 0.75em 0;
+  font-size: 1em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75em;
+}
+
+.cr-stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75em;
+  padding: 0.75em;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.cr-stat-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.cr-stat-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25em;
+  min-width: 0;
+}
+
+.cr-stat-label {
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+
+.cr-stat-value {
+  font-size: 1em;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.cr-completeness-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.cr-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75em;
+}
+
+.cr-progress-label {
+  width: 100px;
+  flex-shrink: 0;
+  font-size: 0.9em;
+}
+
+.cr-progress-bar-container {
+  flex: 1;
+  height: 8px;
+  background: var(--background-modifier-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cr-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.cr-progress-bar--good {
+  background: var(--color-green);
+}
+
+.cr-progress-bar--medium {
+  background: var(--color-orange);
+}
+
+.cr-progress-bar--low {
+  background: var(--color-red);
+}
+
+.cr-progress-percent {
+  width: 40px;
+  text-align: right;
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.cr-stats-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  margin-top: 0.75em;
+  padding: 0.5em 0.75em;
+  background: rgba(255, 165, 0, 0.1);
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.cr-stats-info {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}
+
+.cr-stats-info p {
+  margin: 0.25em 0;
+}
+
+.cr-stats-list {
+  margin: 0.5em 0 0 1.5em;
+  padding: 0;
+  font-size: 0.9em;
+}
+
+.cr-stats-list li {
+  margin: 0.25em 0;
+}
+
+.cr-loading {
+  text-align: center;
+  padding: 2em;
+  color: var(--text-muted);
+}
+
+.cr-error-text {
+  color: var(--color-red);
+}

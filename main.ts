@@ -9,6 +9,7 @@ import { RelationshipValidator } from './src/core/relationship-validator';
 import { ValidationResultsModal } from './src/ui/validation-results-modal';
 import { FindOnCanvasModal } from './src/ui/find-on-canvas-modal';
 import { FolderScanModal } from './src/ui/folder-scan-modal';
+import { FolderStatisticsModal } from './src/ui/folder-statistics-modal';
 import { RelationshipCalculatorModal } from './src/ui/relationship-calculator-modal';
 import { LoggerFactory, getLogger } from './src/core/logging';
 import { getErrorMessage } from './src/core/error-utils';
@@ -19,6 +20,7 @@ import { ExcalidrawExporter } from './src/excalidraw/excalidraw-exporter';
 import { BidirectionalLinker } from './src/core/bidirectional-linker';
 import { generateCrId } from './src/core/uuid';
 import { ReferenceNumberingService, NumberingSystem } from './src/core/reference-numbering';
+import { LineageTrackingService, LineageType } from './src/core/lineage-tracking';
 
 const logger = getLogger('CanvasRootsPlugin');
 
@@ -159,6 +161,24 @@ export default class CanvasRootsPlugin extends Plugin {
 			name: 'Clear reference numbers',
 			callback: () => {
 				this.promptClearReferenceNumbers();
+			}
+		});
+
+		// Add command: Assign Lineage
+		this.addCommand({
+			id: 'assign-lineage',
+			name: 'Assign lineage from root person',
+			callback: () => {
+				this.promptAssignLineage();
+			}
+		});
+
+		// Add command: Remove Lineage
+		this.addCommand({
+			id: 'remove-lineage',
+			name: 'Remove lineage tags',
+			callback: () => {
+				this.promptRemoveLineage();
 			}
 		});
 
@@ -521,6 +541,41 @@ export default class CanvasRootsPlugin extends Plugin {
 											});
 									});
 								});
+
+								// Lineage tracking submenu
+								submenu.addItem((subItem) => {
+									const lineageSubmenu: Menu = subItem
+										.setTitle('Assign lineage')
+										.setIcon('git-branch')
+										.setSubmenu();
+
+									lineageSubmenu.addItem((linItem) => {
+										linItem
+											.setTitle('All descendants')
+											.setIcon('users')
+											.onClick(async () => {
+												await this.assignLineageFromPerson(file, 'all');
+											});
+									});
+
+									lineageSubmenu.addItem((linItem) => {
+										linItem
+											.setTitle('Patrilineal (father\'s line)')
+											.setIcon('arrow-down')
+											.onClick(async () => {
+												await this.assignLineageFromPerson(file, 'patrilineal');
+											});
+									});
+
+									lineageSubmenu.addItem((linItem) => {
+										linItem
+											.setTitle('Matrilineal (mother\'s line)')
+											.setIcon('arrow-down')
+											.onClick(async () => {
+												await this.assignLineageFromPerson(file, 'matrilineal');
+											});
+									});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -698,6 +753,34 @@ export default class CanvasRootsPlugin extends Plugin {
 										await this.assignReferenceNumbersFromPerson(file, 'generation');
 									});
 							});
+
+							// Lineage tracking (mobile - flat menu)
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Assign lineage (all)')
+									.setIcon('git-branch')
+									.onClick(async () => {
+										await this.assignLineageFromPerson(file, 'all');
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Assign lineage (patrilineal)')
+									.setIcon('git-branch')
+									.onClick(async () => {
+										await this.assignLineageFromPerson(file, 'patrilineal');
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Assign lineage (matrilineal)')
+									.setIcon('git-branch')
+									.onClick(async () => {
+										await this.assignLineageFromPerson(file, 'matrilineal');
+									});
+							});
 						}
 					}
 
@@ -818,6 +901,38 @@ export default class CanvasRootsPlugin extends Plugin {
 										await this.createBaseTemplate(file);
 									});
 							});
+
+							submenu.addSeparator();
+
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Generate all trees')
+									.setIcon('git-fork')
+									.onClick(async () => {
+										// Temporarily set this folder as people folder
+										const originalFolder = this.settings.peopleFolder;
+										this.settings.peopleFolder = file.path;
+										await this.saveSettings();
+
+										// Generate all trees
+										await this.generateAllTrees();
+
+										// Restore original if needed
+										if (originalFolder !== file.path) {
+											this.settings.peopleFolder = originalFolder;
+											await this.saveSettings();
+										}
+									});
+							});
+
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Show folder statistics')
+									.setIcon('bar-chart-2')
+									.onClick(async () => {
+										await this.showFolderStatistics(file);
+									});
+							});
 						});
 					} else {
 						// Mobile: flat menu with prefix
@@ -880,6 +995,36 @@ export default class CanvasRootsPlugin extends Plugin {
 								.setIcon('table')
 								.onClick(async () => {
 									await this.createBaseTemplate(file);
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Generate all trees')
+								.setIcon('git-fork')
+								.onClick(async () => {
+									// Temporarily set this folder as people folder
+									const originalFolder = this.settings.peopleFolder;
+									this.settings.peopleFolder = file.path;
+									await this.saveSettings();
+
+									// Generate all trees
+									await this.generateAllTrees();
+
+									// Restore original if needed
+									if (originalFolder !== file.path) {
+										this.settings.peopleFolder = originalFolder;
+										await this.saveSettings();
+									}
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Show folder statistics')
+								.setIcon('bar-chart-2')
+								.onClick(async () => {
+									await this.showFolderStatistics(file);
 								});
 						});
 					}
@@ -1371,6 +1516,233 @@ export default class CanvasRootsPlugin extends Plugin {
 			});
 		}
 		menu.showAtMouseEvent(new MouseEvent('click'));
+	}
+
+	/**
+	 * Prompt user to select a person and lineage type, then assign lineage
+	 */
+	private promptAssignLineage(): void {
+		const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+			void (async () => {
+				// Show lineage type selection
+				const lineageType = await this.promptLineageType();
+				if (!lineageType) return;
+
+				// Prompt for lineage name
+				const lineageName = await this.promptLineageName(selectedPerson.name);
+				if (!lineageName) return;
+
+				try {
+					const service = new LineageTrackingService(this.app);
+					new Notice(`Assigning "${lineageName}" lineage from ${selectedPerson.name}...`);
+
+					const stats = await service.assignLineage({
+						name: lineageName,
+						rootCrId: selectedPerson.crId,
+						type: lineageType
+					});
+
+					new Notice(`Assigned "${lineageName}" to ${stats.totalMembers} descendants (${stats.maxGeneration} generations)`);
+				} catch (error) {
+					logger.error('lineage-tracking', 'Failed to assign lineage', error);
+					new Notice(`Failed to assign lineage: ${getErrorMessage(error)}`);
+				}
+			})();
+		});
+		picker.open();
+	}
+
+	/**
+	 * Prompt user to select and remove a lineage
+	 */
+	private promptRemoveLineage(): void {
+		void (async () => {
+			try {
+				const service = new LineageTrackingService(this.app);
+				const lineages = await service.getAllLineages();
+
+				if (lineages.length === 0) {
+					new Notice('No lineages found in vault');
+					return;
+				}
+
+				const menu = new Menu();
+				for (const lineage of lineages) {
+					menu.addItem((item) => {
+						item
+							.setTitle(`Remove "${lineage}"`)
+							.setIcon('trash-2')
+							.onClick(async () => {
+								try {
+									new Notice(`Removing "${lineage}" lineage...`);
+									const count = await service.removeLineage(lineage);
+									new Notice(`Removed "${lineage}" from ${count} people`);
+								} catch (error) {
+									logger.error('lineage-tracking', 'Failed to remove lineage', error);
+									new Notice(`Failed to remove lineage: ${getErrorMessage(error)}`);
+								}
+							});
+					});
+				}
+				menu.showAtMouseEvent(new MouseEvent('click'));
+			} catch (error) {
+				logger.error('lineage-tracking', 'Failed to get lineages', error);
+				new Notice(`Failed to get lineages: ${getErrorMessage(error)}`);
+			}
+		})();
+	}
+
+	/**
+	 * Assign lineage from a specific person (for context menu)
+	 */
+	private async assignLineageFromPerson(file: TFile, type: LineageType): Promise<void> {
+		const cache = this.app.metadataCache.getFileCache(file);
+		const crId = cache?.frontmatter?.cr_id;
+		const personName = cache?.frontmatter?.name || file.basename;
+
+		if (!crId) {
+			new Notice('Invalid person note: missing cr_id');
+			return;
+		}
+
+		// Prompt for lineage name
+		const lineageName = await this.promptLineageName(personName);
+		if (!lineageName) return;
+
+		try {
+			const service = new LineageTrackingService(this.app);
+			new Notice(`Assigning "${lineageName}" lineage from ${personName}...`);
+
+			const stats = await service.assignLineage({
+				name: lineageName,
+				rootCrId: crId,
+				type: type
+			});
+
+			new Notice(`Assigned "${lineageName}" to ${stats.totalMembers} descendants (${stats.maxGeneration} generations)`);
+		} catch (error) {
+			logger.error('lineage-tracking', 'Failed to assign lineage', error);
+			new Notice(`Failed to assign lineage: ${getErrorMessage(error)}`);
+		}
+	}
+
+	/**
+	 * Prompt user to select a lineage type
+	 */
+	private async promptLineageType(): Promise<LineageType | null> {
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Select lineage type');
+
+			modal.contentEl.createEl('p', {
+				text: 'How should descendants be traced?'
+			});
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'cr-prompt-buttons' });
+
+			const allBtn = buttonContainer.createEl('button', {
+				text: 'All descendants',
+				cls: 'mod-cta'
+			});
+			allBtn.addEventListener('click', () => {
+				modal.close();
+				resolve('all');
+			});
+
+			const patriBtn = buttonContainer.createEl('button', {
+				text: 'Patrilineal'
+			});
+			patriBtn.addEventListener('click', () => {
+				modal.close();
+				resolve('patrilineal');
+			});
+
+			const matriBtn = buttonContainer.createEl('button', {
+				text: 'Matrilineal'
+			});
+			matriBtn.addEventListener('click', () => {
+				modal.close();
+				resolve('matrilineal');
+			});
+
+			const cancelBtn = buttonContainer.createEl('button', {
+				text: 'Cancel'
+			});
+			cancelBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(null);
+			});
+
+			modal.open();
+		});
+	}
+
+	/**
+	 * Prompt user for a lineage name
+	 */
+	private async promptLineageName(suggestedName: string): Promise<string | null> {
+		// Extract surname for suggestion
+		const nameParts = suggestedName.trim().split(/\s+/);
+		const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : suggestedName;
+		const suggestion = `${surname} Line`;
+
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Enter lineage name');
+
+			modal.contentEl.createEl('p', {
+				text: 'Enter a name for this lineage (e.g., "Smith Line", "Tudor Dynasty"):'
+			});
+
+			const inputContainer = modal.contentEl.createDiv({ cls: 'setting-item-control' });
+			const input = inputContainer.createEl('input', {
+				type: 'text',
+				placeholder: 'e.g., "Smith Line", "Tudor Dynasty"',
+				value: suggestion,
+				cls: 'cr-prompt-input'
+			});
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'cr-prompt-buttons' });
+
+			const saveBtn = buttonContainer.createEl('button', {
+				text: 'Assign',
+				cls: 'mod-cta'
+			});
+			saveBtn.addEventListener('click', () => {
+				const lineageName = input.value.trim();
+				if (lineageName) {
+					modal.close();
+					resolve(lineageName);
+				} else {
+					new Notice('Please enter a lineage name');
+				}
+			});
+
+			const cancelBtn = buttonContainer.createEl('button', {
+				text: 'Cancel'
+			});
+			cancelBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(null);
+			});
+
+			// Allow Enter key to save
+			input.addEventListener('keydown', (e) => {
+				if (e.key === 'Enter') {
+					saveBtn.click();
+				} else if (e.key === 'Escape') {
+					cancelBtn.click();
+				}
+			});
+
+			modal.open();
+
+			// Focus the input
+			setTimeout(() => {
+				input.focus();
+				input.select();
+			}, 50);
+		});
 	}
 
 	private generateTreeForCurrentNote(): void {
@@ -1961,5 +2333,12 @@ export default class CanvasRootsPlugin extends Plugin {
 		} catch (error: unknown) {
 			logger.error('migration', 'Error during collection_name to group_name migration', error);
 		}
+	}
+
+	/**
+	 * Show folder statistics modal
+	 */
+	private async showFolderStatistics(folder: TFolder): Promise<void> {
+		new FolderStatisticsModal(this.app, folder).open();
 	}
 }
