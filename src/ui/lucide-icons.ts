@@ -83,7 +83,7 @@ export const TAB_CONFIGS: TabConfig[] = [
 	},
 	{
 		id: 'quick-actions',
-		name: 'Quick Actions',
+		name: 'Quick actions',
 		icon: 'zap',
 		description: 'Frequently used commands'
 	},
@@ -95,7 +95,7 @@ export const TAB_CONFIGS: TabConfig[] = [
 	},
 	{
 		id: 'data-entry',
-		name: 'Data Entry',
+		name: 'Data entry',
 		icon: 'user-plus',
 		description: 'Create new person notes'
 	},
@@ -107,19 +107,19 @@ export const TAB_CONFIGS: TabConfig[] = [
 	},
 	{
 		id: 'tree-generation',
-		name: 'Tree Output',
+		name: 'Tree output',
 		icon: 'git-branch',
 		description: 'Generate trees and export to various formats'
 	},
 	{
 		id: 'quick-settings',
-		name: 'Canvas Settings',
+		name: 'Canvas settings',
 		icon: 'settings',
 		description: 'Canvas layout and arrow styling settings'
 	},
 	{
 		id: 'person-detail',
-		name: 'Person Details',
+		name: 'Person details',
 		icon: 'user',
 		description: 'Person detail panel settings'
 	},

@@ -53,7 +53,8 @@ export class TreePreviewRenderer {
 			this.isDragging = true;
 			this.dragStartX = e.clientX - this.currentTranslateX;
 			this.dragStartY = e.clientY - this.currentTranslateY;
-			this.container.style.cursor = 'grabbing';
+			this.container.removeClass('cr-cursor--grab');
+			this.container.addClass('cr-cursor--grabbing');
 		});
 
 		this.container.addEventListener('mousemove', (e: MouseEvent) => {
@@ -65,15 +66,17 @@ export class TreePreviewRenderer {
 
 		this.container.addEventListener('mouseup', () => {
 			this.isDragging = false;
-			this.container.style.cursor = 'grab';
+			this.container.removeClass('cr-cursor--grabbing');
+			this.container.addClass('cr-cursor--grab');
 		});
 
 		this.container.addEventListener('mouseleave', () => {
 			this.isDragging = false;
-			this.container.style.cursor = 'grab';
+			this.container.removeClass('cr-cursor--grabbing');
+			this.container.addClass('cr-cursor--grab');
 		});
 
-		this.container.style.cursor = 'grab';
+		this.container.addClass('cr-cursor--grab');
 	}
 
 	/**
@@ -82,7 +85,7 @@ export class TreePreviewRenderer {
 	private setupTooltip(): void {
 		this.tooltipElement = document.createElement('div');
 		this.tooltipElement.addClass('crc-preview-tooltip');
-		this.tooltipElement.style.display = 'none';
+		this.tooltipElement.addClass('cr-hidden');
 		document.body.appendChild(this.tooltipElement);
 	}
 
@@ -128,10 +131,10 @@ export class TreePreviewRenderer {
 	/**
 	 * Render a preview of the family tree with the given options
 	 */
-	async renderPreview(
+	renderPreview(
 		familyTree: FamilyTree,
 		options: LayoutOptions
-	): Promise<void> {
+	): void {
 		// Clear existing preview
 		this.clear();
 
@@ -365,23 +368,28 @@ export class TreePreviewRenderer {
 		if (!this.tooltipElement) return;
 
 		const person = pos.person;
-		let tooltipContent = `<strong>${person.name}</strong>`;
+		this.tooltipElement.empty();
+
+		// Name
+		this.tooltipElement.createEl('strong', { text: person.name });
 
 		// Add dates if available
 		if (person.birthDate || person.deathDate) {
-			tooltipContent += '<br>';
-			if (person.birthDate) tooltipContent += `b. ${person.birthDate}`;
-			if (person.birthDate && person.deathDate) tooltipContent += ' | ';
-			if (person.deathDate) tooltipContent += `d. ${person.deathDate}`;
+			this.tooltipElement.createEl('br');
+			let dateText = '';
+			if (person.birthDate) dateText += `b. ${person.birthDate}`;
+			if (person.birthDate && person.deathDate) dateText += ' | ';
+			if (person.deathDate) dateText += `d. ${person.deathDate}`;
+			this.tooltipElement.appendText(dateText);
 		}
 
 		// Add generation
 		if (pos.generation !== undefined) {
-			tooltipContent += `<br><em>Generation ${pos.generation}</em>`;
+			this.tooltipElement.createEl('br');
+			this.tooltipElement.createEl('em', { text: `Generation ${pos.generation}` });
 		}
 
-		this.tooltipElement.innerHTML = tooltipContent;
-		this.tooltipElement.style.display = 'block';
+		this.tooltipElement.removeClass('cr-hidden');
 		this.updateTooltipPosition(event);
 	}
 
@@ -390,7 +398,7 @@ export class TreePreviewRenderer {
 	 */
 	private hideTooltip(): void {
 		if (!this.tooltipElement) return;
-		this.tooltipElement.style.display = 'none';
+		this.tooltipElement.addClass('cr-hidden');
 	}
 
 	/**

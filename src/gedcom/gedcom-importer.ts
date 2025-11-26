@@ -143,7 +143,7 @@ export class GedcomImporter {
 
 		try {
 			// Validate GEDCOM first
-			new Notice('Validating GEDCOM file...');
+			new Notice('Validating GEDCOM file…');
 			const validation = GedcomParser.validate(content);
 			result.validation = validation;
 
@@ -160,7 +160,7 @@ export class GedcomImporter {
 			}
 
 			// Parse GEDCOM
-			new Notice('Parsing GEDCOM file...');
+			new Notice('Parsing GEDCOM file…');
 			const gedcomData = GedcomParser.parse(content);
 			result.gedcomData = gedcomData;
 
@@ -206,7 +206,7 @@ export class GedcomImporter {
 			}
 
 			// Second pass: Update relationships now that all cr_ids are known
-			for (const [gedcomId, individual] of gedcomData.individuals) {
+			for (const [, individual] of gedcomData.individuals) {
 				try {
 					await this.updateRelationships(
 						individual,
@@ -392,7 +392,7 @@ export class GedcomImporter {
 					);
 					// Also replace in array format
 					updatedContent = updatedContent.replace(
-						new RegExp(`  - ${escapedRef}`, 'g'),
+						new RegExp(` {2}- ${escapedRef}`, 'g'),
 						`  - ${spouseCrId}`
 					);
 				}

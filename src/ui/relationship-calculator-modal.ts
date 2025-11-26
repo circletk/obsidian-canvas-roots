@@ -31,7 +31,7 @@ export class RelationshipCalculatorModal extends Modal {
 		this.open();
 	}
 
-	async onOpen() {
+	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 
@@ -90,7 +90,7 @@ export class RelationshipCalculatorModal extends Modal {
 			text: 'Calculate relationship'
 		});
 		this.calculateButton.disabled = true;
-		this.calculateButton.addEventListener('click', () => this.calculateRelationship());
+		this.calculateButton.addEventListener('click', () => void this.calculateRelationship());
 		this.updateCalculateButton();
 
 		// Results section (hidden initially)
@@ -383,7 +383,7 @@ export class RelationshipCalculatorModal extends Modal {
 			});
 		}
 
-		navigator.clipboard.writeText(lines.join('\n'));
+		void navigator.clipboard.writeText(lines.join('\n'));
 		new Notice('Result copied to clipboard');
 	}
 }

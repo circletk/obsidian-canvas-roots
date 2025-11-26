@@ -147,8 +147,10 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 
 		// Regenerate canvas feature info
 		const regenerateInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		regenerateInfo.innerHTML = '<strong>💡 Tip:</strong> After changing layout settings, right-click any existing canvas file and select ' +
-			'<strong>"Regenerate canvas"</strong> to apply the new settings.';
+		regenerateInfo.createEl('strong', { text: '💡 Tip:' });
+		regenerateInfo.appendText(' After changing layout settings, right-click any existing canvas file and select ');
+		regenerateInfo.createEl('strong', { text: '"Regenerate canvas"' });
+		regenerateInfo.appendText(' to apply the new settings.');
 
 		new Setting(containerEl)
 			.setName('Default node width')
@@ -266,8 +268,10 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 
 		// Styling tip
 		const stylingInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		stylingInfo.innerHTML = '<strong>💡 Tip:</strong> After changing styling settings, right-click any existing canvas file and select ' +
-			'<strong>"Regenerate canvas"</strong> to apply the new settings.';
+		stylingInfo.createEl('strong', { text: '💡 Tip:' });
+		stylingInfo.appendText(' After changing styling settings, right-click any existing canvas file and select ');
+		stylingInfo.createEl('strong', { text: '"Regenerate canvas"' });
+		stylingInfo.appendText(' to apply the new settings.');
 
 		new Setting(containerEl)
 			.setName('Node color scheme')
@@ -351,7 +355,7 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 			.setName('Log level')
 			.setDesc('Set the verbosity of console logging. Debug shows all messages, Info shows important events, Warn shows warnings only, Error shows errors only, Off disables logging.')
 			.addDropdown(dropdown => dropdown
-				.addOption('debug', 'Debug (Most Verbose)')
+				.addOption('debug', 'Debug (most verbose)')
 				.addOption('info', 'Info')
 				.addOption('warn', 'Warn')
 				.addOption('error', 'Error')

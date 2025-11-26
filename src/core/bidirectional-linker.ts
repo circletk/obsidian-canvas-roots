@@ -44,7 +44,7 @@ export class BidirectionalLinker {
 	 *
 	 * Runs asynchronously to avoid blocking plugin initialization
 	 */
-	async initializeSnapshots(): Promise<void> {
+	initializeSnapshots(): void {
 		logger.info('snapshot-init', 'Initializing relationship snapshots for all person notes');
 
 		const files = this.app.vault.getMarkdownFiles();
@@ -679,10 +679,8 @@ export class BidirectionalLinker {
 		}
 
 		// Find and remove existing field
-		let fieldLineIndex = -1;
 		for (let i = frontmatterStart + 1; i < frontmatterEnd; i++) {
 			if (lines[i].startsWith(`${fieldName}:`)) {
-				fieldLineIndex = i;
 				// Remove field and its array items if any
 				let j = i + 1;
 				while (j < frontmatterEnd && lines[j].trim().startsWith('- ')) {

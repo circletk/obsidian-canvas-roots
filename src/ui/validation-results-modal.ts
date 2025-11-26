@@ -1,5 +1,5 @@
 import { App, Modal } from 'obsidian';
-import { ValidationResult, ValidationIssue } from '../core/relationship-validator';
+import { ValidationResult } from '../core/relationship-validator';
 import { createLucideIcon } from './lucide-icons';
 
 /**
@@ -87,7 +87,7 @@ export class ValidationResultsModal extends Modal {
 				}
 
 				// Issue type badge
-				const typeBadge = issueBody.createEl('span', {
+				issueBody.createEl('span', {
 					text: this.getIssueTypeLabel(issue.type),
 					cls: 'cr-validation-issue__type-badge'
 				});
@@ -115,13 +115,13 @@ export class ValidationResultsModal extends Modal {
 	 */
 	private getIssueTypeLabel(type: string): string {
 		const labels: Record<string, string> = {
-			'broken-father-ref': 'Broken Father Reference',
-			'broken-mother-ref': 'Broken Mother Reference',
-			'broken-spouse-ref': 'Broken Spouse Reference',
-			'broken-child-ref': 'Broken Child Reference',
-			'missing-bidirectional-parent': 'Missing Bidirectional (Parent)',
-			'missing-bidirectional-spouse': 'Missing Bidirectional (Spouse)',
-			'missing-bidirectional-child': 'Missing Bidirectional (Child)'
+			'broken-father-ref': 'Broken father reference',
+			'broken-mother-ref': 'Broken mother reference',
+			'broken-spouse-ref': 'Broken spouse reference',
+			'broken-child-ref': 'Broken child reference',
+			'missing-bidirectional-parent': 'Missing bidirectional (parent)',
+			'missing-bidirectional-spouse': 'Missing bidirectional (spouse)',
+			'missing-bidirectional-child': 'Missing bidirectional (child)'
 		};
 		return labels[type] || type;
 	}

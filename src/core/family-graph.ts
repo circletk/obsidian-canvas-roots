@@ -397,7 +397,7 @@ export class FamilyGraphService {
 				person.motherCrId,
 				...person.spouseCrIds,
 				...person.childrenCrIds
-			].filter(id => id !== undefined) as string[];
+			].filter((id): id is string => id !== undefined);
 
 			for (const relatedCrId of relatedCrIds) {
 				const relatedPerson = this.personCache.get(relatedCrId);
@@ -648,7 +648,7 @@ export class FamilyGraphService {
 		const files = this.app.vault.getMarkdownFiles();
 
 		for (const file of files) {
-			const personNode = await this.extractPersonNode(file);
+			const personNode = this.extractPersonNode(file);
 			if (personNode) {
 				this.personCache.set(personNode.crId, personNode);
 			}
@@ -681,7 +681,7 @@ export class FamilyGraphService {
 	/**
 	 * Extracts person node data from a file
 	 */
-	private async extractPersonNode(file: TFile): Promise<PersonNode | null> {
+	private extractPersonNode(file: TFile): PersonNode | null {
 		const cache = this.app.metadataCache.getFileCache(file);
 		if (!cache || !cache.frontmatter) {
 			return null;
@@ -914,12 +914,12 @@ export class FamilyGraphService {
 		// Calculate date ranges
 		const datesWithYears = allPeople
 			.map(p => p.birthDate || p.deathDate)
-			.filter(d => d)
+			.filter((d): d is string => !!d)
 			.map(d => {
-				const match = d!.match(/^(\d{4})/);
+				const match = d.match(/^(\d{4})/);
 				return match ? parseInt(match[1]) : null;
 			})
-			.filter(y => y !== null) as number[];
+			.filter((y): y is number => y !== null);
 
 		const earliestYear = datesWithYears.length > 0 ? Math.min(...datesWithYears) : undefined;
 		const latestYear = datesWithYears.length > 0 ? Math.max(...datesWithYears) : undefined;

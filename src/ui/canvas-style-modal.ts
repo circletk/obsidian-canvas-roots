@@ -193,8 +193,8 @@ export class CanvasStyleModal extends Modal {
 		buttonContainer.createEl('button', {
 			text: 'Save styles',
 			cls: 'mod-cta'
-		}).addEventListener('click', async () => {
-			await this.saveStyleOverrides({
+		}).addEventListener('click', () => {
+			void this.saveStyleOverrides({
 				nodeColorScheme,
 				parentChildArrowStyle,
 				spouseArrowStyle,
@@ -208,8 +208,8 @@ export class CanvasStyleModal extends Modal {
 		// Clear all button
 		buttonContainer.createEl('button', {
 			text: 'Clear all overrides'
-		}).addEventListener('click', async () => {
-			await this.saveStyleOverrides({});
+		}).addEventListener('click', () => {
+			void this.saveStyleOverrides({});
 		});
 
 		// Cancel button

@@ -340,9 +340,10 @@ export class RelationshipCalculator {
 			case 1: return 'Parent';
 			case 2: return 'Grandparent';
 			case 3: return 'Great-Grandparent';
-			default:
+			default: {
 				const greats = generations - 2;
 				return 'Great-'.repeat(greats) + 'Grandparent';
+			}
 		}
 	}
 
@@ -355,9 +356,10 @@ export class RelationshipCalculator {
 			case 1: return 'Child';
 			case 2: return 'Grandchild';
 			case 3: return 'Great-Grandchild';
-			default:
+			default: {
 				const greats = generations - 2;
 				return 'Great-'.repeat(greats) + 'Grandchild';
+			}
 		}
 	}
 

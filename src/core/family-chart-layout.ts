@@ -193,7 +193,7 @@ export class FamilyChartLayoutEngine {
 		// Find all people with no parents (top ancestors)
 		const topAncestors: PersonNode[] = [];
 
-		for (const [_, person] of familyTree.nodes) {
+		for (const [, person] of familyTree.nodes) {
 			const hasParents =
 				(person.fatherCrId && familyTree.nodes.has(person.fatherCrId)) ||
 				(person.motherCrId && familyTree.nodes.has(person.motherCrId));
@@ -293,7 +293,7 @@ export class FamilyChartLayoutEngine {
 
 		// Process each generation
 		const adjusted: NodePosition[] = [];
-		for (const [_y, nodesAtLevel] of byGeneration) {
+		for (const [, nodesAtLevel] of byGeneration) {
 			// Sort by X coordinate
 			const sorted = [...nodesAtLevel].sort((a, b) => a.x - b.x);
 
@@ -406,7 +406,7 @@ export class FamilyChartLayoutEngine {
 			let gender: 'M' | 'F' = 'M';
 
 			// Check if this person is referenced as anyone's mother
-			for (const [_, otherPerson] of familyTree.nodes) {
+			for (const [, otherPerson] of familyTree.nodes) {
 				if (otherPerson.motherCrId === crId) {
 					gender = 'F';
 					break;

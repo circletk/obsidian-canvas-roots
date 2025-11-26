@@ -104,7 +104,7 @@ export class FindOnCanvasModal extends Modal {
 			const canvasIcon = createLucideIcon('layout', 16);
 			resultHeader.appendChild(canvasIcon);
 
-			const nameSpan = resultHeader.createEl('span', {
+			resultHeader.createEl('span', {
 				text: result.canvasFile.basename,
 				cls: 'cr-find-result__name'
 			});
@@ -113,14 +113,14 @@ export class FindOnCanvasModal extends Modal {
 			const resultMeta = resultItem.createDiv({ cls: 'cr-find-result__meta' });
 
 			// Node count badge
-			const nodeCountBadge = resultMeta.createEl('span', {
+			resultMeta.createEl('span', {
 				text: `${result.nodeCount} people`,
 				cls: 'cr-find-result__badge'
 			});
 
 			// Tree type if available
 			if (result.treeType) {
-				const treeTypeBadge = resultMeta.createEl('span', {
+				resultMeta.createEl('span', {
 					text: result.treeType,
 					cls: 'cr-find-result__badge cr-find-result__badge--tree-type'
 				});
@@ -136,10 +136,12 @@ export class FindOnCanvasModal extends Modal {
 
 			// Click to open
 			resultItem.addClass('cr-find-result--clickable');
-			resultItem.addEventListener('click', async () => {
-				await this.finder.openCanvas(result.canvasFile);
-				this.close();
-				new Notice(`Opened ${result.canvasFile.basename}`);
+			resultItem.addEventListener('click', () => {
+				void (async () => {
+					await this.finder.openCanvas(result.canvasFile);
+					this.close();
+					new Notice(`Opened ${result.canvasFile.basename}`);
+				})();
 			});
 		});
 

@@ -158,7 +158,7 @@ export class RelationshipManager {
 		const childrenMatch = content.match(/^children_id:\s*$/m);
 		if (childrenMatch) {
 			// Array format exists, check if child already listed
-			const arrayMatch = content.match(/^children_id:\s*\n((?:  - .+\n)*)/m);
+			const arrayMatch = content.match(/^children_id:\s*\n((?: {2}- .+\n)*)/m);
 			if (arrayMatch) {
 				const arrayContent = arrayMatch[1];
 				if (arrayContent.includes(childCrId)) {
@@ -167,7 +167,7 @@ export class RelationshipManager {
 				}
 				// Add to existing array
 				const updatedContent = content.replace(
-					/^(children_id:\s*\n(?:  - .+\n)*)/m,
+					/^(children_id:\s*\n(?: {2}- .+\n)*)/m,
 					`$1  - ${childCrId}\n`
 				);
 				await this.app.vault.modify(parentFile, updatedContent);
@@ -210,7 +210,7 @@ export class RelationshipManager {
 		const spouseMatch = content.match(/^spouse_id:\s*$/m);
 		if (spouseMatch) {
 			// Array format exists, check if spouse already listed
-			const arrayMatch = content.match(/^spouse_id:\s*\n((?:  - .+\n)*)/m);
+			const arrayMatch = content.match(/^spouse_id:\s*\n((?: {2}- .+\n)*)/m);
 			if (arrayMatch) {
 				const arrayContent = arrayMatch[1];
 				if (arrayContent.includes(spouseCrId)) {
@@ -219,7 +219,7 @@ export class RelationshipManager {
 				}
 				// Add to existing array
 				const updatedContent = content.replace(
-					/^(spouse_id:\s*\n(?:  - .+\n)*)/m,
+					/^(spouse_id:\s*\n(?: {2}- .+\n)*)/m,
 					`$1  - ${spouseCrId}\n`
 				);
 				await this.app.vault.modify(personFile, updatedContent);

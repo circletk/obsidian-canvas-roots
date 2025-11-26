@@ -8,7 +8,7 @@ import { App, TFile, Notice } from 'obsidian';
 import { getLogger } from '../core/logging';
 import { getErrorMessage } from '../core/error-utils';
 import type { CanvasData } from '../core/canvas-generator';
-import type { CanvasNode, CanvasEdge } from '../models/canvas';
+import type { CanvasNode } from '../models/canvas';
 
 const logger = getLogger('ExcalidrawExporter');
 

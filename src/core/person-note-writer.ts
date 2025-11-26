@@ -76,7 +76,7 @@ export async function createPersonNote(
 
 	// Build frontmatter with essential properties
 	// Essential properties are always included (per Guide documentation)
-	const frontmatter: Record<string, any> = {
+	const frontmatter: Record<string, string | string[]> = {
 		cr_id: crId,
 		name: person.name || '',
 		born: person.birthDate || '',
@@ -100,7 +100,7 @@ export async function createPersonNote(
 	}
 
 	// Handle relationships using dual storage: wikilinks for Obsidian + _id fields for reliability
-	logger.debug('relationships', `Processing - fatherCrId: ${person.fatherCrId}, motherCrId: ${person.motherCrId}, spouseCrId: ${person.spouseCrId}`);
+	logger.debug('relationships', `Processing - fatherCrId: ${person.fatherCrId}, motherCrId: ${person.motherCrId}, spouseCrId: ${person.spouseCrId?.join(', ') ?? 'none'}`);
 
 	// Father relationship (dual storage)
 	if (person.fatherCrId && person.fatherName) {
@@ -331,9 +331,9 @@ async function addBidirectionalSpouseLink(
 		// Check if it's an array or single value
 		if (frontmatterText.includes('spouse:\n')) {
 			// Array format - extract all values
-			const arrayMatches = frontmatterText.match(/^  - (.+)$/gm);
+			const arrayMatches = frontmatterText.match(/^ {2}- (.+)$/gm);
 			if (arrayMatches) {
-				spouseValues = arrayMatches.map(m => m.replace(/^  - /, '').trim());
+				spouseValues = arrayMatches.map(m => m.replace(/^ {2}- /, '').trim());
 			}
 		} else {
 			// Single value format
@@ -352,7 +352,7 @@ async function addBidirectionalSpouseLink(
 		// Remove old spouse field if it exists
 		newFrontmatterText = newFrontmatterText.replace(/^spouse:.*$/gm, '');
 		// Remove any spouse array items
-		newFrontmatterText = newFrontmatterText.replace(/^  - [^\n]+$/gm, '');
+		newFrontmatterText = newFrontmatterText.replace(/^ {2}- [^\n]+$/gm, '');
 		// Clean up extra blank lines
 		newFrontmatterText = newFrontmatterText.replace(/\n\n+/g, '\n');
 

@@ -72,7 +72,7 @@ export class RelationshipValidator {
 		}
 
 		// Build a map of all person cr_ids in the vault
-		const allPersonCrIds = await this.getAllPersonCrIds();
+		const allPersonCrIds = this.getAllPersonCrIds();
 
 		// Validate father reference
 		if (fatherId && !allPersonCrIds.has(fatherId)) {
@@ -189,7 +189,7 @@ export class RelationshipValidator {
 	/**
 	 * Get all person cr_ids in the vault
 	 */
-	private async getAllPersonCrIds(): Promise<Map<string, TFile>> {
+	private getAllPersonCrIds(): Map<string, TFile> {
 		const crIdMap = new Map<string, TFile>();
 		const files = this.app.vault.getMarkdownFiles();
 
@@ -224,15 +224,15 @@ export class RelationshipValidator {
 			const value = singleMatch[1].trim();
 			// Check if it's followed by array items
 			const arrayMatch = content.match(
-				new RegExp(`^${fieldName}:\\s*\\n((?:  - .+\\n)*)`, 'm')
+				new RegExp(`^${fieldName}:\\s*\\n((?: {2}- .+\\n)*)`, 'm')
 			);
 			if (arrayMatch) {
 				// Array format
 				const arrayContent = arrayMatch[1];
-				const items = arrayContent.match(/  - (.+)/g);
+				const items = arrayContent.match(/ {2}- (.+)/g);
 				if (items) {
 					items.forEach(item => {
-						const cleaned = item.replace(/  - /, '').trim();
+						const cleaned = item.replace(/ {2}- /, '').trim();
 						if (cleaned) result.push(cleaned);
 					});
 				}

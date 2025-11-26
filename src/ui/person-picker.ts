@@ -82,7 +82,7 @@ export class PersonPickerModal extends Modal {
 		const files = this.app.vault.getMarkdownFiles();
 
 		for (const file of files) {
-			const personInfo = await this.extractPersonInfo(file);
+			const personInfo = this.extractPersonInfo(file);
 			if (personInfo) {
 				this.allPeople.push(personInfo);
 			}
@@ -178,7 +178,7 @@ export class PersonPickerModal extends Modal {
 	/**
 	 * Extract person information from a note file
 	 */
-	private async extractPersonInfo(file: TFile): Promise<PersonInfo | null> {
+	private extractPersonInfo(file: TFile): PersonInfo | null {
 		try {
 			const cache = this.app.metadataCache.getFileCache(file);
 			if (!cache || !cache.frontmatter) {
@@ -225,7 +225,7 @@ export class PersonPickerModal extends Modal {
 		const titleSection = header.createDiv({ cls: 'crc-picker-title' });
 		const icon = createLucideIcon('users', 20);
 		titleSection.appendChild(icon);
-		titleSection.appendText('Select Person');
+		titleSection.appendText('Select person');
 
 		// Search and sort section
 		const searchSection = contentEl.createDiv({ cls: 'crc-picker-search' });
@@ -249,7 +249,7 @@ export class PersonPickerModal extends Modal {
 
 		// Sort dropdown
 		const sortContainer = contentEl.createDiv({ cls: 'crc-picker-sort' });
-		const sortLabel = sortContainer.createSpan({ cls: 'crc-picker-sort__label', text: 'Sort by:' });
+		sortContainer.createSpan({ cls: 'crc-picker-sort__label', text: 'Sort by:' });
 		const sortSelect = sortContainer.createEl('select', { cls: 'crc-form-select' });
 
 		const sortOptions: Array<{ value: SortOption; label: string }> = [

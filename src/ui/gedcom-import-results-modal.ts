@@ -25,7 +25,7 @@ export class GedcomImportResultsModal extends Modal {
 
 		// Title
 		contentEl.createEl('h2', {
-			text: 'GEDCOM Import Results',
+			text: 'GEDCOM import results',
 			cls: 'crc-modal-title'
 		});
 

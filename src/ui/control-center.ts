@@ -201,7 +201,7 @@ export class ControlCenterModal extends Modal {
 
 		switch (tabId) {
 			case 'status':
-				this.showStatusTab();
+				void this.showStatusTab();
 				break;
 			case 'guide':
 				this.showGuideTab();
@@ -216,10 +216,10 @@ export class ControlCenterModal extends Modal {
 				this.showDataEntryTab();
 				break;
 			case 'collections':
-				this.showCollectionsTab();
+				void this.showCollectionsTab();
 				break;
 			case 'tree-generation':
-				this.showTreeGenerationTab();
+				void this.showTreeGenerationTab();
 				break;
 			case 'gedcom':
 				this.showGedcomTab();
@@ -249,7 +249,7 @@ export class ControlCenterModal extends Modal {
 	 *
 	 * @param file - The TFile of the person note
 	 */
-	public async openWithPerson(file: TFile): Promise<void> {
+	public openWithPerson(file: TFile): void {
 		// Get person info from file metadata
 		const cache = this.app.metadataCache.getFileCache(file);
 		if (!cache?.frontmatter) {
@@ -316,7 +316,7 @@ export class ControlCenterModal extends Modal {
 			}
 
 			if (components.length === 1) {
-				new Notice('Only one family tree found. Use "Generate Tree" instead.');
+				new Notice('Only one family tree found. Use "Generate tree" instead.');
 				return;
 			}
 
@@ -402,7 +402,7 @@ export class ControlCenterModal extends Modal {
 					// Create canvas file with collection name if available
 					const fileName = component.collectionName
 						? `${component.collectionName} - ${rep.name}.canvas`
-						: `Family Tree ${i + 1} - ${rep.name}.canvas`;
+						: `Family tree ${i + 1} - ${rep.name}.canvas`;
 					const canvasContent = this.formatCanvasJson(canvasData);
 
 					let file: TFile;
@@ -532,12 +532,13 @@ export class ControlCenterModal extends Modal {
 			const successMsg = this.contentContainer.createEl('p', {
 				cls: 'crc-text-success crc-mt-3'
 			});
-			successMsg.innerHTML = `<strong>✓ All trees generated successfully!</strong>`;
+			successMsg.createEl('strong', { text: '✓ All trees generated successfully!' });
 		} else {
 			const warningMsg = this.contentContainer.createEl('p', {
 				cls: 'crc-text-warning crc-mt-3'
 			});
-			warningMsg.innerHTML = `<strong>⚠ ${failureCount} tree${failureCount === 1 ? '' : 's'} failed to generate.</strong> See details below.`;
+			warningMsg.createEl('strong', { text: `⚠ ${failureCount} tree${failureCount === 1 ? '' : 's'} failed to generate.` });
+			warningMsg.appendText(' See details below.');
 		}
 
 		// Details card
@@ -590,12 +591,14 @@ export class ControlCenterModal extends Modal {
 				});
 				const openIcon = createLucideIcon('external-link', 14);
 				openBtn.prepend(openIcon);
-				openBtn.addEventListener('click', async () => {
-					if (result.file) {
-						const leaf = this.app.workspace.getLeaf(false);
-						await leaf.openFile(result.file);
-						this.close();
-					}
+				openBtn.addEventListener('click', () => {
+					void (async () => {
+						if (result.file) {
+							const leaf = this.app.workspace.getLeaf(false);
+							await leaf.openFile(result.file);
+							this.close();
+						}
+					})();
 				});
 
 				const relayoutBtn = actions.createEl('button', {
@@ -604,11 +607,13 @@ export class ControlCenterModal extends Modal {
 				});
 				const relayoutIcon = createLucideIcon('refresh-cw', 14);
 				relayoutBtn.prepend(relayoutIcon);
-				relayoutBtn.addEventListener('click', async () => {
-					if (result.file) {
-						// Call the plugin's regenerate method
-						await this.plugin.regenerateCanvas(result.file);
-					}
+				relayoutBtn.addEventListener('click', () => {
+					void (async () => {
+						if (result.file) {
+							// Call the plugin's regenerate method
+							await this.plugin.regenerateCanvas(result.file);
+						}
+					})();
 				});
 			}
 
@@ -628,7 +633,7 @@ export class ControlCenterModal extends Modal {
 		// Back button
 		const backBtn = this.contentContainer.createEl('button', {
 			cls: 'crc-btn crc-btn--secondary crc-btn--block crc-mt-3',
-			text: 'Back to Tree Output'
+			text: 'Back to tree output'
 		});
 		const backIcon = createLucideIcon('chevron-right', 16);
 		backBtn.prepend(backIcon);
@@ -715,7 +720,7 @@ export class ControlCenterModal extends Modal {
 
 		const healthInfo = healthContent.createDiv({ cls: 'crc-mt-4' });
 		healthInfo.createEl('p', {
-			text: `Data Completeness: ${completeness}%`,
+			text: `Data completeness: ${completeness}%`,
 			cls: 'crc-mb-2'
 		});
 
@@ -752,11 +757,13 @@ export class ControlCenterModal extends Modal {
 				cls: 'crc-button crc-button--small',
 				text: 'Clear history'
 			});
-			clearButton.addEventListener('click', async () => {
-				this.plugin.settings.recentTrees = [];
-				await this.plugin.saveSettings();
-				new Notice('Tree history cleared');
-				this.showTab('status'); // Refresh the tab
+			clearButton.addEventListener('click', () => {
+				void (async () => {
+					this.plugin.settings.recentTrees = [];
+					await this.plugin.saveSettings();
+					new Notice('Tree history cleared');
+					this.showTab('status'); // Refresh the tab
+				})();
 			});
 
 			existingTrees.forEach((tree) => {
@@ -768,16 +775,18 @@ export class ControlCenterModal extends Modal {
 					cls: 'crc-recent-tree__name',
 					text: tree.canvasName
 				});
-				treeLink.addEventListener('click', async (e) => {
-					e.preventDefault();
-					const file = this.app.vault.getAbstractFileByPath(tree.canvasPath);
-					if (file instanceof TFile) {
-						const leaf = this.app.workspace.getLeaf(false);
-						await leaf.openFile(file);
-						this.close();
-					} else {
-						new Notice(`Canvas file not found: ${tree.canvasPath}`);
-					}
+				treeLink.addEventListener('click', (e) => {
+					void (async () => {
+						e.preventDefault();
+						const file = this.app.vault.getAbstractFileByPath(tree.canvasPath);
+						if (file instanceof TFile) {
+							const leaf = this.app.workspace.getLeaf(false);
+							await leaf.openFile(file);
+							this.close();
+						} else {
+							new Notice(`Canvas file not found: ${tree.canvasPath}`);
+						}
+					})();
 				});
 
 				// Root person
@@ -827,11 +836,13 @@ export class ControlCenterModal extends Modal {
 				cls: 'crc-button crc-button--small',
 				text: 'Clear history'
 			});
-			clearButton.addEventListener('click', async () => {
-				this.plugin.settings.recentImports = [];
-				await this.plugin.saveSettings();
-				new Notice('Import history cleared');
-				this.showTab('status'); // Refresh the tab
+			clearButton.addEventListener('click', () => {
+				void (async () => {
+					this.plugin.settings.recentImports = [];
+					await this.plugin.saveSettings();
+					new Notice('Import history cleared');
+					this.showTab('status'); // Refresh the tab
+				})();
 			});
 
 			recentImports.forEach((importInfo) => {
@@ -1134,9 +1145,8 @@ export class ControlCenterModal extends Modal {
 
 		const actionLink = organizationContent.createEl('a', {
 			text: 'Browse your collections →',
-			cls: 'crc-link crc-mt-3'
+			cls: 'crc-link crc-mt-3 cr-inline-block'
 		});
-		actionLink.style.display = 'inline-block';
 		actionLink.addEventListener('click', (e) => {
 			e.preventDefault();
 			this.switchTab('collections');
@@ -1678,9 +1688,9 @@ export class ControlCenterModal extends Modal {
 		// Create Base template button
 		const createBaseBtn = dataToolsContent.createEl('button', {
 			cls: 'crc-btn crc-btn--primary crc-btn--block',
-			text: 'Create Base template'
+			text: 'Create base template'
 		});
-		createBaseBtn.addEventListener('click', async () => {
+		createBaseBtn.addEventListener('click', () => {
 			this.close();
 			this.app.commands.executeCommandById('canvas-roots:create-base-template');
 		});
@@ -1720,15 +1730,17 @@ export class ControlCenterModal extends Modal {
 					text: `${tree.peopleCount} people`
 				});
 
-				treeBtn.addEventListener('click', async () => {
-					const file = this.app.vault.getAbstractFileByPath(tree.canvasPath);
-					if (file instanceof TFile) {
-						const leaf = this.app.workspace.getLeaf(false);
-						await leaf.openFile(file);
-						this.close();
-					} else {
-						new Notice(`Canvas file not found: ${tree.canvasPath}`);
-					}
+				treeBtn.addEventListener('click', () => {
+					void (async () => {
+						const file = this.app.vault.getAbstractFileByPath(tree.canvasPath);
+						if (file instanceof TFile) {
+							const leaf = this.app.workspace.getLeaf(false);
+							await leaf.openFile(file);
+							this.close();
+						} else {
+							new Notice(`Canvas file not found: ${tree.canvasPath}`);
+						}
+					})();
 				});
 			});
 
@@ -1760,8 +1772,9 @@ export class ControlCenterModal extends Modal {
 		const intro = container.createEl('p', {
 			cls: 'crc-text-muted crc-mb-3'
 		});
-		intro.innerHTML = 'Adjust canvas layout and arrow styling. Changes apply immediately to new tree generations. ' +
-			'<strong>To apply to existing canvases:</strong> right-click the canvas file and select "Re-layout family tree".';
+		intro.appendText('Adjust canvas layout and arrow styling. Changes apply immediately to new tree generations. ');
+		intro.createEl('strong', { text: 'To apply to existing canvases:' });
+		intro.appendText(' right-click the canvas file and select "Re-layout family tree".');
 
 		// Layout Settings Section
 		container.createEl('h3', { text: 'Layout settings', cls: 'crc-section-heading' });
@@ -2057,7 +2070,7 @@ export class ControlCenterModal extends Modal {
 			text: 'Create & Open Note'
 		});
 		createOpenBtn.addEventListener('click', () => {
-			this.createPersonNote(
+			void this.createPersonNote(
 				nameInput.value,
 				birthInput.value,
 				deathInput.value,
@@ -2076,7 +2089,7 @@ export class ControlCenterModal extends Modal {
 			text: 'Create & Add Another'
 		});
 		createAnotherBtn.addEventListener('click', () => {
-			this.createPersonNote(
+			void this.createPersonNote(
 				nameInput.value,
 				birthInput.value,
 				deathInput.value,
@@ -2393,7 +2406,7 @@ export class ControlCenterModal extends Modal {
 			attr: { id: 'preview-labels-toggle' }
 		});
 		labelCheckbox.checked = true;
-		const labelLabel = labelToggle.createEl('label', {
+		labelToggle.createEl('label', {
 			text: 'Show labels',
 			attr: { for: 'preview-labels-toggle' }
 		});
@@ -2433,8 +2446,7 @@ export class ControlCenterModal extends Modal {
 		});
 
 		// Create dropdown menu (hidden by default)
-		const exportDropdown = exportControl.createDiv({ cls: 'crc-preview-export-dropdown' });
-		exportDropdown.style.display = 'none';
+		const exportDropdown = exportControl.createDiv({ cls: 'crc-preview-export-dropdown cr-hidden' });
 
 		const exportPNG = exportDropdown.createEl('div', {
 			text: 'Export as PNG',
@@ -2449,13 +2461,12 @@ export class ControlCenterModal extends Modal {
 		// Toggle dropdown on button click
 		exportBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
-			const isVisible = exportDropdown.style.display === 'block';
-			exportDropdown.style.display = isVisible ? 'none' : 'block';
+			exportDropdown.toggleClass('cr-hidden', !exportDropdown.hasClass('cr-hidden'));
 		});
 
 		// Close dropdown when clicking outside
 		document.addEventListener('click', () => {
-			exportDropdown.style.display = 'none';
+			exportDropdown.addClass('cr-hidden');
 		});
 
 		// Preview container
@@ -2493,80 +2504,84 @@ export class ControlCenterModal extends Modal {
 		});
 
 		// Wire up export options
-		exportPNG.addEventListener('click', async () => {
-			try {
-				await this.treePreviewRenderer?.exportAsPNG();
-				new Notice('Preview exported as PNG');
-				exportDropdown.style.display = 'none';
-			} catch (err) {
-				new Notice('Failed to export preview: ' + (err as Error).message);
-			}
+		exportPNG.addEventListener('click', () => {
+			void (async () => {
+				try {
+					await this.treePreviewRenderer?.exportAsPNG();
+					new Notice('Preview exported as PNG');
+					exportDropdown.addClass('cr-hidden');
+				} catch (err) {
+					new Notice('Failed to export preview: ' + (err as Error).message);
+				}
+			})();
 		});
 
 		exportSVG.addEventListener('click', () => {
 			try {
 				this.treePreviewRenderer?.exportAsSVG();
 				new Notice('Preview exported as SVG');
-				exportDropdown.style.display = 'none';
+				exportDropdown.addClass('cr-hidden');
 			} catch (err) {
 				new Notice('Failed to export preview: ' + (err as Error).message);
 			}
 		});
 
 		// Wire up preview button
-		generatePreviewBtn.addEventListener('click', async () => {
-			if (!rootPersonField.crId) {
-				new Notice('Please select a root person first');
-				return;
-			}
-
-			try {
-				generatePreviewBtn.disabled = true;
-				generatePreviewBtn.setText('Generating preview...');
-
-				// Build family tree
-				const graphService = new FamilyGraphService(this.app);
-				const treeOptions: TreeOptions = {
-					rootCrId: rootPersonField.crId,
-					treeType: typeSelect.value as 'ancestors' | 'descendants' | 'full',
-					maxGenerations: parseInt(genSlider.value) || 0,
-					includeSpouses: spouseToggle.getValue(),
-					collectionFilter: collectionSelect.value || undefined
-				};
-
-				const familyTree = await graphService.generateTree(treeOptions);
-
-				if (!familyTree) {
-					new Notice('Failed to build family tree. Root person may not exist.');
+		generatePreviewBtn.addEventListener('click', () => {
+			void (async () => {
+				if (!rootPersonField.crId) {
+					new Notice('Please select a root person first');
 					return;
 				}
 
-				// Build layout options
-				// Map tree type values (ancestors/descendants -> ancestor/descendant for layout engine)
-				const treeTypeValue = typeSelect.value === 'ancestors' ? 'ancestor' :
-					typeSelect.value === 'descendants' ? 'descendant' : 'full';
+				try {
+					generatePreviewBtn.disabled = true;
+					generatePreviewBtn.setText('Generating preview...');
 
-				const layoutOptions = {
-					nodeSpacingX: parseInt(spacingXInput.value) || 400,
-					nodeSpacingY: parseInt(spacingYInput.value) || 200,
-					direction: dirSelect.value as 'vertical' | 'horizontal',
-					treeType: treeTypeValue as 'ancestor' | 'descendant' | 'full',
-					layoutType: layoutTypeSelect.value as import('../settings').LayoutType,
-					nodeWidth: this.plugin.settings.defaultNodeWidth,
-					nodeHeight: this.plugin.settings.defaultNodeHeight
-				};
+					// Build family tree
+					const graphService = new FamilyGraphService(this.app);
+					const treeOptions: TreeOptions = {
+						rootCrId: rootPersonField.crId,
+						treeType: typeSelect.value as 'ancestors' | 'descendants' | 'full',
+						maxGenerations: parseInt(genSlider.value) || 0,
+						includeSpouses: spouseToggle.getValue(),
+						collectionFilter: collectionSelect.value || undefined
+					};
 
-				// Render preview
-				await this.treePreviewRenderer?.renderPreview(familyTree, layoutOptions);
+					const familyTree = await graphService.generateTree(treeOptions);
 
-				new Notice('Preview generated successfully');
-			} catch (error: unknown) {
-				console.error('Preview generation failed:', error);
-				new Notice('Failed to generate preview. See console for details.');
-			} finally {
-				generatePreviewBtn.disabled = false;
-				generatePreviewBtn.setText('Generate preview');
-			}
+					if (!familyTree) {
+						new Notice('Failed to build family tree. Root person may not exist.');
+						return;
+					}
+
+					// Build layout options
+					// Map tree type values (ancestors/descendants -> ancestor/descendant for layout engine)
+					const treeTypeValue = typeSelect.value === 'ancestors' ? 'ancestor' :
+						typeSelect.value === 'descendants' ? 'descendant' : 'full';
+
+					const layoutOptions = {
+						nodeSpacingX: parseInt(spacingXInput.value) || 400,
+						nodeSpacingY: parseInt(spacingYInput.value) || 200,
+						direction: dirSelect.value as 'vertical' | 'horizontal',
+						treeType: treeTypeValue as 'ancestor' | 'descendant' | 'full',
+						layoutType: layoutTypeSelect.value as import('../settings').LayoutType,
+						nodeWidth: this.plugin.settings.defaultNodeWidth,
+						nodeHeight: this.plugin.settings.defaultNodeHeight
+					};
+
+					// Render preview
+					await this.treePreviewRenderer?.renderPreview(familyTree, layoutOptions);
+
+					new Notice('Preview generated successfully');
+				} catch (error: unknown) {
+					console.error('Preview generation failed:', error);
+					new Notice('Failed to generate preview. See console for details.');
+				} finally {
+					generatePreviewBtn.disabled = false;
+					generatePreviewBtn.setText('Generate preview');
+				}
+			})();
 		});
 
 		// Style Customization Card
@@ -2605,7 +2620,7 @@ export class ControlCenterModal extends Modal {
 		let customSpouseLabelsSelect: HTMLSelectElement;
 
 		// Node color scheme override
-		const nodeColorSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Node coloring')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2625,7 +2640,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Parent-child arrow style override
-		const parentChildArrowSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Parent-child arrows')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2644,7 +2659,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Spouse arrow style override
-		const spouseArrowSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Spouse arrows')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2663,7 +2678,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Parent-child edge color override
-		const parentChildColorSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Parent-child edge color')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2686,7 +2701,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Spouse edge color override
-		const spouseColorSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Spouse edge color')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2709,7 +2724,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Show spouse edges override
-		const spouseEdgesSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Show spouse edges')
 			.setDesc('Enable/disable marriage relationship edges')
 			.addToggle(toggle => {
@@ -2725,7 +2740,7 @@ export class ControlCenterModal extends Modal {
 			});
 
 		// Spouse label format override
-		const spouseLabelsSetting = new Setting(styleContent)
+		new Setting(styleContent)
 			.setName('Spouse edge labels')
 			.addToggle(toggle => {
 				toggle.setValue(false).onChange(value => {
@@ -2782,44 +2797,46 @@ export class ControlCenterModal extends Modal {
 		});
 
 		// Wire up the Generate button (in Root person card)
-		this.treeGenerateBtn?.addEventListener('click', async () => {
-			// Build style overrides object (only include enabled overrides)
-			const styleOverrides: import('../core/canvas-style-overrides').StyleOverrides = {};
-			if (useCustomNodeColor) {
-				styleOverrides.nodeColorScheme = customNodeColorSelect.value as import('../settings').ColorScheme;
-			}
-			if (useCustomParentChildArrow) {
-				styleOverrides.parentChildArrowStyle = customParentChildArrowSelect.value as import('../settings').ArrowStyle;
-			}
-			if (useCustomSpouseArrow) {
-				styleOverrides.spouseArrowStyle = customSpouseArrowSelect.value as import('../settings').ArrowStyle;
-			}
-			if (useCustomParentChildColor) {
-				styleOverrides.parentChildEdgeColor = customParentChildColorSelect.value as import('../settings').CanvasColor;
-			}
-			if (useCustomSpouseColor) {
-				styleOverrides.spouseEdgeColor = customSpouseColorSelect.value as import('../settings').CanvasColor;
-			}
-			if (useCustomSpouseEdges) {
-				styleOverrides.showSpouseEdges = customSpouseEdgesToggle.getValue();
-			}
-			if (useCustomSpouseLabels) {
-				styleOverrides.spouseEdgeLabelFormat = customSpouseLabelsSelect.value as import('../settings').SpouseEdgeLabelFormat;
-			}
+		this.treeGenerateBtn?.addEventListener('click', () => {
+			void (async () => {
+				// Build style overrides object (only include enabled overrides)
+				const styleOverrides: import('../core/canvas-style-overrides').StyleOverrides = {};
+				if (useCustomNodeColor) {
+					styleOverrides.nodeColorScheme = customNodeColorSelect.value as import('../settings').ColorScheme;
+				}
+				if (useCustomParentChildArrow) {
+					styleOverrides.parentChildArrowStyle = customParentChildArrowSelect.value as import('../settings').ArrowStyle;
+				}
+				if (useCustomSpouseArrow) {
+					styleOverrides.spouseArrowStyle = customSpouseArrowSelect.value as import('../settings').ArrowStyle;
+				}
+				if (useCustomParentChildColor) {
+					styleOverrides.parentChildEdgeColor = customParentChildColorSelect.value as import('../settings').CanvasColor;
+				}
+				if (useCustomSpouseColor) {
+					styleOverrides.spouseEdgeColor = customSpouseColorSelect.value as import('../settings').CanvasColor;
+				}
+				if (useCustomSpouseEdges) {
+					styleOverrides.showSpouseEdges = customSpouseEdgesToggle.getValue();
+				}
+				if (useCustomSpouseLabels) {
+					styleOverrides.spouseEdgeLabelFormat = customSpouseLabelsSelect.value as import('../settings').SpouseEdgeLabelFormat;
+				}
 
-			await this.handleTreeGeneration(
-				rootPersonField,
-				typeSelect.value as 'ancestors' | 'descendants' | 'full',
-				parseInt(genSlider.value) || 0,
-				spouseToggle.getValue(),
-				dirSelect.value as 'vertical' | 'horizontal',
-				parseInt(spacingXInput.value),
-				parseInt(spacingYInput.value),
-				layoutTypeSelect.value as import('../settings').LayoutType,
-				this.treeCanvasNameInput?.value || '',
-				collectionSelect.value || undefined,
-				Object.keys(styleOverrides).length > 0 ? styleOverrides : undefined
-			);
+				await this.handleTreeGeneration(
+					rootPersonField,
+					typeSelect.value as 'ancestors' | 'descendants' | 'full',
+					parseInt(genSlider.value) || 0,
+					spouseToggle.getValue(),
+					dirSelect.value as 'vertical' | 'horizontal',
+					parseInt(spacingXInput.value),
+					parseInt(spacingYInput.value),
+					layoutTypeSelect.value as import('../settings').LayoutType,
+					this.treeCanvasNameInput?.value || '',
+					collectionSelect.value || undefined,
+					Object.keys(styleOverrides).length > 0 ? styleOverrides : undefined
+				);
+			})();
 		});
 	}
 
@@ -3159,11 +3176,11 @@ export class ControlCenterModal extends Modal {
 				return box;
 			};
 
-			createStatBox('Total People', analytics.totalPeople);
+			createStatBox('Total people', analytics.totalPeople);
 			createStatBox('Collections', analytics.totalCollections,
 				`${analytics.totalFamilies} families, ${analytics.totalUserCollections} custom`);
-			createStatBox('Average Size', analytics.averageCollectionSize, 'people per collection');
-			createStatBox('Bridge People', analytics.crossCollectionMetrics.totalBridgePeople,
+			createStatBox('Average size', analytics.averageCollectionSize, 'people per collection');
+			createStatBox('Bridge people', analytics.crossCollectionMetrics.totalBridgePeople,
 				'connecting collections');
 
 			// Data Quality Section
@@ -3289,8 +3306,8 @@ export class ControlCenterModal extends Modal {
 		try {
 			// Show loading state
 			analysisContainer.empty();
-			analysisContainer.style.display = 'block';
-			fileBtn.style.display = 'none';
+			analysisContainer.removeClass('cr-hidden');
+			fileBtn.addClass('cr-hidden');
 
 			analysisContainer.createEl('p', {
 				text: `File: ${file.name}`,
@@ -3330,7 +3347,9 @@ export class ControlCenterModal extends Modal {
 				const helpText = results.createEl('p', {
 					cls: 'crc-text-muted crc-mt-2'
 				});
-				helpText.innerHTML = `This file contains multiple separate family trees. After import, use the <strong>"Generate all trees"</strong> command to create canvases for all family groups.`;
+				helpText.appendText('This file contains multiple separate family trees. After import, use the ');
+				helpText.createEl('strong', { text: '"Generate all trees"' });
+				helpText.appendText(' command to create canvases for all family groups.');
 			}
 
 			// Action buttons
@@ -3340,10 +3359,12 @@ export class ControlCenterModal extends Modal {
 				cls: 'crc-btn crc-btn--primary',
 				text: 'Import to Vault'
 			});
-			importBtn.addEventListener('click', async () => {
-				analysisContainer.style.display = 'none';
-				fileBtn.style.display = 'block';
-				await this.handleGedcomImport(file);
+			importBtn.addEventListener('click', () => {
+				void (async () => {
+					analysisContainer.addClass('cr-hidden');
+					fileBtn.removeClass('cr-hidden');
+					await this.handleGedcomImport(file);
+				})();
 			});
 
 			const cancelBtn = actions.createEl('button', {
@@ -3351,8 +3372,8 @@ export class ControlCenterModal extends Modal {
 				text: 'Cancel'
 			});
 			cancelBtn.addEventListener('click', () => {
-				analysisContainer.style.display = 'none';
-				fileBtn.style.display = 'block';
+				analysisContainer.addClass('cr-hidden');
+				fileBtn.removeClass('cr-hidden');
 			});
 
 		} catch (error: unknown) {
@@ -3366,11 +3387,11 @@ export class ControlCenterModal extends Modal {
 
 			const retryBtn = analysisContainer.createEl('button', {
 				cls: 'crc-btn crc-btn--secondary crc-mt-2',
-				text: 'Try Different File'
+				text: 'Try different file'
 			});
 			retryBtn.addEventListener('click', () => {
-				analysisContainer.style.display = 'none';
-				fileBtn.style.display = 'block';
+				analysisContainer.addClass('cr-hidden');
+				fileBtn.removeClass('cr-hidden');
 			});
 		}
 	}
@@ -3565,7 +3586,7 @@ export class ControlCenterModal extends Modal {
 		container.appendChild(analyticsCard);
 
 		// Load analytics data asynchronously
-		this.loadAnalyticsData(analyticsContent);
+		void this.loadAnalyticsData(analyticsContent);
 
 		// Collections List Card
 		await this.updateCollectionsList(container, selectedMode);
@@ -3748,19 +3769,20 @@ export class ControlCenterModal extends Modal {
 		});
 
 		// Analysis results container (hidden initially)
-		const analysisContainer = importContent.createDiv({ cls: 'crc-gedcom-analysis' });
-		analysisContainer.style.display = 'none';
+		const analysisContainer = importContent.createDiv({ cls: 'crc-gedcom-analysis cr-hidden' });
 
 		fileBtn.addEventListener('click', () => {
 			fileInput.click();
 		});
 
-		fileInput.addEventListener('change', async (event) => {
-			const target = event.target as HTMLInputElement;
-			const file = target.files?.[0];
-			if (file) {
-				await this.showGedcomAnalysis(file, analysisContainer, fileBtn);
-			}
+		fileInput.addEventListener('change', (event) => {
+			void (async () => {
+				const target = event.target as HTMLInputElement;
+				const file = target.files?.[0];
+				if (file) {
+					await this.showGedcomAnalysis(file, analysisContainer, fileBtn);
+				}
+			})();
 		});
 
 		container.appendChild(importCard);
@@ -3839,12 +3861,14 @@ export class ControlCenterModal extends Modal {
 			text: 'Export to GEDCOM'
 		});
 
-		exportBtn.addEventListener('click', async () => {
-			await this.handleGedcomExport({
-				fileName: exportFileName,
-				collectionFilter,
-				includeCollectionCodes
-			});
+		exportBtn.addEventListener('click', () => {
+			void (async () => {
+				await this.handleGedcomExport({
+					fileName: exportFileName,
+					collectionFilter,
+					includeCollectionCodes
+				});
+			})();
 		});
 
 		container.appendChild(exportCard);
@@ -3953,7 +3977,7 @@ export class ControlCenterModal extends Modal {
 		});
 
 		exportButton.addEventListener('click', () => {
-			this.handleExportLogs();
+			void this.handleExportLogs();
 		});
 
 		const clearButton = buttonGroup.createEl('button', {
@@ -4033,7 +4057,7 @@ export class ControlCenterModal extends Modal {
 		const tabConfig = TAB_CONFIGS.find(t => t.id === tabId);
 
 		const card = this.createCard({
-			title: tabConfig?.name || 'Coming Soon',
+			title: tabConfig?.name || 'Coming soon',
 			icon: tabConfig?.icon || 'info'
 		});
 
@@ -4221,7 +4245,7 @@ export class ControlCenterModal extends Modal {
 		const files = this.app.vault.getMarkdownFiles();
 
 		for (const file of files) {
-			const personInfo = await this.extractPersonInfoFromFile(file);
+			const personInfo = this.extractPersonInfoFromFile(file);
 			if (personInfo) {
 				allPeople.push(personInfo);
 			}
@@ -4608,8 +4632,9 @@ export class ControlCenterModal extends Modal {
 		const allTreesDesc = allTreesSection.createEl('p', {
 			cls: 'crc-text-muted crc-text-sm crc-mb-3'
 		});
-		allTreesDesc.innerHTML = 'Automatically generate separate canvases for <strong>all disconnected family groups</strong> in your vault. ' +
-			'A root person will be automatically selected for each family group.';
+		allTreesDesc.appendText('Automatically generate separate canvases for ');
+		allTreesDesc.createEl('strong', { text: 'all disconnected family groups' });
+		allTreesDesc.appendText(' in your vault. A root person will be automatically selected for each family group.');
 
 		const allTreesBtn = allTreesSection.createEl('button', {
 			cls: 'crc-btn crc-btn--secondary crc-btn--large',
@@ -4623,28 +4648,32 @@ export class ControlCenterModal extends Modal {
 		});
 
 		// Check for multiple components and update badge
-		(async () => {
+		void (async () => {
 			try {
 				const graphService = new FamilyGraphService(this.app);
 				const components = await graphService.findAllFamilyComponents();
 
 				if (components.length > 1) {
 					countBadge.setText(`${components.length} groups`);
-					allTreesDesc.innerHTML = `Automatically generate separate canvases for <strong>all ${components.length} disconnected family groups</strong> in your vault. ` +
-						`A root person will be automatically selected for each family group.`;
+					allTreesDesc.empty();
+					allTreesDesc.appendText('Automatically generate separate canvases for ');
+					allTreesDesc.createEl('strong', { text: `all ${components.length} disconnected family groups` });
+					allTreesDesc.appendText(' in your vault. A root person will be automatically selected for each family group.');
 				} else {
 					countBadge.setText('1 group');
 					allTreesBtn.disabled = true;
 					allTreesBtn.addClass('crc-btn--disabled');
 					allTreesDesc.setText('Only one family tree detected. Use the "Generate family tree" button above instead.');
 				}
-			} catch (error: unknown) {
+			} catch {
 				countBadge.setText('');
 			}
 		})();
 
-		allTreesBtn.addEventListener('click', async () => {
-			await this.openAndGenerateAllTrees();
+		allTreesBtn.addEventListener('click', () => {
+			void (async () => {
+				await this.openAndGenerateAllTrees();
+			})();
 		});
 
 		// Get references to configuration elements (defined later in showTreeGenerationTab)
@@ -4707,7 +4736,7 @@ export class ControlCenterModal extends Modal {
 	/**
 	 * Extract person info from file (for inline person browser)
 	 */
-	private async extractPersonInfoFromFile(file: TFile): Promise<PersonInfo | null> {
+	private extractPersonInfoFromFile(file: TFile): PersonInfo | null {
 		const cache = this.app.metadataCache.getFileCache(file);
 		if (!cache?.frontmatter) return null;
 

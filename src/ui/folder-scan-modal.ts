@@ -38,7 +38,7 @@ export class FolderScanModal extends Modal {
 
 		try {
 			// Find all person notes in folder (recursively)
-			const personNotes = await this.findPersonNotes(this.folder);
+			const personNotes = this.findPersonNotes(this.folder);
 
 			if (personNotes.length === 0) {
 				loadingEl.remove();
@@ -64,7 +64,7 @@ export class FolderScanModal extends Modal {
 		}
 	}
 
-	private async findPersonNotes(folder: TFolder): Promise<TFile[]> {
+	private findPersonNotes(folder: TFolder): TFile[] {
 		const personNotes: TFile[] = [];
 
 		const processFolder = (currentFolder: TFolder) => {
@@ -155,7 +155,7 @@ export class FolderScanModal extends Modal {
 
 		// Results list (only show notes with issues)
 		if (notesWithIssues > 0) {
-			const resultsHeader = container.createEl('h3', {
+			container.createEl('h3', {
 				text: 'Notes with issues',
 				cls: 'cr-scan-results-header'
 			});
@@ -179,7 +179,7 @@ export class FolderScanModal extends Modal {
 						cls: 'cr-scan-result__name'
 					});
 
-					const issueBadge = resultHeader.createEl('span', {
+					resultHeader.createEl('span', {
 						text: `${result.issues.length} issue${result.issues.length === 1 ? '' : 's'}`,
 						cls: 'cr-scan-result__badge'
 					});
@@ -200,10 +200,12 @@ export class FolderScanModal extends Modal {
 
 					// Click to open file
 					resultItem.addClass('cr-scan-result--clickable');
-					resultItem.addEventListener('click', async () => {
-						const leaf = this.app.workspace.getLeaf(false);
-						await leaf.openFile(result.file);
-						this.close();
+					resultItem.addEventListener('click', () => {
+						void (async () => {
+							const leaf = this.app.workspace.getLeaf(false);
+							await leaf.openFile(result.file);
+							this.close();
+						})();
 					});
 				});
 		}

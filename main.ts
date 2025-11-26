@@ -27,7 +27,7 @@ export default class CanvasRootsPlugin extends Plugin {
 	private bidirectionalLinker: BidirectionalLinker | null = null;
 
 	async onload() {
-		console.log('Loading Canvas Roots plugin');
+		console.debug('Loading Canvas Roots plugin');
 
 		await this.loadSettings();
 
@@ -35,7 +35,7 @@ export default class CanvasRootsPlugin extends Plugin {
 		LoggerFactory.setLogLevel(this.settings.logLevel);
 
 		// Run migration for property rename (collection_name -> group_name)
-		this.migrateCollectionNameToGroupName();
+		await this.migrateCollectionNameToGroupName();
 
 		// Add settings tab
 		this.addSettingTab(new CanvasRootsSettingTab(this.app, this));
@@ -59,7 +59,7 @@ export default class CanvasRootsPlugin extends Plugin {
 			id: 'generate-tree-for-current-note',
 			name: 'Generate tree for current note',
 			callback: () => {
-				this.generateTreeForCurrentNote();
+				void this.generateTreeForCurrentNote();
 			}
 		});
 
@@ -94,16 +94,16 @@ export default class CanvasRootsPlugin extends Plugin {
 			id: 'generate-all-trees',
 			name: 'Generate all trees',
 			callback: () => {
-				this.generateAllTrees();
+				void this.generateAllTrees();
 			}
 		});
 
 		// Add command: Create Base Template
 		this.addCommand({
 			id: 'create-base-template',
-			name: 'Create Base template',
+			name: 'Create base template',
 			callback: () => {
-				this.createBaseTemplate();
+				void this.createBaseTemplate();
 			}
 		});
 
@@ -154,7 +154,7 @@ export default class CanvasRootsPlugin extends Plugin {
 								subItem
 									.setTitle('Show tree statistics')
 									.setIcon('bar-chart')
-									.onClick(async () => {
+									.onClick(() => {
 										new TreeStatisticsModal(this.app, file).open();
 									});
 							});
@@ -208,7 +208,7 @@ export default class CanvasRootsPlugin extends Plugin {
 							item
 								.setTitle('Canvas Roots: Show tree statistics')
 								.setIcon('bar-chart')
-								.onClick(async () => {
+								.onClick(() => {
 									new TreeStatisticsModal(this.app, file).open();
 								});
 						});
@@ -301,18 +301,20 @@ export default class CanvasRootsPlugin extends Plugin {
 										.setTitle('Add parent')
 										.setIcon('user')
 										.onClick(() => {
-											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
-												const relationshipMgr = new RelationshipManager(this.app);
+											const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+												void (async () => {
+													const relationshipMgr = new RelationshipManager(this.app);
 
-												// Ask which parent type
-												const parentType = await this.promptParentType();
-												if (parentType) {
-													await relationshipMgr.addParentRelationship(
-														file,
-														selectedPerson.file,
-														parentType
-													);
-												}
+													// Ask which parent type
+													const parentType = await this.promptParentType();
+													if (parentType) {
+														await relationshipMgr.addParentRelationship(
+															file,
+															selectedPerson.file,
+															parentType
+														);
+													}
+												})();
 											});
 											picker.open();
 										});
@@ -323,9 +325,11 @@ export default class CanvasRootsPlugin extends Plugin {
 										.setTitle('Add spouse')
 										.setIcon('heart')
 										.onClick(() => {
-											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
-												const relationshipMgr = new RelationshipManager(this.app);
-												await relationshipMgr.addSpouseRelationship(file, selectedPerson.file);
+											const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+												void (async () => {
+													const relationshipMgr = new RelationshipManager(this.app);
+													await relationshipMgr.addSpouseRelationship(file, selectedPerson.file);
+												})();
 											});
 											picker.open();
 										});
@@ -336,9 +340,11 @@ export default class CanvasRootsPlugin extends Plugin {
 										.setTitle('Add child')
 										.setIcon('baby')
 										.onClick(() => {
-											const picker = new PersonPickerModal(this.app, async (selectedPerson) => {
-												const relationshipMgr = new RelationshipManager(this.app);
-												await relationshipMgr.addChildRelationship(file, selectedPerson.file);
+											const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+												void (async () => {
+													const relationshipMgr = new RelationshipManager(this.app);
+													await relationshipMgr.addChildRelationship(file, selectedPerson.file);
+												})();
 											});
 											picker.open();
 										});
@@ -361,7 +367,7 @@ export default class CanvasRootsPlugin extends Plugin {
 									subItem
 										.setTitle('Find on canvas')
 										.setIcon('search')
-										.onClick(async () => {
+										.onClick(() => {
 											const cache = this.app.metadataCache.getFileCache(file);
 											const crId = cache?.frontmatter?.cr_id;
 											const personName = cache?.frontmatter?.name || file.basename;
@@ -376,7 +382,7 @@ export default class CanvasRootsPlugin extends Plugin {
 									subItem
 										.setTitle('Calculate relationship...')
 										.setIcon('git-compare')
-										.onClick(async () => {
+										.onClick(() => {
 											const cache = this.app.metadataCache.getFileCache(file);
 											const crId = cache?.frontmatter?.cr_id;
 											const personName = cache?.frontmatter?.name || file.basename;
@@ -1629,8 +1635,8 @@ export default class CanvasRootsPlugin extends Plugin {
 				strokeWidth: 2
 			});
 
-			// Delete temporary canvas file
-			await this.app.vault.delete(tempCanvasFile);
+			// Delete temporary canvas file (respects user's deletion preference)
+			await this.app.fileManager.trashFile(tempCanvasFile);
 
 			if (!result.success) {
 				new Notice(`Export failed: ${result.errors.join(', ')}`);

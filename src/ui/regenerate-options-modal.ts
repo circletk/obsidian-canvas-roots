@@ -40,7 +40,7 @@ export class RegenerateOptionsModal extends Modal {
 				originalSettings = `Originally generated as "${gen.treeType}" tree from ${gen.rootPersonName} ` +
 					`with direction: ${gen.direction}`;
 			}
-		} catch (error: unknown) {
+		} catch {
 			// Ignore errors - we'll just not show original settings
 		}
 
@@ -100,11 +100,13 @@ export class RegenerateOptionsModal extends Modal {
 			cls: 'crc-btn crc-btn--primary',
 			text: 'Regenerate'
 		});
-		applyBtn.addEventListener('click', async () => {
-			const direction = this.directionSelect!.value as 'vertical' | 'horizontal';
-			this.close();
-			// Call the plugin's regenerate method with the selected direction
-			await this.plugin.regenerateCanvas(this.canvasFile, direction);
+		applyBtn.addEventListener('click', () => {
+			void (async () => {
+				const direction = this.directionSelect!.value as 'vertical' | 'horizontal';
+				this.close();
+				// Call the plugin's regenerate method with the selected direction
+				await this.plugin.regenerateCanvas(this.canvasFile, direction);
+			})();
 		});
 	}
 

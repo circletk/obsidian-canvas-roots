@@ -64,7 +64,7 @@ export class VaultStatsService {
 		let totalSpouseLinks = 0;
 
 		for (const file of files) {
-			const personData = await this.extractPersonData(file);
+			const personData = this.extractPersonData(file);
 			if (!personData) continue;
 
 			totalPeople++;
@@ -127,14 +127,14 @@ export class VaultStatsService {
 	/**
 	 * Extract person data from a file
 	 */
-	private async extractPersonData(file: TFile): Promise<{
+	private extractPersonData(file: TFile): {
 		hasCrId: boolean;
 		hasBirthDate: boolean;
 		hasDeathDate: boolean;
 		hasFather: boolean;
 		hasMother: boolean;
 		spouseCount: number;
-	} | null> {
+	} | null {
 		try {
 			const cache = this.app.metadataCache.getFileCache(file);
 			if (!cache || !cache.frontmatter) {

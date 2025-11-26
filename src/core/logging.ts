@@ -137,7 +137,7 @@ class Logger implements ILogger {
 					console.debug(logMessage);
 					break;
 				case 'info':
-					console.info(logMessage);
+					console.debug(logMessage);
 					break;
 				case 'warn':
 					console.warn(logMessage);
@@ -277,7 +277,7 @@ export { loggerFactory, LoggerFactoryClass as LoggerFactory };
 const NAME_PATTERN = /\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g; // Capitalized names (e.g., "John Smith")
 const DATE_PATTERN = /\b\d{4}-\d{2}-\d{2}\b/g; // ISO dates (YYYY-MM-DD)
 const YEAR_PATTERN = /\b(1[0-9]{3}|20[0-2][0-9])\b/g; // Years 1000-2029
-const PATH_PATTERN = /(?:\/|\\)[^\/\\]+\.md/g; // File paths ending in .md
+const PATH_PATTERN = /(?:\/|\\)[^/\\]+\.md/g; // File paths ending in .md
 const CRID_PATTERN = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi; // UUIDs/cr_ids
 
 /**

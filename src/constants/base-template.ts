@@ -58,7 +58,7 @@ properties:
     displayName: Location
 views:
   - type: table
-    name: All Family Members
+    name: All family members
     filters:
       and:
         - note.cr_id
@@ -74,7 +74,7 @@ views:
       died: Latest
       formula.full_lifespan: Average
   - type: table
-    name: Living Members
+    name: Living members
     filters:
       and:
         - note.cr_id
@@ -84,7 +84,7 @@ views:
     summaries:
       formula.age_now: Average
   - type: table
-    name: Deceased Members
+    name: Deceased members
     filters:
       and:
         - note.cr_id
@@ -95,7 +95,7 @@ views:
       formula.full_lifespan: Average
       died: Latest
   - type: table
-    name: Recently Added
+    name: Recently added
     filters:
       and:
         - note.cr_id
@@ -104,7 +104,7 @@ views:
       - file.ctime
     limit: 20
   - type: table
-    name: Missing Parents
+    name: Missing parents
     filters:
       and:
         - note.cr_id
@@ -112,7 +112,7 @@ views:
     order:
       - file.name
   - type: table
-    name: Incomplete Data
+    name: Incomplete data
     filters:
       and:
         - note.cr_id
@@ -120,7 +120,7 @@ views:
     order:
       - file.name
   - type: table
-    name: By Collection
+    name: By collection
     filters:
       and:
         - note.cr_id
@@ -133,7 +133,7 @@ views:
       born: Earliest
       died: Latest
   - type: table
-    name: By Family Group
+    name: By family group
     filters:
       and:
         - note.cr_id
@@ -146,7 +146,7 @@ views:
       born: Earliest
       died: Latest
   - type: table
-    name: Unassigned Collections
+    name: Unassigned collections
     filters:
       and:
         - note.cr_id
@@ -154,7 +154,7 @@ views:
     order:
       - file.name
   - type: table
-    name: Single Parents
+    name: Single parents
     filters:
       and:
         - note.cr_id
@@ -165,7 +165,7 @@ views:
     summaries:
       child: Count
   - type: table
-    name: Childless Couples
+    name: Childless couples
     filters:
       and:
         - note.cr_id
@@ -174,7 +174,7 @@ views:
     order:
       - file.name
   - type: table
-    name: Multiple Marriages
+    name: Multiple marriages
     filters:
       and:
         - note.cr_id
@@ -182,7 +182,7 @@ views:
     order:
       - file.name
   - type: table
-    name: Sibling Groups
+    name: Sibling groups
     filters:
       and:
         - note.cr_id
@@ -194,7 +194,7 @@ views:
     summaries:
       father: Count
   - type: table
-    name: Root Generation
+    name: Root generation
     filters:
       and:
         - note.cr_id
@@ -204,7 +204,7 @@ views:
     summaries:
       child: Count
   - type: table
-    name: Marked Root Persons
+    name: Marked root persons
     filters:
       and:
         - note.cr_id

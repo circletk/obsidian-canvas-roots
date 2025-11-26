@@ -71,7 +71,7 @@ export class CanvasFinder {
 	 * Check if a node's file matches the person cr_id
 	 * This is a simplified check - we cache cr_id to file path mapping
 	 */
-	private async nodeMatchesPerson(filePath: string, crId: string): Promise<boolean> {
+	private nodeMatchesPerson(filePath: string, crId: string): boolean {
 		try {
 			const file = this.app.vault.getAbstractFileByPath(filePath);
 			if (!file || !(file instanceof TFile)) {
@@ -80,7 +80,7 @@ export class CanvasFinder {
 
 			const cache = this.app.metadataCache.getFileCache(file);
 			return cache?.frontmatter?.cr_id === crId;
-		} catch (error: unknown) {
+		} catch {
 			return false;
 		}
 	}

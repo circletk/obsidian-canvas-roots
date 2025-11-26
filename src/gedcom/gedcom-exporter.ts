@@ -4,7 +4,7 @@
  * Exports person notes from Obsidian vault to GEDCOM 5.5.1 format.
  */
 
-import { App, TFile, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { FamilyGraphService, type PersonNode } from '../core/family-graph';
 import { getLogger } from '../core/logging';
 import { getErrorMessage } from '../core/error-utils';
@@ -482,7 +482,7 @@ export class GedcomExporter {
 	private inferSex(person: PersonNode, allPeople?: PersonNode[]): 'M' | 'F' | undefined {
 		// Check if sex is already recorded
 		if (person.sex === 'M' || person.sex === 'F') {
-			return person.sex as 'M' | 'F';
+			return person.sex;
 		}
 
 		if (!allPeople) return undefined;
