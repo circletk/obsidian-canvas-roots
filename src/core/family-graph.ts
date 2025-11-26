@@ -642,7 +642,7 @@ export class FamilyGraphService {
 	/**
 	 * Loads all person notes from vault into cache
 	 */
-	private async loadPersonCache(): Promise<void> {
+	private loadPersonCache(): void {
 		this.personCache.clear();
 
 		const files = this.app.vault.getMarkdownFiles();

@@ -1135,7 +1135,7 @@ export default class CanvasRootsPlugin extends Plugin {
 		);
 	}
 
-	private async generateTreeForCurrentNote() {
+	private generateTreeForCurrentNote(): void {
 		const activeFile = this.app.workspace.getActiveFile();
 
 		if (!activeFile) {
@@ -1440,7 +1440,7 @@ export default class CanvasRootsPlugin extends Plugin {
 					const existingFrontmatter = cache?.frontmatter || {};
 
 					// Define essential properties
-					const essentialProperties: Record<string, any> = {};
+					const essentialProperties: Record<string, unknown> = {};
 
 					// cr_id: Generate if missing
 					if (!existingFrontmatter.cr_id) {

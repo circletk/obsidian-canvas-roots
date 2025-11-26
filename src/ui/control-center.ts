@@ -2557,14 +2557,14 @@ export class ControlCenterModal extends Modal {
 
 					// Build layout options
 					// Map tree type values (ancestors/descendants -> ancestor/descendant for layout engine)
-					const treeTypeValue = typeSelect.value === 'ancestors' ? 'ancestor' :
+					const treeTypeValue: 'ancestor' | 'descendant' | 'full' = typeSelect.value === 'ancestors' ? 'ancestor' :
 						typeSelect.value === 'descendants' ? 'descendant' : 'full';
 
 					const layoutOptions = {
 						nodeSpacingX: parseInt(spacingXInput.value) || 400,
 						nodeSpacingY: parseInt(spacingYInput.value) || 200,
 						direction: dirSelect.value as 'vertical' | 'horizontal',
-						treeType: treeTypeValue as 'ancestor' | 'descendant' | 'full',
+						treeType: treeTypeValue,
 						layoutType: layoutTypeSelect.value as import('../settings').LayoutType,
 						nodeWidth: this.plugin.settings.defaultNodeWidth,
 						nodeHeight: this.plugin.settings.defaultNodeHeight

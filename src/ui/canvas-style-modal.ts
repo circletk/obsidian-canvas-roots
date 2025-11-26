@@ -35,7 +35,7 @@ export class CanvasStyleModal extends Modal {
 		try {
 			const canvasContent = await this.app.vault.read(this.canvasFile);
 			const canvasData: CanvasData = JSON.parse(canvasContent);
-			const metadata = canvasData.metadata?.frontmatter as Record<string, unknown> | undefined;
+			const metadata = canvasData.metadata?.frontmatter;
 
 			if (metadata?.plugin === 'canvas-roots') {
 				this.currentOverrides = metadata.styleOverrides as StyleOverrides | undefined;
@@ -235,7 +235,7 @@ export class CanvasStyleModal extends Modal {
 			}
 
 			// Update style overrides in metadata
-			const metadata = canvasData.metadata.frontmatter as Record<string, unknown>;
+			const metadata = canvasData.metadata.frontmatter;
 
 			// If all overrides are undefined, remove styleOverrides entirely
 			const hasOverrides = Object.values(overrides).some(value => value !== undefined);

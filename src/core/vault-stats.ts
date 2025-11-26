@@ -47,7 +47,7 @@ export class VaultStatsService {
 	/**
 	 * Collect full vault statistics
 	 */
-	async collectStats(): Promise<FullVaultStats> {
+	collectStats(): FullVaultStats {
 		const files = this.app.vault.getMarkdownFiles();
 
 		let totalPeople = 0;
