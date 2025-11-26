@@ -18,6 +18,7 @@ import { BASE_TEMPLATE } from './src/constants/base-template';
 import { ExcalidrawExporter } from './src/excalidraw/excalidraw-exporter';
 import { BidirectionalLinker } from './src/core/bidirectional-linker';
 import { generateCrId } from './src/core/uuid';
+import { ReferenceNumberingService, NumberingSystem } from './src/core/reference-numbering';
 
 const logger = getLogger('CanvasRootsPlugin');
 
@@ -113,6 +114,33 @@ export default class CanvasRootsPlugin extends Plugin {
 			name: 'Calculate relationship between people',
 			callback: () => {
 				new RelationshipCalculatorModal(this.app).open();
+			}
+		});
+
+		// Add command: Assign Ahnentafel Numbers
+		this.addCommand({
+			id: 'assign-ahnentafel',
+			name: 'Assign Ahnentafel numbers (ancestors)',
+			callback: () => {
+				this.promptAssignReferenceNumbers('ahnentafel');
+			}
+		});
+
+		// Add command: Assign d'Aboville Numbers
+		this.addCommand({
+			id: 'assign-daboville',
+			name: "Assign d'Aboville numbers (descendants)",
+			callback: () => {
+				this.promptAssignReferenceNumbers('daboville');
+			}
+		});
+
+		// Add command: Assign Henry Numbers
+		this.addCommand({
+			id: 'assign-henry',
+			name: 'Assign Henry numbers (descendants)',
+			callback: () => {
+				this.promptAssignReferenceNumbers('henry');
 			}
 		});
 
@@ -431,6 +459,41 @@ export default class CanvasRootsPlugin extends Plugin {
 											await this.toggleRootPerson(file);
 										});
 								});
+
+								// Reference numbering submenu
+								submenu.addItem((subItem) => {
+									const refNumberSubmenu: Menu = subItem
+										.setTitle('Assign reference numbers')
+										.setIcon('hash')
+										.setSubmenu();
+
+									refNumberSubmenu.addItem((numItem) => {
+										numItem
+											.setTitle('Ahnentafel (ancestors)')
+											.setIcon('arrow-up')
+											.onClick(async () => {
+												await this.assignReferenceNumbersFromPerson(file, 'ahnentafel');
+											});
+									});
+
+									refNumberSubmenu.addItem((numItem) => {
+										numItem
+											.setTitle("d'Aboville (descendants)")
+											.setIcon('arrow-down')
+											.onClick(async () => {
+												await this.assignReferenceNumbersFromPerson(file, 'daboville');
+											});
+									});
+
+									refNumberSubmenu.addItem((numItem) => {
+										numItem
+											.setTitle('Henry (descendants)')
+											.setIcon('arrow-down')
+											.onClick(async () => {
+												await this.assignReferenceNumbersFromPerson(file, 'henry');
+											});
+									});
+								});
 							});
 						} else {
 							// Mobile: flat menu with prefix
@@ -569,6 +632,34 @@ export default class CanvasRootsPlugin extends Plugin {
 									.setIcon('crown')
 									.onClick(async () => {
 										await this.toggleRootPerson(file);
+									});
+							});
+
+							// Reference numbering (mobile - flat menu)
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Assign Ahnentafel numbers')
+									.setIcon('hash')
+									.onClick(async () => {
+										await this.assignReferenceNumbersFromPerson(file, 'ahnentafel');
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle("Canvas Roots: Assign d'Aboville numbers")
+									.setIcon('hash')
+									.onClick(async () => {
+										await this.assignReferenceNumbersFromPerson(file, 'daboville');
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Assign Henry numbers')
+									.setIcon('hash')
+									.onClick(async () => {
+										await this.assignReferenceNumbersFromPerson(file, 'henry');
 									});
 							});
 						}
@@ -1133,6 +1224,78 @@ export default class CanvasRootsPlugin extends Plugin {
 			? 'Unmarked as root person'
 			: 'Marked as root person'
 		);
+	}
+
+	/**
+	 * Prompt user to select a person and assign reference numbers
+	 */
+	private promptAssignReferenceNumbers(system: NumberingSystem): void {
+		const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+			void (async () => {
+				try {
+					const service = new ReferenceNumberingService(this.app);
+					let stats;
+
+					new Notice(`Assigning ${system} numbers from ${selectedPerson.name}...`);
+
+					switch (system) {
+						case 'ahnentafel':
+							stats = await service.assignAhnentafel(selectedPerson.crId);
+							break;
+						case 'daboville':
+							stats = await service.assignDAboville(selectedPerson.crId);
+							break;
+						case 'henry':
+							stats = await service.assignHenry(selectedPerson.crId);
+							break;
+					}
+
+					new Notice(`Assigned ${stats.totalAssigned} ${system} numbers from ${stats.rootPerson}`);
+				} catch (error) {
+					logger.error('reference-numbering', `Failed to assign ${system} numbers`, error);
+					new Notice(`Failed to assign numbers: ${getErrorMessage(error)}`);
+				}
+			})();
+		});
+		picker.open();
+	}
+
+	/**
+	 * Assign reference numbers from a specific person (for context menu)
+	 */
+	private async assignReferenceNumbersFromPerson(file: TFile, system: NumberingSystem): Promise<void> {
+		const cache = this.app.metadataCache.getFileCache(file);
+		const crId = cache?.frontmatter?.cr_id;
+		const personName = cache?.frontmatter?.name || file.basename;
+
+		if (!crId) {
+			new Notice('Invalid person note: missing cr_id');
+			return;
+		}
+
+		try {
+			const service = new ReferenceNumberingService(this.app);
+			let stats;
+
+			new Notice(`Assigning ${system} numbers from ${personName}...`);
+
+			switch (system) {
+				case 'ahnentafel':
+					stats = await service.assignAhnentafel(crId);
+					break;
+				case 'daboville':
+					stats = await service.assignDAboville(crId);
+					break;
+				case 'henry':
+					stats = await service.assignHenry(crId);
+					break;
+			}
+
+			new Notice(`Assigned ${stats.totalAssigned} ${system} numbers from ${stats.rootPerson}`);
+		} catch (error) {
+			logger.error('reference-numbering', `Failed to assign ${system} numbers`, error);
+			new Notice(`Failed to assign numbers: ${getErrorMessage(error)}`);
+		}
 	}
 
 	private generateTreeForCurrentNote(): void {
