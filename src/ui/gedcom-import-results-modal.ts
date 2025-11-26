@@ -9,11 +9,18 @@ import { createLucideIcon } from './lucide-icons';
 export class GedcomImportResultsModal extends Modal {
 	private result: GedcomImportResult;
 	private validation?: GedcomValidationResult;
+	private onAssignNumbers?: () => void;
 
-	constructor(app: App, result: GedcomImportResult, validation?: GedcomValidationResult) {
+	constructor(
+		app: App,
+		result: GedcomImportResult,
+		validation?: GedcomValidationResult,
+		onAssignNumbers?: () => void
+	) {
 		super(app);
 		this.result = result;
 		this.validation = validation;
+		this.onAssignNumbers = onAssignNumbers;
 	}
 
 	onOpen() {
@@ -116,8 +123,21 @@ export class GedcomImportResultsModal extends Modal {
 			});
 		}
 
-		// Close button
+		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: 'cr-modal-buttons' });
+
+		// Assign reference numbers button (only if import was successful and callback provided)
+		if (this.result.success && this.result.individualsImported > 0 && this.onAssignNumbers) {
+			const assignBtn = buttonContainer.createEl('button', {
+				cls: 'crc-btn',
+				text: 'Assign reference numbers'
+			});
+			assignBtn.addEventListener('click', () => {
+				this.close();
+				this.onAssignNumbers?.();
+			});
+		}
+
 		const closeBtn = buttonContainer.createEl('button', {
 			cls: 'crc-btn crc-btn--primary',
 			text: 'Close'

@@ -12,6 +12,7 @@ import { GedcomImporter } from '../gedcom/gedcom-importer';
 import { GedcomImportResultsModal } from './gedcom-import-results-modal';
 import { BidirectionalLinker } from '../core/bidirectional-linker';
 import { TreePreviewRenderer } from './tree-preview';
+import { ReferenceNumberingService, NumberingSystem } from '../core/reference-numbering';
 import type { RecentTreeInfo, RecentImportInfo, ArrowStyle, ColorScheme, SpouseEdgeLabelFormat } from '../settings';
 
 const logger = getLogger('ControlCenter');
@@ -3445,8 +3446,13 @@ export class ControlCenterModal extends Modal {
 				await this.syncImportedRelationships();
 			}
 
-			// Show detailed import results modal
-			const resultsModal = new GedcomImportResultsModal(this.app, result, result.validation);
+			// Show detailed import results modal with option to assign reference numbers
+			const resultsModal = new GedcomImportResultsModal(
+				this.app,
+				result,
+				result.validation,
+				() => this.promptAssignReferenceNumbersAfterImport()
+			);
 			resultsModal.open();
 
 			// Refresh status tab
@@ -3458,6 +3464,84 @@ export class ControlCenterModal extends Modal {
 			logger.error('gedcom', `GEDCOM import failed: ${errorMsg}`);
 			new Notice(`Failed to import GEDCOM: ${errorMsg}`);
 		}
+	}
+
+	/**
+	 * Prompt user to assign reference numbers after GEDCOM import
+	 */
+	private promptAssignReferenceNumbersAfterImport(): void {
+		// Show menu to select numbering system
+		const systemChoices: { system: NumberingSystem; label: string; description: string }[] = [
+			{ system: 'ahnentafel', label: 'Ahnentafel', description: 'Ancestor numbering (1=self, 2=father, 3=mother)' },
+			{ system: 'daboville', label: "d'Aboville", description: 'Descendant numbering with dots (1, 1.1, 1.2)' },
+			{ system: 'henry', label: 'Henry', description: 'Compact descendant numbering (1, 11, 12)' },
+			{ system: 'generation', label: 'Generation', description: 'Relative generation (0=self, -1=parents, +1=children)' }
+		];
+
+		// Create a simple selection modal
+		const modal = new Modal(this.app);
+		modal.titleEl.setText('Select numbering system');
+
+		const content = modal.contentEl;
+		content.createEl('p', {
+			text: 'Choose a numbering system, then select the root person.',
+			cls: 'crc-text-muted'
+		});
+
+		const buttonContainer = content.createDiv({ cls: 'cr-numbering-system-buttons' });
+
+		for (const choice of systemChoices) {
+			const btn = buttonContainer.createEl('button', {
+				cls: 'crc-btn crc-btn--block',
+				text: choice.label
+			});
+			btn.createEl('small', {
+				text: ` - ${choice.description}`,
+				cls: 'crc-text-muted'
+			});
+			btn.addEventListener('click', () => {
+				modal.close();
+				this.selectRootPersonForNumbering(choice.system);
+			});
+		}
+
+		modal.open();
+	}
+
+	/**
+	 * Select root person and assign reference numbers
+	 */
+	private selectRootPersonForNumbering(system: NumberingSystem): void {
+		const picker = new PersonPickerModal(this.app, (selectedPerson) => {
+			void (async () => {
+				try {
+					const service = new ReferenceNumberingService(this.app);
+					new Notice(`Assigning ${system} numbers from ${selectedPerson.name}...`);
+
+					let stats;
+					switch (system) {
+						case 'ahnentafel':
+							stats = await service.assignAhnentafel(selectedPerson.crId);
+							break;
+						case 'daboville':
+							stats = await service.assignDAboville(selectedPerson.crId);
+							break;
+						case 'henry':
+							stats = await service.assignHenry(selectedPerson.crId);
+							break;
+						case 'generation':
+							stats = await service.assignGeneration(selectedPerson.crId);
+							break;
+					}
+
+					new Notice(`Assigned ${stats.totalAssigned} ${system} numbers from ${stats.rootPerson}`);
+				} catch (error) {
+					logger.error('reference-numbering', `Failed to assign ${system} numbers`, error);
+					new Notice(`Failed to assign numbers: ${getErrorMessage(error)}`);
+				}
+			})();
+		});
+		picker.open();
 	}
 
 	/**
