@@ -13,6 +13,10 @@ export const BASE_TEMPLATE = `visibleProperties:
   - note.collection
   - note.group_name
   - note.root_person
+  - note.lineage
+  - note.generation
+  - note.ahnentafel
+  - note.daboville
 summaries:
   generation_span: if(values.length > 0, values.max().year() - values.min().year(), 0)
 filters:
@@ -54,6 +58,16 @@ properties:
     displayName: Group name
   note.root_person:
     displayName: Root person
+  note.lineage:
+    displayName: Lineage
+  note.generation:
+    displayName: Generation
+  note.ahnentafel:
+    displayName: Ahnentafel #
+  note.daboville:
+    displayName: d'Aboville #
+  note.henry:
+    displayName: Henry #
   file.path:
     displayName: Location
 views:
@@ -213,4 +227,53 @@ views:
       - born
     summaries:
       child: Count
+  - type: table
+    name: By lineage
+    filters:
+      and:
+        - note.cr_id
+        - note.lineage
+    order:
+      - lineage
+      - generation
+      - born
+    summaries:
+      lineage: Count
+  - type: table
+    name: By generation number
+    filters:
+      and:
+        - note.cr_id
+        - note.generation
+    order:
+      - generation
+      - born
+    summaries:
+      generation: Count
+  - type: table
+    name: Ahnentafel ordered
+    filters:
+      and:
+        - note.cr_id
+        - note.ahnentafel
+    order:
+      - ahnentafel
+    summaries:
+      ahnentafel: Max
+  - type: table
+    name: d'Aboville ordered
+    filters:
+      and:
+        - note.cr_id
+        - note.daboville
+    order:
+      - daboville
+  - type: table
+    name: Without lineage
+    filters:
+      and:
+        - note.cr_id
+        - "!note.lineage"
+    order:
+      - file.name
 `;

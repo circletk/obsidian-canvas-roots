@@ -2273,6 +2273,17 @@ export default class CanvasRootsPlugin extends Plugin {
 
 	private async createBaseTemplate(folder?: TFolder) {
 		try {
+			// Validate: Check if Bases plugin might be available (look for .base files)
+			const baseFiles = this.app.vault.getFiles().filter(f => f.extension === 'base');
+			const isBasesLikelyInstalled = baseFiles.length > 0 ||
+				// @ts-expect-error - accessing internal plugins
+				this.app.plugins?.plugins?.['obsidian-bases'] !== undefined;
+
+			if (!isBasesLikelyInstalled) {
+				const proceed = await this.confirmBaseCreation();
+				if (!proceed) return;
+			}
+
 			// Determine the target path
 			const folderPath = folder ? folder.path + '/' : '';
 			const defaultPath = folderPath + 'family-members.base';
@@ -2289,18 +2300,76 @@ export default class CanvasRootsPlugin extends Plugin {
 				return;
 			}
 
+			// Validate folder exists if specified
+			if (folder && !this.app.vault.getAbstractFileByPath(folder.path)) {
+				new Notice(`Folder not found: ${folder.path}`);
+				return;
+			}
+
 			// Create the file with template content
 			const file = await this.app.vault.create(defaultPath, BASE_TEMPLATE);
 
-			new Notice('Base template created successfully!');
+			new Notice('Base template created with 22 pre-configured views!');
+			logger.info('base-template', `Created base template at ${defaultPath}`);
 
 			// Open the newly created file
 			const leaf = this.app.workspace.getLeaf(false);
 			await leaf.openFile(file);
 		} catch (error: unknown) {
-			console.error('Error creating Base template:', error);
-			new Notice('Failed to create Base template. Check console for details.');
+			const errorMsg = getErrorMessage(error);
+			logger.error('base-template', 'Failed to create base template', error);
+
+			// Provide specific error messages
+			if (errorMsg.includes('already exists')) {
+				new Notice('A file with this name already exists.');
+			} else if (errorMsg.includes('permission') || errorMsg.includes('EACCES')) {
+				new Notice('Permission denied. Check file system permissions.');
+			} else if (errorMsg.includes('ENOSPC')) {
+				new Notice('Disk full. Free up space and try again.');
+			} else {
+				new Notice(`Failed to create Base template: ${errorMsg}`);
+			}
 		}
+	}
+
+	/**
+	 * Confirm base creation if Bases plugin may not be installed
+	 */
+	private async confirmBaseCreation(): Promise<boolean> {
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Bases plugin not detected');
+
+			modal.contentEl.createEl('p', {
+				text: 'The Obsidian Bases plugin does not appear to be installed. The .base file will be created, but you\'ll need to install the Bases plugin to use it.'
+			});
+
+			modal.contentEl.createEl('p', {
+				text: 'Would you like to create the template anyway?',
+				cls: 'cr-confirm-text'
+			});
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'cr-prompt-buttons' });
+
+			const createBtn = buttonContainer.createEl('button', {
+				text: 'Create anyway',
+				cls: 'mod-cta'
+			});
+			createBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(true);
+			});
+
+			const cancelBtn = buttonContainer.createEl('button', {
+				text: 'Cancel'
+			});
+			cancelBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(false);
+			});
+
+			modal.open();
+		});
 	}
 
 	/**
