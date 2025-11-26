@@ -93,6 +93,11 @@ export interface CanvasRootsSettings {
 	syncOnFileModify: boolean;
 	// Layout algorithm
 	defaultLayoutType: LayoutType;
+	// Privacy settings
+	enablePrivacyProtection: boolean;
+	livingPersonAgeThreshold: number;
+	privacyDisplayFormat: 'living' | 'private' | 'initials' | 'hidden';
+	hideDetailsForLiving: boolean;
 }
 
 export const DEFAULT_SETTINGS: CanvasRootsSettings = {
@@ -124,7 +129,12 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	enableBidirectionalSync: true,      // Default: ON - automatically sync relationships
 	syncOnFileModify: true,             // Default: ON - sync when files are modified
 	// Layout algorithm default
-	defaultLayoutType: 'standard'       // Default: standard family-chart layout
+	defaultLayoutType: 'standard',      // Default: standard family-chart layout
+	// Privacy settings defaults
+	enablePrivacyProtection: false,     // Default: OFF - user must opt-in to privacy protection
+	livingPersonAgeThreshold: 100,      // Assume alive if born within last 100 years with no death date
+	privacyDisplayFormat: 'living',     // Show "Living" for protected persons
+	hideDetailsForLiving: true          // Hide birth dates and places for living persons
 };
 
 export class CanvasRootsSettingTab extends PluginSettingTab {
@@ -367,6 +377,59 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					// Update logger immediately
 					const { LoggerFactory } = await import('./core/logging');
 					LoggerFactory.setLogLevel(value);
+				}));
+
+		// Privacy
+		new Setting(containerEl)
+			.setName('Privacy')
+			.setHeading();
+
+		new Setting(containerEl)
+			.setName('Enable privacy protection')
+			.setDesc('Protect living persons in exports and canvas displays. When enabled, living persons (those without a death date and born within the threshold) will be obfuscated.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.enablePrivacyProtection)
+				.onChange(async (value) => {
+					this.plugin.settings.enablePrivacyProtection = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Living person age threshold')
+			.setDesc('Assume a person is living if born within this many years and has no death date')
+			.addText(text => text
+				.setPlaceholder('100')
+				.setValue(String(this.plugin.settings.livingPersonAgeThreshold))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue > 0) {
+						this.plugin.settings.livingPersonAgeThreshold = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
+
+		new Setting(containerEl)
+			.setName('Privacy display format')
+			.setDesc('How to display protected persons in exports and canvases')
+			.addDropdown(dropdown => dropdown
+				.addOption('living', 'Show "Living" as name')
+				.addOption('private', 'Show "Private" as name')
+				.addOption('initials', 'Show initials only')
+				.addOption('hidden', 'Exclude from output entirely')
+				.setValue(this.plugin.settings.privacyDisplayFormat)
+				.onChange(async (value: 'living' | 'private' | 'initials' | 'hidden') => {
+					this.plugin.settings.privacyDisplayFormat = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Hide details for living persons')
+			.setDesc('When enabled, birth dates and places are hidden for living persons even when showing their name')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideDetailsForLiving)
+				.onChange(async (value) => {
+					this.plugin.settings.hideDetailsForLiving = value;
+					await this.plugin.saveSettings();
 				}));
 	}
 }
