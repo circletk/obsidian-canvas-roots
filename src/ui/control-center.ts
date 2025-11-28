@@ -2459,6 +2459,11 @@ export class ControlCenterModal extends Modal {
 			cls: 'crc-preview-export-option'
 		});
 
+		const exportPDF = exportDropdown.createEl('div', {
+			text: 'Export as PDF',
+			cls: 'crc-preview-export-option'
+		});
+
 		// Toggle dropdown on button click
 		exportBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
@@ -2525,6 +2530,18 @@ export class ControlCenterModal extends Modal {
 			} catch (err) {
 				new Notice('Failed to export preview: ' + (err as Error).message);
 			}
+		});
+
+		exportPDF.addEventListener('click', () => {
+			void (async () => {
+				try {
+					await this.treePreviewRenderer?.exportAsPDF();
+					new Notice('Preview exported as PDF');
+					exportDropdown.addClass('cr-hidden');
+				} catch (err) {
+					new Notice('Failed to export preview: ' + (err as Error).message);
+				}
+			})();
 		});
 
 		// Wire up preview button

@@ -24,6 +24,7 @@ import { LineageTrackingService, LineageType } from './src/core/lineage-tracking
 import { RelationshipHistoryService, RelationshipHistoryData, formatChangeDescription } from './src/core/relationship-history';
 import { RelationshipHistoryModal } from './src/ui/relationship-history-modal';
 import { FamilyChartView, VIEW_TYPE_FAMILY_CHART } from './src/ui/views/family-chart-view';
+import { TreePreviewRenderer } from './src/ui/tree-preview';
 
 const logger = getLogger('CanvasRootsPlugin');
 
@@ -310,6 +311,41 @@ export default class CanvasRootsPlugin extends Plugin {
 									});
 							});
 
+							// Export as image submenu
+							submenu.addItem((subItem) => {
+								const exportSubmenu: Menu = subItem
+									.setTitle('Export as image')
+									.setIcon('image')
+									.setSubmenu();
+
+								exportSubmenu.addItem((expItem) => {
+									expItem
+										.setTitle('Export as PNG')
+										.setIcon('image')
+										.onClick(async () => {
+											await this.exportCanvasAsImage(file, 'png');
+										});
+								});
+
+								exportSubmenu.addItem((expItem) => {
+									expItem
+										.setTitle('Export as SVG')
+										.setIcon('file-code')
+										.onClick(async () => {
+											await this.exportCanvasAsImage(file, 'svg');
+										});
+								});
+
+								exportSubmenu.addItem((expItem) => {
+									expItem
+										.setTitle('Export as PDF')
+										.setIcon('file-text')
+										.onClick(async () => {
+											await this.exportCanvasAsImage(file, 'pdf');
+										});
+								});
+							});
+
 							submenu.addSeparator();
 
 							submenu.addItem((subItem) => {
@@ -370,6 +406,33 @@ export default class CanvasRootsPlugin extends Plugin {
 								.setIcon('pencil')
 								.onClick(async () => {
 									await this.exportCanvasToExcalidraw(file);
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Export as PNG')
+								.setIcon('image')
+								.onClick(async () => {
+									await this.exportCanvasAsImage(file, 'png');
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Export as SVG')
+								.setIcon('file-code')
+								.onClick(async () => {
+									await this.exportCanvasAsImage(file, 'svg');
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Export as PDF')
+								.setIcon('file-text')
+								.onClick(async () => {
+									await this.exportCanvasAsImage(file, 'pdf');
 								});
 						});
 					}
@@ -2170,6 +2233,85 @@ export default class CanvasRootsPlugin extends Plugin {
 		} catch (error: unknown) {
 			console.error('Error exporting to Excalidraw:', error);
 			new Notice(`Failed to export to Excalidraw: ${getErrorMessage(error)}`);
+		}
+	}
+
+	/**
+	 * Export canvas tree as PNG, SVG, or PDF image
+	 */
+	private async exportCanvasAsImage(canvasFile: TFile, format: 'png' | 'svg' | 'pdf') {
+		try {
+			new Notice(`Exporting as ${format.toUpperCase()}...`);
+
+			// Read canvas to get root person
+			const canvasContent = await this.app.vault.read(canvasFile);
+			const canvasData = JSON.parse(canvasContent);
+			const metadata = canvasData.metadata?.frontmatter;
+
+			if (metadata?.plugin !== 'canvas-roots' || !metadata.generation?.rootCrId) {
+				new Notice('This canvas does not contain Canvas Roots tree data');
+				return;
+			}
+
+			const rootCrId = metadata.generation.rootCrId;
+			const treeType = metadata.generation.treeType || 'full';
+			const maxGenerations = metadata.generation.maxGenerations || 0;
+			const includeSpouses = metadata.generation.includeSpouses ?? true;
+
+			// Build family tree
+			const graphService = new FamilyGraphService(this.app);
+
+			const familyTree = await graphService.generateTree({
+				rootCrId,
+				treeType,
+				maxGenerations,
+				includeSpouses
+			});
+
+			if (!familyTree) {
+				new Notice('Failed to build family tree from canvas data');
+				return;
+			}
+
+			// Create a temporary container for the preview renderer
+			const tempContainer = document.createElement('div');
+			tempContainer.style.position = 'absolute';
+			tempContainer.style.left = '-9999px';
+			tempContainer.style.width = '2000px';
+			tempContainer.style.height = '2000px';
+			document.body.appendChild(tempContainer);
+
+			try {
+				// Render tree
+				const renderer = new TreePreviewRenderer(tempContainer);
+				renderer.setColorScheme(this.settings.nodeColorScheme);
+				renderer.renderPreview(familyTree, {
+					layoutType: metadata.generation.layoutType || this.settings.defaultLayoutType,
+					treeType: treeType === 'ancestors' ? 'ancestor' : treeType === 'descendants' ? 'descendant' : 'full',
+					direction: 'vertical',
+					nodeWidth: this.settings.defaultNodeWidth,
+					nodeHeight: this.settings.defaultNodeHeight,
+					nodeSpacingX: this.settings.horizontalSpacing,
+					nodeSpacingY: this.settings.verticalSpacing
+				});
+
+				// Export based on format
+				if (format === 'png') {
+					await renderer.exportAsPNG();
+				} else if (format === 'svg') {
+					renderer.exportAsSVG();
+				} else if (format === 'pdf') {
+					await renderer.exportAsPDF();
+				}
+
+				new Notice(`${format.toUpperCase()} exported successfully`);
+			} finally {
+				// Clean up temporary container
+				document.body.removeChild(tempContainer);
+			}
+		} catch (error: unknown) {
+			console.error(`Error exporting canvas as ${format}:`, error);
+			new Notice(`Failed to export as ${format.toUpperCase()}: ${getErrorMessage(error)}`);
 		}
 	}
 

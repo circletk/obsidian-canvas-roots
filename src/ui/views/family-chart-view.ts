@@ -7,6 +7,7 @@
 
 import { ItemView, WorkspaceLeaf, Menu, TFile, Notice } from 'obsidian';
 import f3 from 'family-chart';
+import { jsPDF } from 'jspdf';
 import type CanvasRootsPlugin from '../../../main';
 import { FamilyGraphService, PersonNode } from '../../core/family-graph';
 import type { ColorScheme } from '../../settings';
@@ -667,6 +668,12 @@ export class FamilyChartView extends ItemView {
 				.onClick(() => this.exportAsSvg());
 		});
 
+		menu.addItem((item) => {
+			item.setTitle('Export as PDF')
+				.setIcon('file-text')
+				.onClick(() => this.exportAsPdf());
+		});
+
 		menu.showAtMouseEvent(e);
 	}
 
@@ -1120,6 +1127,77 @@ export class FamilyChartView extends ItemView {
 		} catch (error) {
 			logger.error('export-svg', 'Failed to export SVG', { error });
 			new Notice('Failed to export SVG');
+		}
+	}
+
+	/**
+	 * Export the chart as PDF
+	 */
+	private async exportAsPdf(): Promise<void> {
+		if (!this.f3Chart) return;
+
+		const svg = this.f3Chart.svg;
+		if (!svg) {
+			new Notice('No chart to export');
+			return;
+		}
+
+		try {
+			// Prepare SVG for export using shared helper
+			const { svgClone, width, height } = this.prepareSvgForExport(svg as SVGSVGElement);
+
+			// Serialize SVG
+			const serializer = new XMLSerializer();
+			const svgString = serializer.serializeToString(svgClone);
+			const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+			const svgUrl = URL.createObjectURL(svgBlob);
+
+			// Create canvas and draw SVG (same as PNG export)
+			const canvas = document.createElement('canvas');
+			const scale = 2; // Higher quality
+			canvas.width = width * scale;
+			canvas.height = height * scale;
+			const ctx = canvas.getContext('2d');
+			if (!ctx) {
+				new Notice('Failed to create canvas context');
+				return;
+			}
+
+			// Generate filename before the async callback
+			const filename = this.generateExportFilename('pdf');
+
+			const img = new Image();
+			img.onload = () => {
+				ctx.scale(scale, scale);
+				ctx.drawImage(img, 0, 0);
+				URL.revokeObjectURL(svgUrl);
+
+				// Create PDF with appropriate page size
+				// Use landscape if wider than tall, portrait otherwise
+				const orientation = width > height ? 'landscape' : 'portrait';
+				const pdf = new jsPDF({
+					orientation,
+					unit: 'px',
+					format: [width, height]
+				});
+
+				// Add canvas image to PDF
+				const imgData = canvas.toDataURL('image/png');
+				pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+
+				// Save PDF
+				pdf.save(filename);
+				new Notice('PDF exported successfully');
+			};
+			img.onerror = () => {
+				URL.revokeObjectURL(svgUrl);
+				new Notice('Failed to render chart as PDF');
+			};
+			img.src = svgUrl;
+
+		} catch (error) {
+			logger.error('export-pdf', 'Failed to export PDF', { error });
+			new Notice('Failed to export PDF');
 		}
 	}
 

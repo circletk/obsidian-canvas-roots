@@ -9,6 +9,7 @@ import { FamilyChartLayoutEngine } from '../core/family-chart-layout';
 import { TimelineLayoutEngine } from '../core/timeline-layout';
 import { HourglassLayoutEngine } from '../core/hourglass-layout';
 import type { ColorScheme } from '../settings';
+import { jsPDF } from 'jspdf';
 
 /**
  * Renders interactive SVG preview of family trees
@@ -628,6 +629,105 @@ export class TreePreviewRenderer {
 		const svgString = new XMLSerializer().serializeToString(svgClone);
 		const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
 		this.downloadBlob(blob, 'tree-preview.svg');
+	}
+
+	/**
+	 * Export preview as PDF file
+	 */
+	async exportAsPDF(): Promise<void> {
+		if (!this.svgElement) {
+			throw new Error('No preview to export');
+		}
+
+		// Clone SVG and prepare for export (same as PNG)
+		const svgClone = this.svgElement.cloneNode(true) as SVGElement;
+
+		// Get SVG bounds
+		const bbox = this.svgElement.getBoundingClientRect();
+		const width = bbox.width;
+		const height = bbox.height;
+
+		// Set explicit dimensions and namespace on clone
+		svgClone.setAttribute('width', width.toString());
+		svgClone.setAttribute('height', height.toString());
+		svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+		// Inline styles so they survive serialization
+		this.inlineStylesFromSource(this.svgElement, svgClone);
+
+		// Remove clip-path and mask references
+		svgClone.querySelectorAll('[clip-path]').forEach((el) => {
+			el.removeAttribute('clip-path');
+		});
+		svgClone.querySelectorAll('[mask]').forEach((el) => {
+			el.removeAttribute('mask');
+		});
+		svgClone.querySelectorAll('[style*="clip-path"], [style*="mask"]').forEach((el) => {
+			const style = el.getAttribute('style') || '';
+			el.setAttribute('style', style.replace(/clip-path:[^;]+;?/g, '').replace(/mask:[^;]+;?/g, ''));
+		});
+
+		// Set text colors
+		const isDark = document.body.classList.contains('theme-dark');
+		const textColor = isDark ? '#ffffff' : '#333333';
+		svgClone.querySelectorAll('text, tspan').forEach((el) => {
+			el.setAttribute('fill', textColor);
+		});
+
+		// Add background rect
+		const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+		bgRect.setAttribute('width', '100%');
+		bgRect.setAttribute('height', '100%');
+		bgRect.setAttribute('fill', isDark ? '#1e1e1e' : '#ffffff');
+		svgClone.insertBefore(bgRect, svgClone.firstChild);
+
+		// Serialize SVG to string
+		const svgString = new XMLSerializer().serializeToString(svgClone);
+		const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+		const url = URL.createObjectURL(svgBlob);
+
+		// Create image and canvas
+		const img = new Image();
+		const canvas = document.createElement('canvas');
+		const scale = 2; // 2x resolution for better quality
+		canvas.width = width * scale;
+		canvas.height = height * scale;
+		const ctx = canvas.getContext('2d');
+
+		if (!ctx) {
+			throw new Error('Failed to get canvas context');
+		}
+
+		// Wait for image to load and create PDF
+		await new Promise<void>((resolve, reject) => {
+			img.onload = () => {
+				// Scale and draw
+				ctx.scale(scale, scale);
+				ctx.drawImage(img, 0, 0);
+				URL.revokeObjectURL(url);
+
+				// Create PDF with appropriate page size
+				const orientation = width > height ? 'landscape' : 'portrait';
+				const pdf = new jsPDF({
+					orientation,
+					unit: 'px',
+					format: [width, height]
+				});
+
+				// Add canvas image to PDF
+				const imgData = canvas.toDataURL('image/png');
+				pdf.addImage(imgData, 'PNG', 0, 0, width, height);
+
+				// Save PDF
+				pdf.save('tree-preview.pdf');
+				resolve();
+			};
+			img.onerror = () => {
+				URL.revokeObjectURL(url);
+				reject(new Error('Failed to load SVG image'));
+			};
+			img.src = url;
+		});
 	}
 
 	/**
