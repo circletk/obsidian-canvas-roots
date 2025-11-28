@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.2] - 2025-11-28
+
+### Fixed
+
+- **ESLint Compliance**: Fixed 19 ESLint errors for PR review compliance
+  - Removed unnecessary `async` keywords from synchronous methods
+  - Fixed floating promises in event handlers with `void` operator
+  - Added eslint-disable comments with explanations where required by base class
+
+### Added
+
+- **Bidirectional Name Sync**: Full two-way synchronization between chart edits and file names
+  - Editing a name in Family Chart View now renames the markdown file
+  - Renaming a file in Obsidian updates the frontmatter `name` property
+  - Chart automatically refreshes when person files are renamed
+  - Added `sanitizeFilename` helper for safe filename generation
+
+---
+
+## [0.3.1] - 2025-11-27
+
+### Added
+
+- **PDF Export**: Export family charts and tree previews to PDF format
+  - Family Chart View: Export menu in toolbar (PNG, SVG, PDF)
+  - Tree Preview in Control Center: PDF export option
+  - Canvas file context menu: "Export as image" submenu with PNG, SVG, PDF options
+
+- **Customizable Export Filenames**: Configure export filename patterns
+  - New setting: Export filename pattern (default: `{name}-family-chart-{date}`)
+  - Placeholders: `{name}` for root person name, `{date}` for current date
+  - Applied to all image exports (PNG, SVG, PDF)
+
+### Changed
+
+- Added jsPDF dependency for PDF generation
+
+---
+
 ## [0.3.0] - 2025-11-26
 
 ### Added
