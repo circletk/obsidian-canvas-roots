@@ -139,6 +139,15 @@ export default class CanvasRootsPlugin extends Plugin {
 			}
 		});
 
+		// Add command: Open new Family Chart (always creates new tab)
+		this.addCommand({
+			id: 'open-new-family-chart',
+			name: 'Open new family chart',
+			callback: () => {
+				void this.activateFamilyChartView(undefined, true, true);
+			}
+		});
+
 		// Add command: Open Family Chart for Current Note
 		this.addCommand({
 			id: 'open-family-chart-for-note',
@@ -2726,14 +2735,15 @@ export default class CanvasRootsPlugin extends Plugin {
 	 * Opens an existing view or creates a new one
 	 * @param rootPersonId - Optional cr_id to set as root person
 	 * @param useMainWorkspace - If true, opens in main workspace instead of sidebar
+	 * @param forceNew - If true, always creates a new view even if one exists
 	 */
-	async activateFamilyChartView(rootPersonId?: string, useMainWorkspace: boolean = false): Promise<void> {
+	async activateFamilyChartView(rootPersonId?: string, useMainWorkspace: boolean = false, forceNew: boolean = false): Promise<void> {
 		const { workspace } = this.app;
 
 		let leaf: WorkspaceLeaf | null = null;
 		const leaves = workspace.getLeavesOfType(VIEW_TYPE_FAMILY_CHART);
 
-		if (leaves.length > 0) {
+		if (leaves.length > 0 && !forceNew) {
 			// A leaf with our view already exists, use that
 			leaf = leaves[0];
 		} else {
