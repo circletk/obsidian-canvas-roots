@@ -4705,12 +4705,12 @@ export class ControlCenterModal extends Modal {
 		// Promote all (if no pending matches)
 		new Setting(actionsContent)
 			.setName('Promote all to main tree')
-			.setDesc('Move all staging data to your main people folder')
+			.setDesc('Move all staging data to your main people folder (skips duplicates)')
 			.addButton(btn => btn
 				.setButtonText('Promote all')
 				.setWarning()
 				.onClick(() => {
-					void this.promoteAllStaging(stagingService);
+					void this.promoteAllStaging(stagingService, crossImportService);
 				})
 			);
 
@@ -4814,7 +4814,7 @@ export class ControlCenterModal extends Modal {
 			cls: 'mod-cta'
 		});
 		promoteBtn.addEventListener('click', () => {
-			void this.promoteAllStaging(stagingService);
+			void this.promoteAllStaging(stagingService, crossImportService);
 		});
 	}
 
@@ -4867,7 +4867,7 @@ export class ControlCenterModal extends Modal {
 			cls: 'mod-cta'
 		});
 		promoteBtn.addEventListener('click', () => {
-			void this.promoteStagingSubfolder(stagingService, subfolder.path);
+			void this.promoteStagingSubfolder(stagingService, subfolder.path, crossImportService);
 		});
 
 		const deleteBtn = actionsEl.createEl('button', {
@@ -4906,7 +4906,10 @@ export class ControlCenterModal extends Modal {
 	/**
 	 * Promote all staging data to main tree
 	 */
-	private async promoteAllStaging(stagingService: StagingService): Promise<void> {
+	private async promoteAllStaging(
+		stagingService: StagingService,
+		crossImportService?: CrossImportDetectionService
+	): Promise<void> {
 		const stats = stagingService.getStagingStats();
 
 		if (stats.totalPeople === 0) {
@@ -4917,16 +4920,30 @@ export class ControlCenterModal extends Modal {
 		// Confirm action
 		const confirmed = await this.confirmAction(
 			'Promote all staging data',
-			`This will move ${stats.totalPeople} people from staging to your main people folder. Continue?`
+			`This will move ${stats.totalPeople} people from staging to your main people folder. Files marked as "same person" will be skipped. Continue?`
 		);
 
 		if (!confirmed) return;
 
 		try {
-			const result = await stagingService.promoteAll();
+			// Create shouldSkip function that checks for "same person" resolutions
+			const shouldSkip = crossImportService
+				? (_file: TFile, crId: string | undefined) => {
+					if (!crId) return false;
+					// Check all resolutions for this staging crId
+					const resolutions = crossImportService.getResolutions();
+					return resolutions.some(r => r.stagingCrId === crId && r.resolution === 'same');
+				}
+				: undefined;
+
+			const result = await stagingService.promoteAll({ shouldSkip });
 
 			if (result.success) {
-				new Notice(`Promoted ${result.filesPromoted} people to main tree`);
+				let message = `Promoted ${result.filesPromoted} people to main tree`;
+				if (result.filesSkipped > 0) {
+					message += ` (${result.filesSkipped} skipped as duplicates)`;
+				}
+				new Notice(message);
 				// Refresh the tab
 				this.showStagingTab();
 			} else {
@@ -4944,13 +4961,27 @@ export class ControlCenterModal extends Modal {
 	 */
 	private async promoteStagingSubfolder(
 		stagingService: StagingService,
-		subfolderPath: string
+		subfolderPath: string,
+		crossImportService?: CrossImportDetectionService
 	): Promise<void> {
 		try {
-			const result = await stagingService.promoteSubfolder(subfolderPath);
+			// Create shouldSkip function that checks for "same person" resolutions
+			const shouldSkip = crossImportService
+				? (_file: TFile, crId: string | undefined) => {
+					if (!crId) return false;
+					const resolutions = crossImportService.getResolutions();
+					return resolutions.some(r => r.stagingCrId === crId && r.resolution === 'same');
+				}
+				: undefined;
+
+			const result = await stagingService.promoteSubfolder(subfolderPath, { shouldSkip });
 
 			if (result.success) {
-				new Notice(`Promoted ${result.filesPromoted} people to main tree`);
+				let message = `Promoted ${result.filesPromoted} people to main tree`;
+				if (result.filesSkipped > 0) {
+					message += ` (${result.filesSkipped} skipped as duplicates)`;
+				}
+				new Notice(message);
 				// Refresh the tab
 				this.showStagingTab();
 			} else {

@@ -18,7 +18,19 @@ export interface StagingSubfolderInfo {
 export interface PromoteResult {
 	success: boolean;
 	filesPromoted: number;
+	filesSkipped: number;
 	errors: string[];
+}
+
+/**
+ * Options for promote operations
+ */
+export interface PromoteOptions {
+	/**
+	 * Function to check if a file should be skipped (e.g., marked as duplicate)
+	 * Returns true if file should be skipped, false to promote
+	 */
+	shouldSkip?: (file: TFile, crId: string | undefined) => boolean;
 }
 
 /**
@@ -171,16 +183,26 @@ export class StagingService {
 	/**
 	 * Promote all files from a staging subfolder to main tree
 	 */
-	async promoteSubfolder(subfolderPath: string): Promise<PromoteResult> {
+	async promoteSubfolder(subfolderPath: string, options: PromoteOptions = {}): Promise<PromoteResult> {
 		const folder = this.app.vault.getAbstractFileByPath(subfolderPath);
 		if (!(folder instanceof TFolder)) {
-			return { success: false, filesPromoted: 0, errors: ['Subfolder not found'] };
+			return { success: false, filesPromoted: 0, filesSkipped: 0, errors: ['Subfolder not found'] };
 		}
 
 		const files = this.getFilesInFolder(folder);
-		const results: PromoteResult = { success: true, filesPromoted: 0, errors: [] };
+		const results: PromoteResult = { success: true, filesPromoted: 0, filesSkipped: 0, errors: [] };
 
 		for (const file of files) {
+			// Check if file should be skipped (e.g., marked as same person)
+			if (options.shouldSkip) {
+				const cache = this.app.metadataCache.getFileCache(file);
+				const crId = cache?.frontmatter?.cr_id;
+				if (options.shouldSkip(file, crId)) {
+					results.filesSkipped++;
+					continue;
+				}
+			}
+
 			const result = await this.promoteFile(file);
 			if (result.success) {
 				results.filesPromoted++;
@@ -189,8 +211,8 @@ export class StagingService {
 			}
 		}
 
-		// If some files were promoted, consider it a partial success
-		results.success = results.filesPromoted > 0 || files.length === 0;
+		// If some files were promoted or skipped, consider it a partial success
+		results.success = results.filesPromoted > 0 || results.filesSkipped > 0 || files.length === 0;
 
 		return results;
 	}
@@ -198,11 +220,21 @@ export class StagingService {
 	/**
 	 * Promote all staging files to main tree
 	 */
-	async promoteAll(): Promise<PromoteResult> {
+	async promoteAll(options: PromoteOptions = {}): Promise<PromoteResult> {
 		const files = this.getStagingFiles();
-		const results: PromoteResult = { success: true, filesPromoted: 0, errors: [] };
+		const results: PromoteResult = { success: true, filesPromoted: 0, filesSkipped: 0, errors: [] };
 
 		for (const file of files) {
+			// Check if file should be skipped (e.g., marked as same person)
+			if (options.shouldSkip) {
+				const cache = this.app.metadataCache.getFileCache(file);
+				const crId = cache?.frontmatter?.cr_id;
+				if (options.shouldSkip(file, crId)) {
+					results.filesSkipped++;
+					continue;
+				}
+			}
+
 			const result = await this.promoteFile(file);
 			if (result.success) {
 				results.filesPromoted++;
@@ -211,7 +243,7 @@ export class StagingService {
 			}
 		}
 
-		results.success = results.filesPromoted > 0 || files.length === 0;
+		results.success = results.filesPromoted > 0 || results.filesSkipped > 0 || files.length === 0;
 
 		return results;
 	}

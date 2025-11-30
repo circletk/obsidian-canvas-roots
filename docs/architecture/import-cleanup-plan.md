@@ -458,7 +458,7 @@ Modal for reviewing staging vs main tree matches:
 4. [x] Add "Check for duplicates" action per subfolder
 5. [x] Create `CrossImportReviewModal` for reviewing matches
 6. [x] Store resolution decisions (same/different)
-7. [ ] Update promote logic to handle resolved matches
+7. [x] Update promote logic to handle resolved matches
 8. [ ] Test cross-import workflow
 
 ### Resolution Storage
