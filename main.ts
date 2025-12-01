@@ -26,6 +26,7 @@ import { RelationshipHistoryModal } from './src/ui/relationship-history-modal';
 import { FamilyChartView, VIEW_TYPE_FAMILY_CHART } from './src/ui/views/family-chart-view';
 import { TreePreviewRenderer } from './src/ui/tree-preview';
 import { FolderFilterService } from './src/core/folder-filter';
+import { SplitWizardModal } from './src/ui/split-wizard-modal';
 
 const logger = getLogger('CanvasRootsPlugin');
 
@@ -279,6 +280,15 @@ export default class CanvasRootsPlugin extends Plugin {
 			name: 'Undo last relationship change',
 			callback: () => {
 				void this.undoLastRelationshipChange();
+			}
+		});
+
+		// Add command: Split Canvas Wizard
+		this.addCommand({
+			id: 'split-canvas-wizard',
+			name: 'Split canvas wizard',
+			callback: () => {
+				new SplitWizardModal(this.app, this.settings, this.folderFilter ?? undefined).open();
 			}
 		});
 
