@@ -304,11 +304,13 @@ Tools for consolidating multiple GEDCOM files, cleaning up messy imports, and im
 - Relationship reconciliation when merging people with different connections
 - Merge available from both cross-import review and duplicate detection modals
 
-**Phase 4 - Data Quality Tools:** 🔜 Planned
-- Data quality report: missing dates, orphaned records, incomplete relationships
-- Batch operations: normalize name formats, standardize date formats
-- Inconsistency detection (e.g., child born before parent)
-- Completeness scoring per person
+**Phase 4 - Data Quality Tools:** ✅ Complete
+- Data quality report with quality score (0-100)
+- Issue detection across 5 categories: date inconsistencies, relationship problems, missing data, format issues, orphan references
+- 15+ specific issue types (birth after death, circular references, unrealistic ages, etc.)
+- Batch normalization: date formats, gender values, orphan reference cleanup
+- Preview changes before applying batch operations
+- Data Quality tab in Control Center with filtering and navigation
 
 See [import-cleanup-plan.md](architecture/import-cleanup-plan.md) for implementation details.
 
@@ -464,11 +466,18 @@ A dedicated Obsidian leaf view that renders the full family-chart library intera
 
 ### Canvas Navigation & Organization
 
-- Split large canvases by branch, generation, or geography
-- Linked branch canvases with navigation nodes
-- Ancestor/descendant canvas linking for same root person
-- Canvas-to-canvas file nodes for easy navigation
+**Status:** 🚧 In Development
+
+Tools for splitting large trees into manageable segments and linking them together.
+
+**Planned Features:**
+- Split large canvases by branch, generation, or collection
+- Navigation nodes linking between related canvases
+- Ancestor/descendant canvas pairs for same root person
 - Master overview canvases with links to detailed views
+- Split wizard modal for configuring canvas splitting
+
+See [canvas-navigation-plan.md](architecture/canvas-navigation-plan.md) for implementation details.
 
 ### World-Building Features
 
