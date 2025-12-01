@@ -72,7 +72,7 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 
 - **Data Quality Tools:** Comprehensive data quality analysis and batch normalization. Quality score (0-100) measures data completeness and consistency. Detects 15+ issue types across five categories: date inconsistencies (birth after death, impossible ages), relationship problems (circular references, mismatched links), missing data (no birth date, no parents), format issues (non-standard dates/gender), and orphan references. Filter issues by category and severity. Batch operations normalize dates to YYYY-MM-DD, standardize gender to M/F, and clear invalid references—all with preview before applying. Data Quality tab in Control Center provides visual stats, completeness bars, and scrollable issue list.
 
-- **Split Canvas Wizard:** Multi-step wizard for planning how to split large family trees into manageable segments. Six split methods: by generation (configurable generations per canvas), by branch (paternal/maternal lines), single lineage extraction (direct line between two people), by collection (one canvas per user-defined collection), ancestor + descendant pairs, and by surname (extract people sharing a surname even without established connections). Surname extraction includes scrollable surname list sorted by frequency, multi-surname selection, and options to include spouses and match maiden names. Preview shows expected canvas count and people before generating. Access via canvas context menu → Canvas Roots → Split canvas wizard.
+- **Split Canvas Wizard:** Multi-step wizard for splitting large family trees into manageable canvas files. Six split methods: by generation (configurable generations per canvas), by branch (paternal/maternal lines), single lineage extraction (direct line between two people), by collection (one canvas per user-defined collection), ancestor + descendant pairs, and by surname (extract people sharing a surname even without established connections). Surname extraction includes scrollable surname list sorted by frequency, multi-surname selection, and options to include spouses and match maiden names. Preview step shows expected canvas count and people before generating. Generates actual canvas files with full layout and styling. Access via canvas context menu → Canvas Roots → Split canvas wizard.
 
 - **Reference Numbering Systems:** Assign standard genealogical reference numbers to your family members. Supports four numbering systems: Ahnentafel (ancestor numbering where father=2N, mother=2N+1), d'Aboville (descendant numbering with dot notation like 1.2.3), Henry System (compact descendant numbering without dots), and Generation numbering (relative generation depth from a reference person). Numbers are stored in frontmatter and automatically available in Bases views.
 
@@ -87,7 +87,7 @@ This plugin is designed for genealogists, historians, and world-builders. It tra
 ### Planned Features
 
 See [Roadmap](docs/roadmap.md) for detailed feature descriptions and development priorities.
-- **Import/Export Enhancements:** GEDCOM X, Gramps XML, CSV import/export, selective branch export
+- **Import/Export Enhancements:** GEDCOM X and Gramps XML format support
 - **World-Building Features:** Track fantasy dynasties, corporate succession, and historical kingdoms
 
 
