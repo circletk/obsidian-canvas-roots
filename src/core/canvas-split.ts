@@ -236,6 +236,61 @@ export const DEFAULT_ANCESTOR_DESCENDANT_OPTIONS: Omit<AncestorDescendantSplitOp
 };
 
 /**
+ * Options for surname-based splitting
+ */
+export interface SurnameSplitOptions extends Partial<SplitOptions> {
+	/** Surnames to extract */
+	surnames: string[];
+	/** Include spouses of matching people (even with different surnames) */
+	includeSpouses: boolean;
+	/** Also match maiden names from frontmatter */
+	includeMaidenNames: boolean;
+	/** Handle spelling variants (future feature) */
+	handleVariants: boolean;
+	/** Create separate canvases per surname vs one combined canvas */
+	separateCanvases: boolean;
+}
+
+/**
+ * Default surname split options
+ */
+export const DEFAULT_SURNAME_SPLIT_OPTIONS: Omit<SurnameSplitOptions, 'surnames'> = {
+	...DEFAULT_SPLIT_OPTIONS,
+	includeSpouses: true,
+	includeMaidenNames: true,
+	handleVariants: true,
+	separateCanvases: true
+};
+
+/**
+ * Result of surname extraction
+ */
+export interface SurnameExtractionResult {
+	/** People matching each surname */
+	bySurname: Map<string, PersonNode[]>;
+	/** Spouses included (keyed by their surname, value is original person's surname) */
+	spouses: Map<string, string>;
+	/** Total people extracted */
+	totalPeople: number;
+	/** Total unique people (some may appear in multiple if they have variant surnames) */
+	uniquePeople: Set<string>;
+}
+
+/**
+ * Preview result for surname split
+ */
+export interface SurnameSplitPreview {
+	/** Surnames and their counts */
+	surnames: Array<{ name: string; count: number }>;
+	/** Total people to be extracted */
+	totalPeople: number;
+	/** Number of canvases that will be created */
+	canvasCount: number;
+	/** Spouse count (included but with different surname) */
+	spouseCount: number;
+}
+
+/**
  * Result of ancestor or descendant extraction
  */
 export interface DirectionalExtractionResult {
@@ -3013,6 +3068,41 @@ export class CanvasSplitService {
 				count: descendantExtraction.people.length,
 				generations: descendantExtraction.generationCount
 			}
+		};
+	}
+
+	/**
+	 * Preview a surname-based split without creating files
+	 *
+	 * Note: This method works directly with surname data passed in,
+	 * since surname extraction happens at the wizard level (scanning vault files).
+	 */
+	previewSurnameSplit(
+		surnameCounts: Map<string, number>,
+		options: SurnameSplitOptions
+	): SurnameSplitPreview {
+		const opts = { ...DEFAULT_SURNAME_SPLIT_OPTIONS, ...options };
+
+		const surnames: Array<{ name: string; count: number }> = [];
+		let totalPeople = 0;
+
+		for (const surname of opts.surnames) {
+			const count = surnameCounts.get(surname) || 0;
+			surnames.push({ name: surname, count });
+			totalPeople += count;
+		}
+
+		// Sort by count descending
+		surnames.sort((a, b) => b.count - a.count);
+
+		// Calculate canvas count
+		const canvasCount = opts.separateCanvases ? surnames.length : 1;
+
+		return {
+			surnames,
+			totalPeople,
+			canvasCount,
+			spouseCount: 0 // Calculated separately if includeSpouses is true
 		};
 	}
 }

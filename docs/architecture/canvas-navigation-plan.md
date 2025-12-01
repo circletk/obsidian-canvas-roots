@@ -93,6 +93,22 @@ Create separate canvases per user-defined collection:
 
 **Use case:** Multi-family research projects, fictional world-building with factions.
 
+#### 1.5 Split by Surname ✅ Implemented
+
+Extract all people with a given surname, even without established family connections:
+- Scrollable list of available surnames sorted by frequency
+- Multi-surname selection for combined extraction
+- One canvas per surname (or combined into single canvas)
+- Optionally include spouses (with different surnames)
+- Optionally match maiden names from frontmatter
+- Handle spelling variants (future enhancement)
+
+**Use cases:**
+- Surname studies when connections are incomplete or unknown
+- Consolidating unconnected people who share a family name
+- Research projects focused on a specific surname
+- Extracting people imported from different GEDCOM files that haven't been linked yet
+
 ### Feature 2: Extraction Modes
 
 All split/extraction operations support two modes:
@@ -404,6 +420,15 @@ interface LineageOptions extends SplitOptions {
     lineageDirection: 'ancestors' | 'descendants' | 'auto';  // Which direction to trace
 }
 
+// ✅ Implemented
+interface SurnameSplitOptions extends Partial<SplitOptions> {
+    surnames: string[];           // Surnames to extract
+    includeSpouses: boolean;      // Include spouses with different surnames
+    includeMaidenNames: boolean;  // Match maiden names from frontmatter
+    handleVariants: boolean;      // Handle spelling variants (future)
+    separateCanvases: boolean;    // One canvas per surname vs combined
+}
+
 interface SplitOptions {
     outputFolder: string;
     filenamePattern: string;
@@ -521,6 +546,7 @@ Multi-step modal for configuring canvas splitting:
 │ ● Single lineage (direct line between two people)        │
 │ ○ By collection (one canvas per collection)              │
 │ ○ Ancestor + Descendant pair                             │
+│ ○ By surname (extract by last name, even unconnected)    │
 │                                                          │
 │ ──────────────────────────────────────────────────────── │
 │                                                          │
@@ -697,18 +723,22 @@ Add "Split options" section to Tree Output tab:
 - `src/core/canvas-split.ts`
 - `src/main.ts` (add command)
 
-### Phase 9: Split Wizard UI
+### Phase 9: Split Wizard UI ✅ Complete
 
 **Goal:** Full-featured split configuration modal.
 
-1. [ ] Create `SplitWizardModal` with multi-step flow
-2. [ ] Add preview of generated canvases
-3. [ ] Implement all split methods in wizard
-4. [ ] Add context menu integration
+1. [x] Create `SplitWizardModal` with multi-step flow
+2. [x] Add preview of generated canvases
+3. [x] Implement all split methods in wizard (generation, branch, lineage, collection, ancestor-descendant, **surname**)
+4. [x] Add context menu integration
 
-**Files to create/modify:**
+**Files created/modified:**
 - `src/ui/split-wizard-modal.ts` (new)
-- `src/main.ts` (add commands, context menus)
+- `src/core/canvas-split.ts` (new)
+- `src/main.ts` (context menus)
+- `styles/canvas-navigation.css` (new)
+
+**Note:** The surname split method was added as a sixth split type, allowing extraction of people by surname even without established family connections. This is useful for consolidating unconnected GEDCOM imports or surname-focused research.
 
 ### Phase 10: Collection-Based Splitting
 

@@ -398,6 +398,15 @@ export default class CanvasRootsPlugin extends Plugin {
 								});
 							});
 
+							submenu.addItem((subItem) => {
+								subItem
+									.setTitle('Split canvas wizard')
+									.setIcon('layers')
+									.onClick(() => {
+										new SplitWizardModal(this.app, this.settings, this.folderFilter ?? undefined).open();
+									});
+							});
+
 							submenu.addSeparator();
 
 							submenu.addItem((subItem) => {
@@ -485,6 +494,15 @@ export default class CanvasRootsPlugin extends Plugin {
 								.setIcon('file-text')
 								.onClick(async () => {
 									await this.exportCanvasAsImage(file, 'pdf');
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: Split canvas wizard')
+								.setIcon('layers')
+								.onClick(() => {
+									new SplitWizardModal(this.app, this.settings, this.folderFilter ?? undefined).open();
 								});
 						});
 					}

@@ -19,13 +19,24 @@ import {
 	type LineageSplitOptions,
 	type CollectionSplitOptions,
 	type AncestorDescendantSplitOptions,
+	type SurnameSplitOptions,
 	DEFAULT_GENERATION_SPLIT_OPTIONS,
 	DEFAULT_BRANCH_SPLIT_OPTIONS,
 	DEFAULT_LINEAGE_SPLIT_OPTIONS,
 	DEFAULT_COLLECTION_SPLIT_OPTIONS,
-	DEFAULT_ANCESTOR_DESCENDANT_OPTIONS
+	DEFAULT_ANCESTOR_DESCENDANT_OPTIONS,
+	DEFAULT_SURNAME_SPLIT_OPTIONS
 } from '../core/canvas-split';
 import { PersonPickerModal, type PersonInfo } from './person-picker';
+
+/**
+ * Simplified person selection info for the wizard
+ * (doesn't require full PersonNode which may not exist in partial tree)
+ */
+interface SelectedPerson {
+	crId: string;
+	name: string;
+}
 import { createLucideIcon, type LucideIconName } from './lucide-icons';
 import { getLogger } from '../core/logging';
 
@@ -34,7 +45,7 @@ const logger = getLogger('SplitWizard');
 /**
  * Split method type
  */
-export type SplitMethod = 'generation' | 'branch' | 'lineage' | 'collection' | 'ancestor-descendant';
+export type SplitMethod = 'generation' | 'branch' | 'lineage' | 'collection' | 'ancestor-descendant' | 'surname';
 
 /**
  * Wizard step type
@@ -64,18 +75,18 @@ export class SplitWizardModal extends Modal {
 	// Generation split options
 	private generationsPerCanvas: number = 4;
 	private generationDirection: 'up' | 'down' = 'up';
-	private selectedRootPerson: PersonNode | null = null;
+	private selectedRootPerson: SelectedPerson | null = null;
 
 	// Branch split options
 	private includePaternal: boolean = true;
 	private includeMaternal: boolean = true;
 	private includeDescendants: boolean = false;
 	private branchMaxGenerations?: number;
-	private branchAnchorPerson: PersonNode | null = null;
+	private branchAnchorPerson: SelectedPerson | null = null;
 
 	// Lineage split options
-	private lineageStartPerson: PersonNode | null = null;
-	private lineageEndPerson: PersonNode | null = null;
+	private lineageStartPerson: SelectedPerson | null = null;
+	private lineageEndPerson: SelectedPerson | null = null;
 	private lineageIncludeSpouses: boolean = true;
 	private lineageIncludeSiblings: boolean = false;
 
@@ -85,10 +96,18 @@ export class SplitWizardModal extends Modal {
 	private collectionIncludeBridgePeople: boolean = true;
 
 	// Ancestor-descendant options
-	private ancestorDescendantRoot: PersonNode | null = null;
+	private ancestorDescendantRoot: SelectedPerson | null = null;
 	private ancestorDescendantIncludeSpouses: boolean = true;
 	private ancestorDescendantMaxAncestors?: number;
 	private ancestorDescendantMaxDescendants?: number;
+
+	// Surname split options
+	private selectedSurnames: string[] = [];
+	private availableSurnames: string[] = [];
+	private surnameIncludeSpouses: boolean = true;
+	private surnameIncludeMaidenNames: boolean = true;
+	private surnameHandleVariants: boolean = true;
+	private surnameSeparateCanvases: boolean = true;
 
 	// Preview data
 	private previewData: {
@@ -280,6 +299,12 @@ export class SplitWizardModal extends Modal {
 				label: 'Ancestor + descendant pair',
 				desc: 'Create linked ancestor and descendant canvases',
 				icon: 'arrow-up-down'
+			},
+			{
+				id: 'surname',
+				label: 'By surname',
+				desc: 'Extract all people with a given surname (even without connections)',
+				icon: 'users'
 			}
 		];
 
@@ -344,6 +369,9 @@ export class SplitWizardModal extends Modal {
 			case 'ancestor-descendant':
 				this.renderAncestorDescendantConfig(stepContainer);
 				break;
+			case 'surname':
+				this.renderSurnameConfig(stepContainer);
+				break;
 		}
 
 		// Common output options
@@ -370,7 +398,7 @@ export class SplitWizardModal extends Modal {
 					.setButtonText(this.selectedRootPerson?.name || 'Select person')
 					.onClick(() => {
 						new PersonPickerModal(this.app, (person: PersonInfo) => {
-							this.selectedRootPerson = this.findPersonNode(person.crId);
+							this.selectedRootPerson = { crId: person.crId, name: person.name };
 							this.render();
 						}, this.folderFilter).open();
 					});
@@ -425,7 +453,7 @@ export class SplitWizardModal extends Modal {
 					.setButtonText(this.branchAnchorPerson?.name || 'Select person')
 					.onClick(() => {
 						new PersonPickerModal(this.app, (person: PersonInfo) => {
-							this.branchAnchorPerson = this.findPersonNode(person.crId);
+							this.branchAnchorPerson = { crId: person.crId, name: person.name };
 							this.render();
 						}, this.folderFilter).open();
 					});
@@ -500,7 +528,7 @@ export class SplitWizardModal extends Modal {
 					.setButtonText(this.lineageStartPerson?.name || 'Select person')
 					.onClick(() => {
 						new PersonPickerModal(this.app, (person: PersonInfo) => {
-							this.lineageStartPerson = this.findPersonNode(person.crId);
+							this.lineageStartPerson = { crId: person.crId, name: person.name };
 							this.render();
 						}, this.folderFilter).open();
 					});
@@ -515,7 +543,7 @@ export class SplitWizardModal extends Modal {
 					.setButtonText(this.lineageEndPerson?.name || 'Select person')
 					.onClick(() => {
 						new PersonPickerModal(this.app, (person: PersonInfo) => {
-							this.lineageEndPerson = this.findPersonNode(person.crId);
+							this.lineageEndPerson = { crId: person.crId, name: person.name };
 							this.render();
 						}, this.folderFilter).open();
 					});
@@ -630,7 +658,7 @@ export class SplitWizardModal extends Modal {
 					.setButtonText(this.ancestorDescendantRoot?.name || 'Select person')
 					.onClick(() => {
 						new PersonPickerModal(this.app, (person: PersonInfo) => {
-							this.ancestorDescendantRoot = this.findPersonNode(person.crId);
+							this.ancestorDescendantRoot = { crId: person.crId, name: person.name };
 							this.render();
 						}, this.folderFilter).open();
 					});
@@ -675,6 +703,191 @@ export class SplitWizardModal extends Modal {
 						this.ancestorDescendantMaxDescendants = isNaN(num) ? undefined : num;
 					});
 			});
+	}
+
+	/**
+	 * Render surname split configuration
+	 */
+	private renderSurnameConfig(container: HTMLElement): void {
+		container.createDiv({
+			cls: 'crc-split-wizard-step-header',
+			text: 'Configure surname-based extraction'
+		});
+
+		const configSection = container.createDiv({ cls: 'crc-split-config-section' });
+
+		// Load surnames if not already loaded
+		if (this.availableSurnames.length === 0) {
+			this.loadAvailableSurnames();
+		}
+
+		if (this.availableSurnames.length === 0) {
+			configSection.createDiv({
+				cls: 'crc-split-info',
+				text: 'No people found. Ensure person notes exist in your vault.'
+			});
+			return;
+		}
+
+		// Surname selection
+		configSection.createDiv({
+			cls: 'crc-split-config-section-header',
+			text: `Select surnames to extract (${this.availableSurnames.length} found)`
+		});
+
+		const surnameList = configSection.createDiv({ cls: 'crc-collection-list' });
+
+		this.availableSurnames.forEach(surname => {
+			const item = surnameList.createDiv({ cls: 'crc-collection-item' });
+
+			const checkbox = item.createEl('input', {
+				type: 'checkbox',
+				attr: { id: `surname-${surname}` }
+			});
+			checkbox.checked = this.selectedSurnames.includes(surname);
+			checkbox.addEventListener('change', () => {
+				if (checkbox.checked) {
+					this.selectedSurnames.push(surname);
+				} else {
+					this.selectedSurnames = this.selectedSurnames.filter(
+						s => s !== surname
+					);
+				}
+			});
+
+			// Get count for this surname
+			const count = this.getSurnameCount(surname);
+			item.createEl('label', {
+				text: `${surname} (${count})`,
+				attr: { for: `surname-${surname}` }
+			});
+		});
+
+		// Additional options
+		configSection.createDiv({
+			cls: 'crc-split-config-section-header',
+			text: 'Options',
+			attr: { style: 'margin-top: var(--size-4-3);' }
+		});
+
+		// Include spouses
+		new Setting(configSection)
+			.setName('Include spouses')
+			.setDesc('Include spouses of matching people (with different surnames)')
+			.addToggle(toggle => {
+				toggle
+					.setValue(this.surnameIncludeSpouses)
+					.onChange(value => {
+						this.surnameIncludeSpouses = value;
+					});
+			});
+
+		// Include maiden names
+		new Setting(configSection)
+			.setName('Include maiden names')
+			.setDesc('Also match people whose maiden name matches the surname')
+			.addToggle(toggle => {
+				toggle
+					.setValue(this.surnameIncludeMaidenNames)
+					.onChange(value => {
+						this.surnameIncludeMaidenNames = value;
+					});
+			});
+
+		// Handle variants
+		new Setting(configSection)
+			.setName('Handle name variants')
+			.setDesc('Treat similar spellings as the same surname (e.g., Smith/Smythe)')
+			.addToggle(toggle => {
+				toggle
+					.setValue(this.surnameHandleVariants)
+					.onChange(value => {
+						this.surnameHandleVariants = value;
+					});
+			});
+
+		// Separate canvases per surname
+		new Setting(configSection)
+			.setName('Separate canvas per surname')
+			.setDesc('Create one canvas per surname (off = combine all into one)')
+			.addToggle(toggle => {
+				toggle
+					.setValue(this.surnameSeparateCanvases)
+					.onChange(value => {
+						this.surnameSeparateCanvases = value;
+					});
+			});
+	}
+
+	/**
+	 * Load available surnames from all people
+	 */
+	private loadAvailableSurnames(): void {
+		const surnames = new Map<string, number>();
+
+		// Scan all people files in the vault
+		const files = this.app.vault.getMarkdownFiles();
+		const peopleFolder = this.settings.peopleFolder;
+
+		for (const file of files) {
+			// Check if file is in people folder
+			if (peopleFolder && !file.path.startsWith(peopleFolder)) {
+				continue;
+			}
+
+			// Apply folder filter if set
+			if (this.folderFilter && !this.folderFilter.shouldIncludePath(file.path)) {
+				continue;
+			}
+
+			// Extract surname from file name (last word typically)
+			const baseName = file.basename;
+			const nameParts = baseName.split(/\s+/);
+			if (nameParts.length >= 2) {
+				const surname = nameParts[nameParts.length - 1];
+				// Skip if it looks like a date or number
+				if (!/^\d+$/.test(surname) && surname.length > 1) {
+					surnames.set(surname, (surnames.get(surname) || 0) + 1);
+				}
+			}
+		}
+
+		// Sort by count (most common first), then alphabetically
+		this.availableSurnames = Array.from(surnames.entries())
+			.sort((a, b) => {
+				if (b[1] !== a[1]) return b[1] - a[1];
+				return a[0].localeCompare(b[0]);
+			})
+			.map(([name]) => name);
+	}
+
+	/**
+	 * Get count of people with a given surname
+	 */
+	private getSurnameCount(surname: string): number {
+		let count = 0;
+		const files = this.app.vault.getMarkdownFiles();
+		const peopleFolder = this.settings.peopleFolder;
+
+		for (const file of files) {
+			if (peopleFolder && !file.path.startsWith(peopleFolder)) {
+				continue;
+			}
+			if (this.folderFilter && !this.folderFilter.shouldIncludePath(file.path)) {
+				continue;
+			}
+
+			const baseName = file.basename;
+			const nameParts = baseName.split(/\s+/);
+			if (nameParts.length >= 2) {
+				const fileSurname = nameParts[nameParts.length - 1];
+				if (fileSurname.toLowerCase() === surname.toLowerCase()) {
+					count++;
+				}
+			}
+		}
+
+		return count;
 	}
 
 	/**
@@ -805,7 +1018,8 @@ export class SplitWizardModal extends Modal {
 	 * Generate preview data based on current configuration
 	 */
 	private generatePreview(): void {
-		if (!this.tree) {
+		// Surname split doesn't need the tree
+		if (this.selectedMethod !== 'surname' && !this.tree) {
 			this.previewData = null;
 			return;
 		}
@@ -827,6 +1041,9 @@ export class SplitWizardModal extends Modal {
 				case 'ancestor-descendant':
 					this.previewAncestorDescendantSplit();
 					break;
+				case 'surname':
+					this.previewSurnameSplit();
+					break;
 				default:
 					this.previewData = null;
 			}
@@ -840,12 +1057,22 @@ export class SplitWizardModal extends Modal {
 	 * Preview generation-based split
 	 */
 	private previewGenerationSplit(): void {
-		if (!this.tree || !this.selectedRootPerson) {
+		if (!this.selectedRootPerson) {
 			this.previewData = null;
 			return;
 		}
 
-		const preview = this.splitService.previewGenerationSplit(this.tree, {
+		const tree = this.getTreeContainingPerson(this.selectedRootPerson.crId);
+		if (!tree) {
+			this.previewData = {
+				canvasCount: 0,
+				totalPeople: 0,
+				details: ['Could not build family tree for selected person']
+			};
+			return;
+		}
+
+		const preview = this.splitService.previewGenerationSplit(tree, {
 			...DEFAULT_GENERATION_SPLIT_OPTIONS,
 			generationsPerCanvas: this.generationsPerCanvas,
 			generationDirection: this.generationDirection
@@ -872,12 +1099,22 @@ export class SplitWizardModal extends Modal {
 	 * Preview branch-based split
 	 */
 	private previewBranchSplit(): void {
-		if (!this.tree || !this.branchAnchorPerson) {
+		if (!this.branchAnchorPerson) {
 			this.previewData = null;
 			return;
 		}
 
-		const preview = this.splitService.previewBranchSplit(this.tree, {
+		const tree = this.getTreeContainingPerson(this.branchAnchorPerson.crId);
+		if (!tree) {
+			this.previewData = {
+				canvasCount: 0,
+				totalPeople: 0,
+				details: ['Could not build family tree for selected person']
+			};
+			return;
+		}
+
+		const preview = this.splitService.previewBranchSplit(tree, {
 			...DEFAULT_BRANCH_SPLIT_OPTIONS,
 			branches: this.buildBranchDefinitions(),
 			maxGenerations: this.branchMaxGenerations
@@ -946,12 +1183,23 @@ export class SplitWizardModal extends Modal {
 	 * Preview lineage extraction
 	 */
 	private previewLineageSplit(): void {
-		if (!this.tree || !this.lineageStartPerson || !this.lineageEndPerson) {
+		if (!this.lineageStartPerson || !this.lineageEndPerson) {
 			this.previewData = null;
 			return;
 		}
 
-		const preview = this.splitService.previewLineageExtraction(this.tree, {
+		// Build a tree that includes the start person to ensure we can find paths
+		const tree = this.getTreeContainingPerson(this.lineageStartPerson.crId);
+		if (!tree) {
+			this.previewData = {
+				canvasCount: 0,
+				totalPeople: 0,
+				details: ['Could not build family tree for selected person']
+			};
+			return;
+		}
+
+		const preview = this.splitService.previewLineageExtraction(tree, {
 			...DEFAULT_LINEAGE_SPLIT_OPTIONS,
 			startCrId: this.lineageStartPerson.crId,
 			endCrId: this.lineageEndPerson.crId,
@@ -963,7 +1211,7 @@ export class SplitWizardModal extends Modal {
 			this.previewData = {
 				canvasCount: 0,
 				totalPeople: 0,
-				details: ['No path found between selected people']
+				details: ['No path found between selected people', 'They may not be directly related through parent-child relationships']
 			};
 			return;
 		}
@@ -1022,12 +1270,22 @@ export class SplitWizardModal extends Modal {
 	 * Preview ancestor-descendant split
 	 */
 	private previewAncestorDescendantSplit(): void {
-		if (!this.tree || !this.ancestorDescendantRoot) {
+		if (!this.ancestorDescendantRoot) {
 			this.previewData = null;
 			return;
 		}
 
-		const preview = this.splitService.previewAncestorDescendantPair(this.tree, {
+		const tree = this.getTreeContainingPerson(this.ancestorDescendantRoot.crId);
+		if (!tree) {
+			this.previewData = {
+				canvasCount: 0,
+				totalPeople: 0,
+				details: ['Could not build family tree for selected person']
+			};
+			return;
+		}
+
+		const preview = this.splitService.previewAncestorDescendantPair(tree, {
 			...DEFAULT_ANCESTOR_DESCENDANT_OPTIONS,
 			rootCrId: this.ancestorDescendantRoot.crId,
 			includeSpouses: this.ancestorDescendantIncludeSpouses,
@@ -1050,6 +1308,66 @@ export class SplitWizardModal extends Modal {
 		if (this.generateOverview) {
 			this.previewData.details.push(`${prefix}-overview.canvas`);
 		}
+	}
+
+	/**
+	 * Preview surname-based split
+	 */
+	private previewSurnameSplit(): void {
+		if (this.selectedSurnames.length === 0) {
+			this.previewData = null;
+			return;
+		}
+
+		// Build surname counts map
+		const surnameCounts = new Map<string, number>();
+		for (const surname of this.selectedSurnames) {
+			surnameCounts.set(surname, this.getSurnameCount(surname));
+		}
+
+		const preview = this.splitService.previewSurnameSplit(surnameCounts, {
+			...DEFAULT_SURNAME_SPLIT_OPTIONS,
+			surnames: this.selectedSurnames,
+			includeSpouses: this.surnameIncludeSpouses,
+			includeMaidenNames: this.surnameIncludeMaidenNames,
+			handleVariants: this.surnameHandleVariants,
+			separateCanvases: this.surnameSeparateCanvases
+		});
+
+		const canvasCount = preview.canvasCount + (this.generateOverview ? 1 : 0);
+		const prefix = this.filenamePrefix || 'surname';
+
+		const details: string[] = [];
+
+		if (this.surnameSeparateCanvases) {
+			// One canvas per surname
+			for (const { name, count } of preview.surnames) {
+				details.push(`${prefix}-${name.replace(/\s+/g, '-')}.canvas (${count} people)`);
+			}
+		} else {
+			// Combined canvas
+			const surnameList = preview.surnames.map(s => s.name).join(', ');
+			details.push(`${prefix}-combined.canvas (${preview.totalPeople} people)`);
+			details.push(`Surnames: ${surnameList}`);
+		}
+
+		if (this.surnameIncludeSpouses) {
+			details.push('Spouses will be included');
+		}
+
+		if (this.surnameIncludeMaidenNames) {
+			details.push('Maiden names will be matched');
+		}
+
+		if (this.generateOverview) {
+			details.push(`${prefix}-overview.canvas`);
+		}
+
+		this.previewData = {
+			canvasCount,
+			totalPeople: preview.totalPeople,
+			details
+		};
 	}
 
 	/**
@@ -1130,6 +1448,8 @@ export class SplitWizardModal extends Modal {
 				return this.selectedCollections.length > 0;
 			case 'ancestor-descendant':
 				return this.ancestorDescendantRoot !== null;
+			case 'surname':
+				return this.selectedSurnames.length > 0;
 			default:
 				return false;
 		}
@@ -1151,6 +1471,28 @@ export class SplitWizardModal extends Modal {
 	}
 
 	/**
+	 * Get a tree that contains the given person
+	 * This builds a tree from the component containing that person
+	 */
+	private getTreeContainingPerson(crId: string): FamilyTree | null {
+		// First check if the person is in the already-loaded tree
+		if (this.tree && this.tree.nodes.has(crId)) {
+			return this.tree;
+		}
+
+		// Otherwise, build a tree from that person's component
+		try {
+			const tree = this.familyGraph.generateTree({
+				rootCrId: crId,
+				treeType: 'full'
+			});
+			return tree;
+		} catch {
+			return null;
+		}
+	}
+
+	/**
 	 * Go back to previous step
 	 */
 	private goBack(): void {
@@ -1163,14 +1505,6 @@ export class SplitWizardModal extends Modal {
 				break;
 		}
 		this.render();
-	}
-
-	/**
-	 * Find a PersonNode by cr_id in the loaded tree
-	 */
-	private findPersonNode(crId: string): PersonNode | null {
-		if (!this.tree) return null;
-		return this.tree.nodes.get(crId) || null;
 	}
 
 	/**
