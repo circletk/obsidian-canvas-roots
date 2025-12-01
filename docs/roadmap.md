@@ -1,7 +1,7 @@
 # Canvas Roots: Development Roadmap
 
-> **Last Updated:** 2025-11-30
-> **Current Version:** v0.4.0
+> **Last Updated:** 2025-12-01
+> **Current Version:** v0.5.0
 
 Canvas Roots is in beta with core functionality complete and stable. Advanced features and enhancements are planned for future releases.
 
@@ -9,7 +9,18 @@ Canvas Roots is in beta with core functionality complete and stable. Advanced fe
 
 ## 🎯 Released Versions
 
-### v0.4.0 (Current)
+### v0.5.0 (Current)
+
+**Canvas Navigation & Organization:**
+- ✅ Split Canvas Wizard with 6 split methods
+- ✅ Branch splitting (paternal/maternal lines)
+- ✅ Collection-based splitting
+- ✅ Single lineage extraction
+- ✅ Ancestor + descendant canvas pairs
+- ✅ Surname-based splitting (with spouse/maiden name options)
+- ✅ Preview functionality before splitting
+
+### v0.4.0
 
 **Import Cleanup & Merge Tools:**
 - ✅ Staging folder workflow for safe import processing

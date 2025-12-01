@@ -1,7 +1,7 @@
 # Canvas Roots: User Guide
 
-> **Version:** v0.4.0
-> **Last Updated:** 2025-11-30
+> **Version:** v0.5.0
+> **Last Updated:** 2025-12-01
 
 This guide covers the complete workflow for using Canvas Roots to create and maintain family trees in Obsidian.
 
