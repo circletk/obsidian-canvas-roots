@@ -129,6 +129,60 @@ export const DEFAULT_BRANCH_SPLIT_OPTIONS: BranchSplitOptions = {
 };
 
 /**
+ * Options for collection-based splitting
+ */
+export interface CollectionSplitOptions extends Partial<SplitOptions> {
+	/** Specific collections to extract (empty = all collections) */
+	collections?: string[];
+	/** Include people with no collection in a separate canvas */
+	includeUncollected: boolean;
+	/** Label for uncollected people canvas */
+	uncollectedLabel: string;
+	/** How to handle bridge people (people in multiple collections) */
+	bridgePeopleHandling: 'duplicate' | 'primary-only' | 'separate-canvas';
+	/** For 'primary-only', which collection takes priority (first alphabetically if not specified) */
+	primaryCollectionOrder?: string[];
+}
+
+/**
+ * Default collection split options
+ */
+export const DEFAULT_COLLECTION_SPLIT_OPTIONS: CollectionSplitOptions = {
+	...DEFAULT_SPLIT_OPTIONS,
+	includeUncollected: true,
+	uncollectedLabel: 'Uncollected',
+	bridgePeopleHandling: 'duplicate'
+};
+
+/**
+ * Information about a collection for splitting
+ */
+export interface CollectionInfo {
+	/** Collection name */
+	name: string;
+	/** People in this collection */
+	people: PersonNode[];
+	/** CrIds of people in this collection */
+	crIds: Set<string>;
+	/** Bridge people (also in other collections) */
+	bridgePeople: Map<string, string[]>; // crId -> other collection names
+	/** People count */
+	count: number;
+}
+
+/**
+ * Result of collection extraction
+ */
+export interface CollectionExtractionResult {
+	/** Collections found and their contents */
+	collections: Map<string, CollectionInfo>;
+	/** People with no collection */
+	uncollected: PersonNode[];
+	/** All bridge people across collections */
+	allBridgePeople: Map<string, string[]>; // crId -> collection names
+}
+
+/**
  * Canvas data structure for manipulation
  */
 interface CanvasData {
@@ -1320,5 +1374,452 @@ export class CanvasSplitService {
 			totalPeople,
 			overlap
 		};
+	}
+
+	// =========================================================================
+	// Phase 6: Collection-Based Splitting
+	// =========================================================================
+
+	/**
+	 * Split a family tree by user-defined collections
+	 *
+	 * @param tree - The family tree to split
+	 * @param options - Collection split options
+	 * @returns Split result with generated canvas information
+	 */
+	splitByCollection(
+		tree: FamilyTree,
+		options: CollectionSplitOptions
+	): SplitResult {
+		const opts = { ...DEFAULT_COLLECTION_SPLIT_OPTIONS, ...options };
+		const canvases: GeneratedCanvas[] = [];
+		let totalPeople = 0;
+
+		// Extract collections from tree
+		const extraction = this.extractCollections(tree, opts);
+
+		// Generate canvas for each collection
+		for (const [collectionName, info] of extraction.collections) {
+			// Filter collections if specific ones requested
+			if (opts.collections && opts.collections.length > 0) {
+				if (!opts.collections.includes(collectionName)) {
+					continue;
+				}
+			}
+
+			// Handle bridge people based on option
+			let peopleForCanvas = info.people;
+			if (opts.bridgePeopleHandling === 'primary-only') {
+				peopleForCanvas = this.filterToPrimaryCollection(
+					info.people,
+					collectionName,
+					extraction.allBridgePeople,
+					opts.primaryCollectionOrder
+				);
+			}
+
+			if (peopleForCanvas.length === 0) continue;
+
+			const canvasPath = this.generateCollectionCanvasPath(opts, collectionName);
+
+			const canvas: GeneratedCanvas = {
+				path: canvasPath,
+				label: collectionName,
+				personCount: peopleForCanvas.length,
+				collection: collectionName
+			};
+			canvases.push(canvas);
+			totalPeople += peopleForCanvas.length;
+		}
+
+		// Handle uncollected people
+		if (opts.includeUncollected && extraction.uncollected.length > 0) {
+			const canvasPath = this.generateCollectionCanvasPath(opts, opts.uncollectedLabel);
+
+			canvases.push({
+				path: canvasPath,
+				label: opts.uncollectedLabel,
+				personCount: extraction.uncollected.length,
+				collection: opts.uncollectedLabel
+			});
+			totalPeople += extraction.uncollected.length;
+		}
+
+		// Handle bridge people as separate canvas if requested
+		if (opts.bridgePeopleHandling === 'separate-canvas' && extraction.allBridgePeople.size > 0) {
+			const bridgePeople = this.getBridgePeopleNodes(tree, extraction.allBridgePeople);
+			if (bridgePeople.length > 0) {
+				const canvasPath = this.generateCollectionCanvasPath(opts, 'Bridge People');
+
+				canvases.push({
+					path: canvasPath,
+					label: 'Bridge People',
+					personCount: bridgePeople.length,
+					collection: 'Bridge People'
+				});
+				// Don't add to totalPeople as they're counted in their collections
+			}
+		}
+
+		return {
+			canvases,
+			totalPeople
+		};
+	}
+
+	/**
+	 * Extract all collections from a family tree
+	 *
+	 * @param tree - The family tree
+	 * @param options - Split options
+	 * @returns Collection extraction result
+	 */
+	extractCollections(
+		tree: FamilyTree,
+		options: CollectionSplitOptions
+	): CollectionExtractionResult {
+		const collections = new Map<string, CollectionInfo>();
+		const uncollected: PersonNode[] = [];
+		const personCollections = new Map<string, string[]>(); // crId -> collection names
+
+		// First pass: identify all collections and assign people
+		for (const person of tree.nodes.values()) {
+			const collection = person.collection;
+
+			if (collection) {
+				// Track which collections this person belongs to
+				const existing = personCollections.get(person.crId) || [];
+				existing.push(collection);
+				personCollections.set(person.crId, existing);
+
+				// Add to collection
+				if (!collections.has(collection)) {
+					collections.set(collection, {
+						name: collection,
+						people: [],
+						crIds: new Set(),
+						bridgePeople: new Map(),
+						count: 0
+					});
+				}
+
+				const info = collections.get(collection)!;
+				info.people.push(person);
+				info.crIds.add(person.crId);
+				info.count++;
+			} else {
+				uncollected.push(person);
+			}
+		}
+
+		// Second pass: identify bridge people (in multiple collections)
+		const allBridgePeople = new Map<string, string[]>();
+
+		for (const [crId, collectionNames] of personCollections) {
+			if (collectionNames.length > 1) {
+				allBridgePeople.set(crId, collectionNames);
+
+				// Mark as bridge person in each collection
+				for (const collectionName of collectionNames) {
+					const info = collections.get(collectionName);
+					if (info) {
+						const otherCollections = collectionNames.filter(c => c !== collectionName);
+						info.bridgePeople.set(crId, otherCollections);
+					}
+				}
+			}
+		}
+
+		return {
+			collections,
+			uncollected,
+			allBridgePeople
+		};
+	}
+
+	/**
+	 * Filter people to only include those whose primary collection matches
+	 */
+	private filterToPrimaryCollection(
+		people: PersonNode[],
+		collectionName: string,
+		allBridgePeople: Map<string, string[]>,
+		primaryOrder?: string[]
+	): PersonNode[] {
+		return people.filter(person => {
+			const collections = allBridgePeople.get(person.crId);
+
+			// Not a bridge person, include in all their collections
+			if (!collections || collections.length <= 1) {
+				return true;
+			}
+
+			// Determine primary collection
+			const primaryCollection = this.determinePrimaryCollection(collections, primaryOrder);
+			return primaryCollection === collectionName;
+		});
+	}
+
+	/**
+	 * Determine which collection is primary for a bridge person
+	 */
+	private determinePrimaryCollection(
+		collections: string[],
+		primaryOrder?: string[]
+	): string {
+		if (primaryOrder && primaryOrder.length > 0) {
+			// Use provided order
+			for (const collection of primaryOrder) {
+				if (collections.includes(collection)) {
+					return collection;
+				}
+			}
+		}
+
+		// Default: first alphabetically
+		return [...collections].sort()[0];
+	}
+
+	/**
+	 * Get PersonNode objects for all bridge people
+	 */
+	private getBridgePeopleNodes(
+		tree: FamilyTree,
+		bridgePeople: Map<string, string[]>
+	): PersonNode[] {
+		const nodes: PersonNode[] = [];
+
+		for (const crId of bridgePeople.keys()) {
+			const person = tree.nodes.get(crId);
+			if (person) {
+				nodes.push(person);
+			}
+		}
+
+		return nodes;
+	}
+
+	/**
+	 * Generate canvas path for a collection
+	 */
+	private generateCollectionCanvasPath(
+		options: CollectionSplitOptions,
+		collectionName: string
+	): string {
+		const folder = options.outputFolder || '';
+		const pattern = options.filenamePattern || '{name}';
+
+		const filename = pattern
+			.replace('{name}', this.sanitizeFilename(collectionName))
+			.replace('{type}', 'collection')
+			.replace('{date}', new Date().toISOString().split('T')[0]);
+
+		const extension = filename.endsWith('.canvas') ? '' : '.canvas';
+
+		if (folder) {
+			return `${folder}/${filename}${extension}`;
+		}
+		return `${filename}${extension}`;
+	}
+
+	/**
+	 * Get all unique collection names from a family tree
+	 */
+	getCollectionNames(tree: FamilyTree): string[] {
+		const collections = new Set<string>();
+
+		for (const person of tree.nodes.values()) {
+			if (person.collection) {
+				collections.add(person.collection);
+			}
+		}
+
+		return Array.from(collections).sort();
+	}
+
+	/**
+	 * Preview a collection split without creating files
+	 */
+	previewCollectionSplit(
+		tree: FamilyTree,
+		options: CollectionSplitOptions
+	): {
+		collections: Array<{
+			name: string;
+			peopleCount: number;
+			bridgeCount: number;
+		}>;
+		uncollectedCount: number;
+		totalBridgePeople: number;
+		totalPeople: number;
+	} {
+		const opts = { ...DEFAULT_COLLECTION_SPLIT_OPTIONS, ...options };
+		const extraction = this.extractCollections(tree, opts);
+
+		const collections: Array<{
+			name: string;
+			peopleCount: number;
+			bridgeCount: number;
+		}> = [];
+
+		let totalPeople = 0;
+
+		for (const [name, info] of extraction.collections) {
+			// Filter if specific collections requested
+			if (opts.collections && opts.collections.length > 0) {
+				if (!opts.collections.includes(name)) {
+					continue;
+				}
+			}
+
+			collections.push({
+				name,
+				peopleCount: info.count,
+				bridgeCount: info.bridgePeople.size
+			});
+
+			totalPeople += info.count;
+		}
+
+		// Sort by name
+		collections.sort((a, b) => a.name.localeCompare(b.name));
+
+		return {
+			collections,
+			uncollectedCount: extraction.uncollected.length,
+			totalBridgePeople: extraction.allBridgePeople.size,
+			totalPeople: totalPeople + extraction.uncollected.length
+		};
+	}
+
+	/**
+	 * Find connections between collections (for overview generation)
+	 */
+	findCollectionConnections(
+		tree: FamilyTree
+	): Map<string, Set<string>> {
+		const connections = new Map<string, Set<string>>();
+
+		// Initialize connection map
+		const collectionNames = this.getCollectionNames(tree);
+		for (const name of collectionNames) {
+			connections.set(name, new Set());
+		}
+
+		// Find connections through family relationships
+		for (const person of tree.nodes.values()) {
+			if (!person.collection) continue;
+
+			const personCollection = person.collection;
+
+			// Check parents
+			if (person.fatherCrId) {
+				const father = tree.nodes.get(person.fatherCrId);
+				if (father?.collection && father.collection !== personCollection) {
+					connections.get(personCollection)?.add(father.collection);
+					connections.get(father.collection)?.add(personCollection);
+				}
+			}
+
+			if (person.motherCrId) {
+				const mother = tree.nodes.get(person.motherCrId);
+				if (mother?.collection && mother.collection !== personCollection) {
+					connections.get(personCollection)?.add(mother.collection);
+					connections.get(mother.collection)?.add(personCollection);
+				}
+			}
+
+			// Check spouses
+			for (const spouseId of person.spouseCrIds) {
+				const spouse = tree.nodes.get(spouseId);
+				if (spouse?.collection && spouse.collection !== personCollection) {
+					connections.get(personCollection)?.add(spouse.collection);
+					connections.get(spouse.collection)?.add(personCollection);
+				}
+			}
+
+			// Check children
+			for (const childId of person.childrenCrIds) {
+				const child = tree.nodes.get(childId);
+				if (child?.collection && child.collection !== personCollection) {
+					connections.get(personCollection)?.add(child.collection);
+					connections.get(child.collection)?.add(personCollection);
+				}
+			}
+		}
+
+		return connections;
+	}
+
+	/**
+	 * Generate collection relationship data for overview canvas
+	 */
+	generateCollectionOverviewData(
+		tree: FamilyTree,
+		options: CollectionSplitOptions
+	): {
+		nodes: Array<{
+			collection: string;
+			peopleCount: number;
+			canvasPath: string;
+		}>;
+		edges: Array<{
+			from: string;
+			to: string;
+			bridgeCount: number;
+		}>;
+	} {
+		const opts = { ...DEFAULT_COLLECTION_SPLIT_OPTIONS, ...options };
+		const extraction = this.extractCollections(tree, opts);
+		const connections = this.findCollectionConnections(tree);
+
+		const nodes: Array<{
+			collection: string;
+			peopleCount: number;
+			canvasPath: string;
+		}> = [];
+
+		// Create nodes for each collection
+		for (const [name, info] of extraction.collections) {
+			nodes.push({
+				collection: name,
+				peopleCount: info.count,
+				canvasPath: this.generateCollectionCanvasPath(opts, name)
+			});
+		}
+
+		// Create edges for connections
+		const edges: Array<{
+			from: string;
+			to: string;
+			bridgeCount: number;
+		}> = [];
+
+		const processedPairs = new Set<string>();
+
+		for (const [from, connectedTo] of connections) {
+			for (const to of connectedTo) {
+				// Avoid duplicate edges (A-B and B-A)
+				const pairKey = [from, to].sort().join('|');
+				if (processedPairs.has(pairKey)) continue;
+				processedPairs.add(pairKey);
+
+				// Count bridge people between these collections
+				let bridgeCount = 0;
+				for (const [, collectionNames] of extraction.allBridgePeople) {
+					if (collectionNames.includes(from) && collectionNames.includes(to)) {
+						bridgeCount++;
+					}
+				}
+
+				edges.push({
+					from,
+					to,
+					bridgeCount
+				});
+			}
+		}
+
+		return { nodes, edges };
 	}
 }
