@@ -555,6 +555,193 @@ Tools for splitting large trees into manageable segments and linking them togeth
 
 See [canvas-navigation-plan.md](architecture/canvas-navigation-plan.md) for implementation details.
 
+### Custom Relationship Types
+
+Define non-familial relationship types beyond the built-in parent/child/spouse relationships:
+
+**Built-in + Custom Pattern:**
+- Same approach as custom place types: built-in options plus user-defined
+- Store in frontmatter as array: `relationships: [{type: "mentor", target: "[[Person]]"}, ...]`
+- Reciprocal relationship handling (liege ↔ vassal, mentor ↔ apprentice)
+
+**Example Relationship Categories:**
+- **Feudal/political:** liege, vassal, sworn knight, ward, hostage
+- **Religious/spiritual:** mentor, disciple, confessor, godparent
+- **Professional:** master, apprentice, patron, protégé
+- **Social:** rival, ally, betrothed, companion
+- **Historical:** guardian, foster-parent (distinct from modern adoption)
+
+**Canvas Visualization:**
+- Render custom relationships as colored canvas edges (distinct from family edges)
+- Configurable edge colors per relationship type in settings
+- Toggle visibility of relationship types on canvas
+- Optional edge labels showing relationship type
+- Dashed vs. solid line styles to distinguish from family relationships
+
+**Integration:**
+- Bases views can filter/group by relationship type
+- Relationship calculator could optionally traverse custom relationships
+- Statistics panel showing relationship type distribution
+
+### Schema Validation & Consistency Checks
+
+User-defined property schemas to catch data inconsistencies and potential plot holes in world-building:
+
+**JSON Schema Configuration:**
+```json
+// .obsidian/canvas-roots-schemas/house-stark.json
+{
+  "name": "House Stark Schema",
+  "applies_to": {
+    "collection": "House Stark",
+    "house": "[[House Stark]]"
+  },
+  "required_properties": ["allegiance", "combat_style"],
+  "properties": {
+    "race": {
+      "type": "enum",
+      "values": ["human", "direwolf"],
+      "default": "human"
+    },
+    "magic_type": {
+      "type": "enum",
+      "values": ["warging", "greensight", "none"],
+      "required_if": { "has_magic": true }
+    },
+    "combat_style": {
+      "type": "enum",
+      "values": ["sword", "bow", "none"]
+    }
+  },
+  "constraints": [
+    {
+      "rule": "if magic_type == 'greensight' then race != 'direwolf'",
+      "message": "Direwolves cannot have greensight"
+    }
+  ]
+}
+```
+
+**Validation Features:**
+- Required properties by collection, house, or custom criteria
+- Enum validation with allowed values lists
+- Conditional requirements (`required_if` another property has certain value)
+- Cross-property constraints with custom error messages
+- Type validation (string, number, date, wikilink, array)
+- Default value suggestions for missing properties
+
+**Integration:**
+- Pre-visualization validation hook (warn before rendering)
+- Data Quality tab shows schema violations alongside genealogical issues
+- Batch "fix missing properties" action with default value insertion
+- Per-schema enable/disable toggle
+- Schema editor UI in Control Center (or manual JSON editing)
+
+**Use Cases:**
+- World-building: ensure character attributes are consistent with lore
+- Historical research: enforce period-appropriate properties
+- Gaming: validate character stats within allowed ranges
+- Fiction writing: catch plot holes from inconsistent character data
+
+### Organization Notes & Hierarchy Views
+
+Define and visualize non-genealogical hierarchies like noble houses, guilds, corporations, and factions:
+
+**Organization Note Schema:**
+```yaml
+---
+type: organization
+name: "House Stark"
+parent_org: "[[The North]]"
+org_type: "noble_house"  # noble_house, guild, corporation, military, religious, etc.
+founded: "Age of Heroes"
+dissolved:  # optional
+motto: "Winter is Coming"
+seat: "[[Winterfell]]"  # links to place note
+---
+```
+
+**Person Membership:**
+```yaml
+---
+# In person note frontmatter
+house: "[[House Stark]]"
+role: "Lord of Winterfell"
+house_from: "TA 280"
+house_to:  # blank = current
+# Multiple memberships supported
+memberships:
+  - org: "[[Night's Watch]]"
+    role: "Lord Commander"
+    from: "TA 300"
+    to: "TA 305"
+---
+```
+
+**Features:**
+- Hierarchical organization structure (parent/child orgs)
+- Temporal membership tracking (when did person join/leave)
+- Role/position tracking within organizations
+- Multiple simultaneous memberships per person
+- Organization succession (who led when)
+
+**Organizational Chart Visualization:**
+- D3-based org chart layout (tree, radial, or dendrogram)
+- View by organization showing member hierarchy
+- View by person showing all affiliations
+- Color coding by role, tenure, or organization type
+- Temporal filtering (show organization at specific date)
+- Export as PNG, SVG, PDF (same as family chart)
+
+**Integration:**
+- Bases views for organization membership queries
+- Custom Relationship Types integration (liege/vassal edges on org chart)
+- Fictional Date Systems integration for temporal membership
+- Place notes integration (organization seats/headquarters)
+
+### Fictional Date Systems
+
+Custom calendar and date format support for world-building and historical research:
+
+**Custom Calendars:**
+- Define named eras with custom epoch points (e.g., "Third Age", "Year of the Dragon")
+- Per-universe/collection date format rules
+- Support for alternate history, fantasy, and sci-fi date systems
+- Historical calendar support (Roman AUC, Hebrew, Islamic, etc.)
+
+**Configuration Example:**
+```yaml
+# Settings: Define custom date formats per universe/collection
+date_formats:
+  middle_earth:
+    pattern: "{era} {year}"
+    eras:
+      - name: "Third Age"
+        abbrev: "TA"
+        epoch: 0
+      - name: "Fourth Age"
+        abbrev: "FA"
+        epoch: 3021
+```
+
+**Person Note Usage:**
+```yaml
+born: "TA 2890"  # Parser recognizes era prefix
+died: "TA 2941"
+```
+
+**Features:**
+- Internal canonical representation for timeline calculations
+- Age calculations work correctly within each calendar system
+- Sorting/filtering in Bases views works across custom dates
+- Graceful fallback for unrecognized formats
+- Migration path from existing ISO dates
+
+**Timeline Integration:**
+- Leaflet.timeline slider animates through fictional history
+- Timeline layout algorithm positions people chronologically
+- "Who was alive in [year]?" queries work with custom calendars
+
 ### World-Building Features
 
 - Visual grouping by house/faction
@@ -562,6 +749,10 @@ See [canvas-navigation-plan.md](architecture/canvas-navigation-plan.md) for impl
 - Complex succession rules
 - Fantasy dynasties and corporate succession tracking
 - Geographic grouping and timeline support
+- Custom relationship types (see above) for non-familial connections
+- Fictional date systems (see above) for custom calendars and eras
+- Schema validation (see above) for property enforcement and consistency checks
+- Organization notes & hierarchy views (see above) for houses, guilds, and factions
 
 ### Family Statistics Dashboard
 

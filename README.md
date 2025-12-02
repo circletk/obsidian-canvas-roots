@@ -98,6 +98,10 @@ See [Roadmap](docs/roadmap.md) for detailed feature descriptions and development
 - **Full Map Support:** Leaflet.js integration with OpenStreetMap tiles for interactive maps showing birth/death locations, migration paths, and animated timelines. Custom image maps for fictional worlds.
 - **Export Enhancements:** GEDCOM X and Gramps XML export support
 - **World-Building Features:** Track fantasy dynasties, corporate succession, and historical kingdoms
+- **Custom Relationship Types:** Define non-familial relationships (mentor, liege, rival, etc.) with colored canvas edges and configurable styling
+- **Fictional Date Systems:** Custom calendars and eras for world-building (e.g., "Third Age 2941", "Year of the Dragon 1247") with timeline integration
+- **Schema Validation & Consistency Checks:** User-defined JSON schemas to enforce property rules (required fields, enum values, cross-property constraints) and catch plot holes or data inconsistencies
+- **Organization Notes & Hierarchy Views:** Track houses, guilds, corporations, and factions with hierarchical structure, temporal membership, and D3-based organizational chart visualization
 
 
 ## 📸 Screenshots
