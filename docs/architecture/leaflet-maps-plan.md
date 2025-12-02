@@ -675,22 +675,57 @@ Options explored (deferred due to CORS complexity):
 - Library: [Leaflet.DistortableImage](https://github.com/publiclab/Leaflet.DistortableImage) (~50KB)
 - Depends on: Leaflet.toolbar, Leaflet.Path.Transform
 
-### Pixel-Based Coordinate System (L.CRS.Simple)
-- Use Leaflet's Simple CRS for direct pixel-to-coordinate mapping
-- Users place markers using pixel coordinates (e.g., `[512, 768]`) instead of lat/lng
-- No geographic projection math - 1 unit = 1 pixel
-- Use cases:
-  - Worldbuilders who want to place markers directly on their map image
-  - Game maps, dungeon layouts, floor plans
-  - Any image where real-world coordinates don't apply
-- Implementation:
-  - Set `crs: L.CRS.Simple` when initializing the map
-  - Image bounds defined as `[[0, 0], [imageHeight, imageWidth]]`
-  - Place notes would use `pixel_x` / `pixel_y` instead of `lat` / `lng`
-- Benefits over current approach:
-  - More intuitive for non-geographic maps (users think in pixels)
-  - No need to define arbitrary lat/lng bounds for fictional worlds
-  - Coordinates directly correspond to image editor positions
+### Pixel-Based Coordinate System (L.CRS.Simple) ✅ Implemented
+
+Leaflet's Simple CRS is now supported for direct pixel-to-coordinate mapping.
+
+**How it works:**
+- Set `coordinate_system: pixel` in the map config frontmatter
+- Place notes use `pixel_coordinates: { x: number, y: number }` instead of `coordinates: { lat, lng }`
+- Image dimensions can be specified or auto-detected from the image
+- The map automatically switches CRS when loading a pixel-based custom map
+
+**Map configuration example:**
+```yaml
+---
+type: map
+map_id: westeros
+name: Westeros
+universe: got
+image: assets/maps/westeros.png
+coordinate_system: pixel
+image_dimensions:
+  width: 2048
+  height: 3072
+center:
+  x: 1024
+  y: 1536
+default_zoom: 0
+---
+```
+
+**Place note example:**
+```yaml
+---
+type: place
+cr_id: winterfell
+name: Winterfell
+universe: got
+pixel_coordinates:
+  x: 1200
+  y: 2400
+---
+```
+
+**Use cases:**
+- Worldbuilders who want to place markers directly on their map image
+- Game maps, dungeon layouts, floor plans
+- Any image where real-world coordinates don't apply
+
+**Benefits:**
+- More intuitive for non-geographic maps (users think in pixels)
+- No need to define arbitrary lat/lng bounds for fictional worlds
+- Coordinates directly correspond to image editor positions
 
 ### Tiled Image Maps (Zoomify/DeepZoom)
 - Replace `L.imageOverlay` with tiled image loading for massive custom maps

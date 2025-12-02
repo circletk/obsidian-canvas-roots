@@ -26,8 +26,14 @@ const logger = getLogger('MapDataService');
 interface PlaceData {
 	crId: string;
 	name: string;
+	/** Latitude (geographic coordinate system) */
 	lat?: number;
+	/** Longitude (geographic coordinate system) */
 	lng?: number;
+	/** Pixel X coordinate (pixel coordinate system) */
+	pixelX?: number;
+	/** Pixel Y coordinate (pixel coordinate system) */
+	pixelY?: number;
 	category?: string;
 	universe?: string;
 	parentPlace?: string;
@@ -168,11 +174,16 @@ export class MapDataService {
 			// Parse coordinates (handles both object and JSON string formats)
 			const coords = this.parseCoordinates(fm.coordinates);
 
+			// Parse pixel coordinates for pixel-based maps
+			const pixelCoords = this.parsePixelCoordinates(fm.pixel_coordinates);
+
 			const placeData: PlaceData = {
 				crId: String(fm.cr_id || ''),
 				name: String(fm.name || file.basename),
 				lat: coords.lat,
 				lng: coords.lng,
+				pixelX: pixelCoords.x,
+				pixelY: pixelCoords.y,
 				category: fm.place_category ? String(fm.place_category) : undefined,
 				universe: fm.universe ? String(fm.universe) : undefined,
 				parentPlace: this.extractLinkTarget(fm.parent_place) || undefined
@@ -249,7 +260,7 @@ export class MapDataService {
 
 			// Birth marker
 			const birthPlace = this.resolvePlace(person.birthPlaceId, person.birthPlace);
-			if (birthPlace && birthPlace.lat !== undefined && birthPlace.lng !== undefined) {
+			if (birthPlace && this.hasValidCoordinates(birthPlace)) {
 				// Apply universe filter - only show markers matching the selected universe
 				if (filters.universe && birthPlace.universe !== filters.universe) {
 					// Skip this marker - wrong universe
@@ -262,8 +273,10 @@ export class MapDataService {
 							personId: person.crId,
 							personName: person.name,
 							type: 'birth',
-							lat: birthPlace.lat,
-							lng: birthPlace.lng,
+							lat: birthPlace.lat ?? 0,
+							lng: birthPlace.lng ?? 0,
+							pixelX: birthPlace.pixelX,
+							pixelY: birthPlace.pixelY,
 							placeName: birthPlace.name,
 							placeId: birthPlace.crId,
 							date: person.born,
@@ -278,7 +291,7 @@ export class MapDataService {
 
 			// Death marker
 			const deathPlace = this.resolvePlace(person.deathPlaceId, person.deathPlace);
-			if (deathPlace && deathPlace.lat !== undefined && deathPlace.lng !== undefined) {
+			if (deathPlace && this.hasValidCoordinates(deathPlace)) {
 				// Apply universe filter - only show markers matching the selected universe
 				if (filters.universe && deathPlace.universe !== filters.universe) {
 					// Skip this marker - wrong universe
@@ -291,8 +304,10 @@ export class MapDataService {
 							personId: person.crId,
 							personName: person.name,
 							type: 'death',
-							lat: deathPlace.lat,
-							lng: deathPlace.lng,
+							lat: deathPlace.lat ?? 0,
+							lng: deathPlace.lng ?? 0,
+							pixelX: deathPlace.pixelX,
+							pixelY: deathPlace.pixelY,
 							placeName: deathPlace.name,
 							placeId: deathPlace.crId,
 							date: person.died,
@@ -310,6 +325,15 @@ export class MapDataService {
 	}
 
 	/**
+	 * Check if a place has valid coordinates (either geographic or pixel)
+	 */
+	private hasValidCoordinates(place: PlaceData): boolean {
+		const hasGeographic = place.lat !== undefined && place.lng !== undefined;
+		const hasPixel = place.pixelX !== undefined && place.pixelY !== undefined;
+		return hasGeographic || hasPixel;
+	}
+
+	/**
 	 * Build migration paths from person data
 	 */
 	private buildPaths(people: PersonData[], filters: MapFilters): MigrationPath[] {
@@ -324,10 +348,9 @@ export class MapDataService {
 			const birthPlace = this.resolvePlace(person.birthPlaceId, person.birthPlace);
 			const deathPlace = this.resolvePlace(person.deathPlaceId, person.deathPlace);
 
-			// Need both places with coordinates to create a path
+			// Need both places with valid coordinates to create a path
 			if (!birthPlace || !deathPlace) continue;
-			if (birthPlace.lat === undefined || birthPlace.lng === undefined) continue;
-			if (deathPlace.lat === undefined || deathPlace.lng === undefined) continue;
+			if (!this.hasValidCoordinates(birthPlace) || !this.hasValidCoordinates(deathPlace)) continue;
 
 			// Apply universe filter - both places must match the universe filter
 			const pathUniverse = birthPlace.universe || deathPlace.universe;
@@ -335,8 +358,10 @@ export class MapDataService {
 				continue;
 			}
 
-			// Skip if same location
-			if (birthPlace.lat === deathPlace.lat && birthPlace.lng === deathPlace.lng) continue;
+			// Skip if same location (check both geographic and pixel coordinates)
+			const sameGeographic = birthPlace.lat === deathPlace.lat && birthPlace.lng === deathPlace.lng;
+			const samePixel = birthPlace.pixelX === deathPlace.pixelX && birthPlace.pixelY === deathPlace.pixelY;
+			if (sameGeographic && samePixel) continue;
 
 			const birthYear = this.extractYear(person.born);
 			const deathYear = this.extractYear(person.died);
@@ -350,13 +375,17 @@ export class MapDataService {
 				personId: person.crId,
 				personName: person.name,
 				origin: {
-					lat: birthPlace.lat,
-					lng: birthPlace.lng,
+					lat: birthPlace.lat ?? 0,
+					lng: birthPlace.lng ?? 0,
+					pixelX: birthPlace.pixelX,
+					pixelY: birthPlace.pixelY,
 					name: birthPlace.name
 				},
 				destination: {
-					lat: deathPlace.lat,
-					lng: deathPlace.lng,
+					lat: deathPlace.lat ?? 0,
+					lng: deathPlace.lng ?? 0,
+					pixelX: deathPlace.pixelX,
+					pixelY: deathPlace.pixelY,
 					name: deathPlace.name
 				},
 				birthYear,
@@ -514,6 +543,34 @@ export class MapDataService {
 			return {
 				lat: this.parseCoordinate(coordObj.lat),
 				lng: this.parseCoordinate(coordObj.long || coordObj.lng)
+			};
+		}
+
+		return {};
+	}
+
+	/**
+	 * Parse pixel coordinates from frontmatter
+	 * Handles both object format { x: number, y: number } and string JSON format
+	 */
+	private parsePixelCoordinates(coords: unknown): { x?: number; y?: number } {
+		if (!coords) return {};
+
+		// If it's a string, try to parse as JSON
+		if (typeof coords === 'string') {
+			try {
+				coords = JSON.parse(coords);
+			} catch {
+				return {};
+			}
+		}
+
+		// Now handle as object
+		if (typeof coords === 'object' && coords !== null) {
+			const coordObj = coords as Record<string, unknown>;
+			return {
+				x: this.parseCoordinate(coordObj.x),
+				y: this.parseCoordinate(coordObj.y)
 			};
 		}
 

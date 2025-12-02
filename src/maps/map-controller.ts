@@ -105,6 +105,7 @@ export class MapController {
 	private imageMapManager: ImageMapManager;
 	private currentImageOverlay: L.ImageOverlay | null = null;
 	private activeMapId: string = 'openstreetmap';
+	private currentCRS: 'geographic' | 'pixel' = 'geographic';
 
 	// Current data
 	private currentData: MapData | null = null;
@@ -432,7 +433,16 @@ export class MapController {
 		const color = this.getMarkerColor(data.type);
 		const icon = this.createMarkerIcon(color);
 
-		const marker = L.marker([data.lat, data.lng], { icon }) as CRMarker;
+		// Use pixel coordinates for pixel CRS, otherwise use lat/lng
+		let coords: L.LatLngExpression;
+		if (this.currentCRS === 'pixel' && data.pixelX !== undefined && data.pixelY !== undefined) {
+			// For L.CRS.Simple: [y, x] where y=0 is at bottom
+			coords = [data.pixelY, data.pixelX];
+		} else {
+			coords = [data.lat, data.lng];
+		}
+
+		const marker = L.marker(coords, { icon }) as CRMarker;
 		marker.crData = data;
 
 		// Create popup content
@@ -560,10 +570,23 @@ export class MapController {
 	 * Create a polyline with arrow decoration for a migration path
 	 */
 	private createPath(data: MigrationPath): L.Polyline {
-		const latlngs: L.LatLngExpression[] = [
-			[data.origin.lat, data.origin.lng],
-			[data.destination.lat, data.destination.lng]
-		];
+		let latlngs: L.LatLngExpression[];
+
+		// Use pixel coordinates for pixel CRS, otherwise use lat/lng
+		if (this.currentCRS === 'pixel' &&
+			data.origin.pixelX !== undefined && data.origin.pixelY !== undefined &&
+			data.destination.pixelX !== undefined && data.destination.pixelY !== undefined) {
+			// For L.CRS.Simple: [y, x] where y=0 is at bottom
+			latlngs = [
+				[data.origin.pixelY, data.origin.pixelX],
+				[data.destination.pixelY, data.destination.pixelX]
+			];
+		} else {
+			latlngs = [
+				[data.origin.lat, data.origin.lng],
+				[data.destination.lat, data.destination.lng]
+			];
+		}
 
 		const polyline = L.polyline(latlngs, {
 			color: this.settings.pathColor,
@@ -667,10 +690,15 @@ export class MapController {
 			this.heatLayer = null;
 		}
 
-		// Create heat data points
+		// Create heat data points using appropriate coordinates
 		const heatData: [number, number, number][] = markers
 			.filter(m => m.type === 'birth' || m.type === 'death')
-			.map(m => [m.lat, m.lng, 1]);
+			.map(m => {
+				if (this.currentCRS === 'pixel' && m.pixelX !== undefined && m.pixelY !== undefined) {
+					return [m.pixelY, m.pixelX, 1] as [number, number, number];
+				}
+				return [m.lat, m.lng, 1] as [number, number, number];
+			});
 
 		if (heatData.length === 0) return;
 
@@ -774,7 +802,18 @@ export class MapController {
 
 		logger.debug('set-active-map', `Switching to map: ${mapId}`);
 
-		// Remove current map layer
+		// Determine if we need to switch CRS
+		const targetCRS = mapId === 'openstreetmap'
+			? 'geographic'
+			: this.imageMapManager.getCoordinateSystem(mapId);
+
+		// If CRS is changing, we need to recreate the map
+		if (targetCRS !== this.currentCRS) {
+			await this.switchCRS(mapId, targetCRS);
+			return;
+		}
+
+		// Same CRS - just switch layers
 		if (mapId === 'openstreetmap') {
 			// Switch to OpenStreetMap tiles
 			if (this.currentImageOverlay) {
@@ -799,7 +838,7 @@ export class MapController {
 				this.settings.defaultZoom
 			);
 		} else {
-			// Switch to custom image map
+			// Switch to custom image map (same CRS)
 			if (this.tileLayer && this.map.hasLayer(this.tileLayer)) {
 				this.map.removeLayer(this.tileLayer);
 			}
@@ -845,6 +884,150 @@ export class MapController {
 	}
 
 	/**
+	 * Switch the map's coordinate reference system
+	 * This requires destroying and recreating the map since Leaflet doesn't allow CRS changes
+	 */
+	private async switchCRS(mapId: string, targetCRS: 'geographic' | 'pixel'): Promise<void> {
+		logger.debug('switch-crs', `Switching CRS from ${this.currentCRS} to ${targetCRS}`);
+
+		// Save current data to restore after map recreation
+		const savedData = this.currentData;
+		const savedLayers = { ...this.currentLayers };
+
+		// Clean up existing map layers
+		this.birthClusterGroup?.clearLayers();
+		this.deathClusterGroup?.clearLayers();
+		this.marriageClusterGroup?.clearLayers();
+		this.burialClusterGroup?.clearLayers();
+		this.pathLayer?.clearLayers();
+
+		if (this.heatLayer && this.map) {
+			this.map.removeLayer(this.heatLayer);
+			this.heatLayer = null;
+		}
+
+		if (this.currentImageOverlay && this.map) {
+			this.map.removeLayer(this.currentImageOverlay);
+			this.currentImageOverlay = null;
+		}
+
+		if (this.tileLayer && this.map) {
+			this.map.removeLayer(this.tileLayer);
+		}
+
+		// Destroy the old map
+		this.map?.remove();
+		this.map = null;
+		this.birthClusterGroup = null;
+		this.deathClusterGroup = null;
+		this.marriageClusterGroup = null;
+		this.burialClusterGroup = null;
+		this.pathLayer = null;
+		this.fullscreenControl = null;
+		this.miniMap = null;
+		this.searchControl = null;
+
+		// Create new map with appropriate CRS
+		const mapConfig = mapId === 'openstreetmap' ? null : this.imageMapManager.getMapConfig(mapId);
+
+		const mapOptions: L.MapOptions = {
+			zoomControl: true
+		};
+
+		if (targetCRS === 'pixel') {
+			// Use Simple CRS for pixel coordinates
+			mapOptions.crs = L.CRS.Simple;
+			mapOptions.minZoom = mapConfig?.minZoom ?? -2;
+			mapOptions.maxZoom = mapConfig?.maxZoom ?? 4;
+		}
+
+		this.map = L.map(this.container, mapOptions);
+		this.currentCRS = targetCRS;
+
+		// Set up layers based on new CRS
+		if (targetCRS === 'geographic') {
+			// Geographic mode - add OSM tiles or custom image overlay
+			if (mapId === 'openstreetmap') {
+				this.tileLayer = L.tileLayer(OSM_TILE_URL, {
+					attribution: OSM_ATTRIBUTION,
+					maxZoom: 19
+				}).addTo(this.map);
+
+				this.map.setView(
+					[this.settings.defaultCenter.lat, this.settings.defaultCenter.lng],
+					this.settings.defaultZoom
+				);
+			} else {
+				// Geographic mode custom map
+				const overlay = await this.imageMapManager.createImageOverlay(mapId);
+				if (overlay) {
+					this.currentImageOverlay = overlay;
+					overlay.addTo(this.map);
+
+					const bounds = this.imageMapManager.getMapBounds(mapId);
+					if (bounds) {
+						this.map.fitBounds(bounds);
+					}
+				}
+			}
+		} else {
+			// Pixel mode - add custom image overlay
+			const overlay = await this.imageMapManager.createImageOverlay(mapId);
+			if (overlay) {
+				this.currentImageOverlay = overlay;
+				overlay.addTo(this.map);
+
+				const bounds = this.imageMapManager.getMapBounds(mapId);
+				if (bounds) {
+					this.map.fitBounds(bounds);
+				}
+
+				// Set to configured center/zoom
+				const center = this.imageMapManager.getMapCenter(mapId);
+				const zoom = this.imageMapManager.getDefaultZoom(mapId);
+				if (center) {
+					this.map.setView(center, zoom);
+				}
+			}
+		}
+
+		// Reinitialize cluster groups and layers
+		this.initializeClusterGroups();
+		this.pathLayer = L.layerGroup().addTo(this.map);
+
+		// Reinitialize controls
+		this.initializeFullscreen();
+		// Only add mini-map for geographic CRS (doesn't make sense for pixel maps)
+		if (targetCRS === 'geographic') {
+			this.initializeMiniMap();
+		}
+		this.initializeSearch();
+
+		this.activeMapId = mapId;
+
+		// Restore data and layer visibility
+		if (savedData) {
+			this.setData(savedData);
+		}
+		this.setLayerVisibility(savedLayers);
+
+		// Notify listeners
+		if (this.onMapChangeCallback) {
+			const universe = mapId === 'openstreetmap' ? null : this.imageMapManager.getMapUniverse(mapId);
+			this.onMapChangeCallback(mapId, universe);
+		}
+
+		logger.info('switch-crs', `CRS switched to ${targetCRS} for map: ${mapId}`);
+	}
+
+	/**
+	 * Get the current coordinate reference system
+	 */
+	getCurrentCRS(): 'geographic' | 'pixel' {
+		return this.currentCRS;
+	}
+
+	/**
 	 * Register a callback for when the active map changes
 	 * The callback receives the new mapId and the universe (null for OpenStreetMap)
 	 */
@@ -882,10 +1065,15 @@ export class MapController {
 		const markers = this.currentData.markers;
 		if (markers.length === 0) return;
 
-		const bounds = L.latLngBounds(
-			markers.map(m => [m.lat, m.lng] as L.LatLngTuple)
-		);
+		// Create bounds using appropriate coordinates
+		const coords = markers.map(m => {
+			if (this.currentCRS === 'pixel' && m.pixelX !== undefined && m.pixelY !== undefined) {
+				return [m.pixelY, m.pixelX] as L.LatLngTuple;
+			}
+			return [m.lat, m.lng] as L.LatLngTuple;
+		});
 
+		const bounds = L.latLngBounds(coords);
 		this.map.fitBounds(bounds, { padding: [50, 50] });
 	}
 

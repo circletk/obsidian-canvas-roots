@@ -27,8 +27,17 @@ export interface ImageMapFrontmatter {
 	universe: string;
 	/** Path to the image file (relative to vault) */
 	image: string;
-	/** Coordinate bounds for the image */
-	bounds: {
+	/**
+	 * Coordinate system type:
+	 * - 'geographic': Use lat/lng bounds (default, backward compatible)
+	 * - 'pixel': Use pixel coordinates with L.CRS.Simple
+	 */
+	coordinate_system?: 'geographic' | 'pixel';
+	/**
+	 * Coordinate bounds for the image (geographic mode)
+	 * For pixel mode, bounds are auto-calculated from image dimensions
+	 */
+	bounds?: {
 		/** Southwest corner (bottom-left) */
 		south: number;
 		west: number;
@@ -36,10 +45,20 @@ export interface ImageMapFrontmatter {
 		north: number;
 		east: number;
 	};
-	/** Optional default center point */
+	/**
+	 * Image dimensions in pixels (pixel mode)
+	 * If not provided, will be auto-detected from the image
+	 */
+	image_dimensions?: {
+		width: number;
+		height: number;
+	};
+	/** Optional default center point (in lat/lng for geographic, x/y for pixel) */
 	center?: {
-		lat: number;
-		lng: number;
+		lat?: number;
+		lng?: number;
+		x?: number;
+		y?: number;
 	};
 	/** Optional default zoom level */
 	default_zoom?: number;
@@ -102,38 +121,91 @@ export class ImageMapManager {
 	 */
 	private parseMapConfig(fm: Record<string, unknown>, file: TFile): CustomMapConfig | null {
 		// Validate required fields
-		if (!fm.map_id || !fm.name || !fm.universe || !fm.image || !fm.bounds) {
+		if (!fm.map_id || !fm.name || !fm.universe || !fm.image) {
 			logger.warn('invalid-config', `Map config in ${file.path} missing required fields`);
 			return null;
 		}
 
-		const bounds = fm.bounds as Record<string, unknown>;
-		if (
-			typeof bounds.south !== 'number' ||
-			typeof bounds.west !== 'number' ||
-			typeof bounds.north !== 'number' ||
-			typeof bounds.east !== 'number'
-		) {
-			logger.warn('invalid-bounds', `Map config in ${file.path} has invalid bounds`);
+		const coordinateSystem = fm.coordinate_system === 'pixel' ? 'pixel' : 'geographic';
+
+		// For pixel mode, bounds are optional (will be calculated from image dimensions)
+		// For geographic mode, bounds are required
+		if (coordinateSystem === 'geographic' && !fm.bounds) {
+			logger.warn('invalid-config', `Map config in ${file.path} missing bounds (required for geographic mode)`);
 			return null;
 		}
 
+		let bounds: { topLeft: { x: number; y: number }; bottomRight: { x: number; y: number } };
+		let imageDimensions: { width: number; height: number } | undefined;
+
+		if (coordinateSystem === 'pixel') {
+			// For pixel mode, use image dimensions or default placeholder
+			const dims = fm.image_dimensions as Record<string, unknown> | undefined;
+			if (dims && typeof dims.width === 'number' && typeof dims.height === 'number') {
+				imageDimensions = { width: dims.width, height: dims.height };
+				// In pixel/Simple CRS: y increases upward, so bounds go from [0,0] to [height, width]
+				bounds = {
+					topLeft: { x: 0, y: dims.height },      // top-left in Simple CRS
+					bottomRight: { x: dims.width, y: 0 }    // bottom-right in Simple CRS
+				};
+			} else {
+				// Dimensions will be auto-detected later when loading the image
+				// Use placeholder bounds
+				bounds = {
+					topLeft: { x: 0, y: 1000 },
+					bottomRight: { x: 1000, y: 0 }
+				};
+			}
+		} else {
+			// Geographic mode - parse bounds as lat/lng
+			const boundsObj = fm.bounds as Record<string, unknown>;
+			if (
+				typeof boundsObj.south !== 'number' ||
+				typeof boundsObj.west !== 'number' ||
+				typeof boundsObj.north !== 'number' ||
+				typeof boundsObj.east !== 'number'
+			) {
+				logger.warn('invalid-bounds', `Map config in ${file.path} has invalid bounds`);
+				return null;
+			}
+
+			bounds = {
+				topLeft: { x: boundsObj.west as number, y: boundsObj.north as number },
+				bottomRight: { x: boundsObj.east as number, y: boundsObj.south as number }
+			};
+		}
+
 		const center = fm.center as Record<string, unknown> | undefined;
+		let centerPoint: { x: number; y: number } | undefined;
+
+		if (center) {
+			if (coordinateSystem === 'pixel') {
+				// Use x/y for pixel mode
+				centerPoint = {
+					x: (center.x as number) ?? (bounds.bottomRight.x / 2),
+					y: (center.y as number) ?? (bounds.topLeft.y / 2)
+				};
+			} else {
+				// Use lng/lat for geographic mode
+				centerPoint = {
+					x: (center.lng as number) ?? 0,
+					y: (center.lat as number) ?? 0
+				};
+			}
+		}
 
 		return {
 			id: String(fm.map_id),
 			name: String(fm.name),
 			universe: String(fm.universe),
 			imagePath: String(fm.image),
-			bounds: {
-				topLeft: { x: bounds.west as number, y: bounds.north as number },
-				bottomRight: { x: bounds.east as number, y: bounds.south as number }
-			},
-			center: center ? {
-				x: (center.lng as number) ?? 0,
-				y: (center.lat as number) ?? 0
-			} : undefined,
-			defaultZoom: typeof fm.default_zoom === 'number' ? fm.default_zoom : 2
+			coordinateSystem,
+			bounds,
+			imageDimensions,
+			center: centerPoint,
+			defaultZoom: typeof fm.default_zoom === 'number' ? fm.default_zoom : (coordinateSystem === 'pixel' ? 0 : 2),
+			minZoom: typeof fm.min_zoom === 'number' ? fm.min_zoom : (coordinateSystem === 'pixel' ? -2 : undefined),
+			maxZoom: typeof fm.max_zoom === 'number' ? fm.max_zoom : (coordinateSystem === 'pixel' ? 4 : undefined)
 		};
 	}
 
@@ -160,6 +232,7 @@ export class ImageMapManager {
 
 	/**
 	 * Create a Leaflet image overlay for a custom map
+	 * For pixel coordinate maps, also auto-detects image dimensions if needed
 	 */
 	async createImageOverlay(mapId: string): Promise<L.ImageOverlay | null> {
 		const config = this.mapConfigs.get(mapId);
@@ -175,36 +248,82 @@ export class ImageMapManager {
 		}
 
 		try {
-			// Get the image file
-			const imageFile = this.app.vault.getAbstractFileByPath(config.imagePath);
-			if (!imageFile || !(imageFile instanceof this.app.vault.adapter.constructor)) {
-				// Try to read it as a file anyway
-				const imageUrl = await this.getImageUrl(config.imagePath);
-				if (!imageUrl) {
-					logger.error('image-not-found', `Image not found: ${config.imagePath}`);
-					return null;
-				}
+			const imageUrl = await this.getImageUrl(config.imagePath);
+			if (!imageUrl) {
+				logger.error('image-not-found', `Image not found: ${config.imagePath}`);
+				return null;
+			}
 
-				// Create the image overlay with bounds
-				const bounds = L.latLngBounds(
+			// For pixel coordinate system, auto-detect dimensions if not provided
+			if (config.coordinateSystem === 'pixel' && !config.imageDimensions) {
+				const dimensions = await this.getImageDimensions(imageUrl);
+				if (dimensions) {
+					config.imageDimensions = dimensions;
+					// Update bounds based on actual image dimensions
+					config.bounds = {
+						topLeft: { x: 0, y: dimensions.height },
+						bottomRight: { x: dimensions.width, y: 0 }
+					};
+					logger.debug('auto-detect-dimensions', `Auto-detected image dimensions: ${dimensions.width}x${dimensions.height}`);
+				}
+			}
+
+			// Create bounds based on coordinate system
+			let bounds: L.LatLngBounds;
+
+			if (config.coordinateSystem === 'pixel') {
+				// For Simple CRS: [y, x] format where y=0 is bottom
+				// Image bounds: [[0, 0], [height, width]]
+				bounds = L.latLngBounds(
+					[0, 0],                                                    // Southwest (bottom-left)
+					[config.bounds.topLeft.y, config.bounds.bottomRight.x]     // Northeast (top-right)
+				);
+			} else {
+				// Geographic mode: standard lat/lng bounds
+				bounds = L.latLngBounds(
 					[config.bounds.bottomRight.y, config.bounds.topLeft.x],   // Southwest (bottom-left)
 					[config.bounds.topLeft.y, config.bounds.bottomRight.x]    // Northeast (top-right)
 				);
-
-				const overlay = L.imageOverlay(imageUrl, bounds, {
-					opacity: 1,
-					interactive: false
-				});
-
-				this.imageOverlays.set(mapId, overlay);
-				logger.debug('create-overlay', `Created image overlay for ${config.name}`);
-				return overlay;
 			}
+
+			const overlay = L.imageOverlay(imageUrl, bounds, {
+				opacity: 1,
+				interactive: false
+			});
+
+			this.imageOverlays.set(mapId, overlay);
+			logger.debug('create-overlay', `Created image overlay for ${config.name} (${config.coordinateSystem} mode)`);
+			return overlay;
 		} catch (error) {
 			logger.error('create-overlay-error', `Failed to create overlay for ${mapId}`, { error });
 		}
 
 		return null;
+	}
+
+	/**
+	 * Get the coordinate system for a map
+	 */
+	getCoordinateSystem(mapId: string): 'geographic' | 'pixel' {
+		const config = this.mapConfigs.get(mapId);
+		return config?.coordinateSystem ?? 'geographic';
+	}
+
+	/**
+	 * Get image dimensions by loading the image
+	 */
+	private async getImageDimensions(imageUrl: string): Promise<{ width: number; height: number } | null> {
+		return new Promise((resolve) => {
+			const img = new Image();
+			img.onload = () => {
+				resolve({ width: img.naturalWidth, height: img.naturalHeight });
+			};
+			img.onerror = () => {
+				logger.warn('image-dimensions', 'Failed to load image for dimension detection');
+				resolve(null);
+			};
+			img.src = imageUrl;
+		});
 	}
 
 	/**
@@ -296,7 +415,10 @@ export class ImageMapManager {
 }
 
 /**
- * Example map configuration file content:
+ * Example map configuration files:
+ *
+ * ## Geographic Coordinate System (default)
+ * Use this when you want to define arbitrary lat/lng-style coordinates for your map.
  *
  * ```yaml
  * ---
@@ -305,6 +427,7 @@ export class ImageMapManager {
  * name: Middle-earth
  * universe: tolkien
  * image: assets/maps/middle-earth.jpg
+ * coordinate_system: geographic
  * bounds:
  *   north: 50
  *   south: -50
@@ -320,13 +443,53 @@ export class ImageMapManager {
  *
  * # Middle-earth Map
  *
- * This is the map configuration for Middle-earth locations.
+ * Place coordinates use lat/lng values within the defined bounds.
+ * ```
  *
- * ## Place coordinates
+ * ## Pixel Coordinate System
+ * Use this when you want to place markers directly using pixel coordinates.
+ * This is ideal for custom maps where you want coordinates to match image editor positions.
  *
- * When adding places in this universe, use the following coordinate system:
- * - (0, 0) is approximately the center of the map (Isengard area)
- * - Positive lat values are north, negative are south
- * - Positive lng values are east, negative are west
+ * ```yaml
+ * ---
+ * type: map
+ * map_id: westeros
+ * name: Westeros
+ * universe: got
+ * image: assets/maps/westeros.png
+ * coordinate_system: pixel
+ * image_dimensions:
+ *   width: 2048
+ *   height: 3072
+ * center:
+ *   x: 1024
+ *   y: 1536
+ * default_zoom: 0
+ * min_zoom: -2
+ * max_zoom: 3
+ * ---
+ *
+ * # Westeros Map
+ *
+ * Place coordinates use pixel positions (x, y) where:
+ * - x: 0 is the left edge, increases rightward
+ * - y: 0 is the bottom edge, increases upward
+ *
+ * Tip: Use an image editor to find pixel coordinates for places.
+ * Note: If image_dimensions is omitted, it will be auto-detected.
+ * ```
+ *
+ * ## Place Note Example (Pixel Mode)
+ *
+ * ```yaml
+ * ---
+ * type: place
+ * cr_id: winterfell
+ * name: Winterfell
+ * universe: got
+ * pixel_coordinates:
+ *   x: 1200
+ *   y: 2400
+ * ---
  * ```
  */

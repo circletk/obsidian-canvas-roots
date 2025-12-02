@@ -23,10 +23,14 @@ export interface MapMarker {
 	personName: string;
 	/** Type of life event */
 	type: MarkerType;
-	/** Latitude coordinate */
+	/** Latitude coordinate (for geographic coordinate system) */
 	lat: number;
-	/** Longitude coordinate */
+	/** Longitude coordinate (for geographic coordinate system) */
 	lng: number;
+	/** Pixel X coordinate (for pixel coordinate system) */
+	pixelX?: number;
+	/** Pixel Y coordinate (for pixel coordinate system) */
+	pixelY?: number;
 	/** Name of the place */
 	placeName: string;
 	/** cr_id of the place note (if linked) */
@@ -55,12 +59,16 @@ export interface MigrationPath {
 	origin: {
 		lat: number;
 		lng: number;
+		pixelX?: number;
+		pixelY?: number;
 		name: string;
 	};
 	/** Destination location (typically death) */
 	destination: {
 		lat: number;
 		lng: number;
+		pixelX?: number;
+		pixelY?: number;
 		name: string;
 	};
 	/** Birth year for filtering */
@@ -90,6 +98,13 @@ export interface AggregatedPath extends MigrationPath {
 // ============================================================================
 
 /**
+ * Coordinate system type for custom maps
+ * - 'geographic': Uses lat/lng coordinates (default, for maps with real-world reference points)
+ * - 'pixel': Uses pixel coordinates with L.CRS.Simple (for custom image maps)
+ */
+export type CoordinateSystemType = 'geographic' | 'pixel';
+
+/**
  * Configuration for a custom image map (fictional worlds)
  */
 export interface CustomMapConfig {
@@ -101,6 +116,8 @@ export interface CustomMapConfig {
 	universe: string;
 	/** Path to the map image in the vault */
 	imagePath: string;
+	/** Coordinate system type ('geographic' or 'pixel') */
+	coordinateSystem: CoordinateSystemType;
 	/** Coordinate bounds for the image */
 	bounds: {
 		/** Top-left corner */
@@ -108,10 +125,16 @@ export interface CustomMapConfig {
 		/** Bottom-right corner */
 		bottomRight: { x: number; y: number };
 	};
+	/** Image dimensions in pixels (required for pixel coordinate system) */
+	imageDimensions?: { width: number; height: number };
 	/** Optional center point for initial view */
 	center?: { x: number; y: number };
 	/** Optional initial zoom level */
 	defaultZoom?: number;
+	/** Optional minimum zoom level */
+	minZoom?: number;
+	/** Optional maximum zoom level */
+	maxZoom?: number;
 }
 
 // ============================================================================
