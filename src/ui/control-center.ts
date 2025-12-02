@@ -1096,6 +1096,12 @@ export class ControlCenterModal extends Modal {
 			li.appendText(` - ${field.description}`);
 		});
 
+		// Link to full schema reference
+		const schemaLink = frontmatterContent.createDiv({ cls: 'crc-mt-3' });
+		schemaLink.createEl('p', {
+			cls: 'crc-text-muted'
+		}).innerHTML = 'For the complete property reference (including spouse metadata, reference numbering, and place notes), see the <a href="https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/reference/frontmatter-schema.md" class="crc-link" target="_blank">Frontmatter Schema Reference</a>.';
+
 		container.appendChild(frontmatterCard);
 
 		// Groups and Collections Card
