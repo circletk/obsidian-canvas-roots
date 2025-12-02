@@ -82,6 +82,8 @@ Click any cell to edit properties. Changes are immediately saved to the note's Y
 
 ## Property Reference
 
+> **Complete Reference:** For the full property schema including advanced spouse metadata, reference numbering systems, and planned place note properties, see the [Frontmatter Schema Reference](reference/frontmatter-schema.md).
+
 Canvas Roots uses these core properties in note frontmatter:
 
 ### Required Properties

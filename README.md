@@ -203,6 +203,7 @@ If you find this plugin useful, please consider supporting its development!
 
 ### For Users
 - **[User Guide](docs/user-guide.md)** - Complete workflow, tree generation, and styling guide
+- **[Frontmatter Schema](docs/reference/frontmatter-schema.md)** - Complete property reference for person and place notes
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
 - **[Bases Integration](docs/bases-integration.md)** - Bulk data management with Obsidian Bases
 - **[Roadmap](docs/roadmap.md)** - Current status and planned features

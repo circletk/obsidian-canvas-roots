@@ -53,6 +53,8 @@ Canvas Roots transforms structured genealogical data in your Markdown notes into
 
 ## Data Entry
 
+> **Reference:** For a complete list of all supported properties, see the [Frontmatter Schema Reference](reference/frontmatter-schema.md).
+
 ### Option A: Individual Markdown Notes
 
 Create individual notes for each person with YAML frontmatter containing relationship data.
