@@ -788,20 +788,31 @@ flowchart LR
 | Gramps XML | ✅ | Native event support |
 | CSV | ✅ | Separate events.csv or flattened columns |
 
-### Route/Journey Visualization
-- Show a person's movements through life, not just birth→death
-- Connect all known locations in chronological order
-- Use cases:
-  - Track immigration journeys (multiple stops)
-  - Visualize military campaigns or tours of duty
-  - Show career moves across cities
-  - Map pilgrimage or travel routes
-- Implementation:
-  - Parse events with dates and locations
-  - Draw polyline connecting locations in date order
-  - Optional animation showing movement over time
-  - "Playback" mode stepping through life events
-- Complements Time Slider: see where someone was at each point in time
+### Route/Journey Visualization ✅ Implemented
+
+Show a person's movements through life by connecting all known locations in chronological order.
+
+**Features:**
+- Connects all life events (birth, residence, occupation, education, military, immigration, marriage, death, burial) in date order
+- Dashed violet polylines distinguish journeys from migration paths (birth→death)
+- Arrow decorations show direction of movement
+- Person name labels along path (optional)
+- Popup shows all waypoints with event types and dates
+- Layer toggle in Layers menu ("Journey paths (all events)")
+- Off by default to avoid visual clutter
+
+**Use cases:**
+- Track immigration journeys (multiple stops)
+- Visualize military campaigns or tours of duty
+- Show career moves across cities
+- Map pilgrimage or travel routes
+
+**Technical details:**
+- `JourneyPath` and `JourneyWaypoint` types in `map-types.ts`
+- `buildJourneyPaths()` method in `MapDataService`
+- Journey layer rendered with dashed lines and arrow decorators
+- Waypoints sorted chronologically (birth first, death/burial last)
+- Consecutive duplicate locations filtered out
 
 ### Image Export
 Options explored (deferred due to CORS complexity):

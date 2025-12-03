@@ -70,6 +70,7 @@ import type {
 	MapMarker,
 	MigrationPath,
 	AggregatedPath,
+	JourneyPath,
 	MapSettings,
 	MapState,
 	LayerVisibility,
@@ -108,6 +109,7 @@ export class MapController {
 	// Single cluster group for all additional event types (residence, occupation, etc.)
 	private eventsClusterGroup: L.MarkerClusterGroup | null = null;
 	private pathLayer: L.LayerGroup | null = null;
+	private journeyLayer: L.LayerGroup | null = null;
 	private heatLayer: L.Layer | null = null;
 
 	// Controls
@@ -141,6 +143,7 @@ export class MapController {
 		custom: true,
 		// Other layers
 		paths: true,
+		journeys: false,
 		heatMap: false
 	};
 
@@ -183,8 +186,11 @@ export class MapController {
 		// Initialize cluster groups
 		this.initializeClusterGroups();
 
-		// Initialize path layer
+		// Initialize path layer (migration paths: birth → death)
 		this.pathLayer = L.layerGroup().addTo(this.map);
+
+		// Initialize journey layer (all life events connected chronologically)
+		this.journeyLayer = L.layerGroup();  // Not added by default
 
 		// Add fullscreen control
 		this.initializeFullscreen();
@@ -407,6 +413,7 @@ export class MapController {
 			this.currentData = data;
 			this.renderMarkers(data.markers);
 			this.renderPaths(data.paths);
+			this.renderJourneyPaths(data.journeyPaths);
 			this.renderHeatMap(data.markers);
 
 			// Update search layer with new markers
@@ -424,10 +431,13 @@ export class MapController {
 	 * Set filtered data (for time slider) without changing current data reference
 	 * This updates only the visible markers/paths without fitting bounds
 	 */
-	setFilteredData(markers: MapMarker[], paths: MigrationPath[]): void {
+	setFilteredData(markers: MapMarker[], paths: MigrationPath[], journeyPaths?: JourneyPath[]): void {
 		try {
 			this.renderMarkers(markers);
 			this.renderPaths(paths);
+			if (journeyPaths) {
+				this.renderJourneyPaths(journeyPaths);
+			}
 			this.renderHeatMap(markers);
 			// Don't fit bounds - keep current view during animation
 		} catch (error) {
@@ -728,6 +738,182 @@ export class MapController {
 	}
 
 	/**
+	 * Render journey paths on the map (all life events connected chronologically)
+	 */
+	private renderJourneyPaths(journeyPaths: JourneyPath[]): void {
+		if (!this.journeyLayer) return;
+
+		this.journeyLayer.clearLayers();
+
+		for (const journey of journeyPaths) {
+			// Need at least 2 waypoints to draw a path
+			if (journey.waypoints.length < 2) continue;
+
+			const polyline = this.createJourneyPath(journey);
+			this.journeyLayer.addLayer(polyline);
+
+			// Add arrow decorations between waypoints
+			this.addJourneyArrows(journey, this.journeyLayer);
+		}
+
+		logger.debug('render-journeys', `Rendered ${journeyPaths.length} journey paths`);
+	}
+
+	/**
+	 * Create a polyline for a journey path
+	 */
+	private createJourneyPath(journey: JourneyPath): L.Polyline {
+		// Build array of coordinates from waypoints
+		const latlngs: L.LatLngExpression[] = journey.waypoints.map(wp => {
+			if (this.currentCRS === 'pixel' && wp.pixelX !== undefined && wp.pixelY !== undefined) {
+				return [wp.pixelY, wp.pixelX] as L.LatLngTuple;
+			}
+			return [wp.lat, wp.lng] as L.LatLngTuple;
+		});
+
+		const polyline = L.polyline(latlngs, {
+			color: this.settings.journeyPathColor,
+			weight: this.settings.journeyPathWeight,
+			opacity: 0.7,
+			dashArray: '5, 5'  // Dashed line to distinguish from migration paths
+		});
+
+		// Add text label along the path (person name)
+		if (this.settings.showJourneyLabels) {
+			try {
+				polyline.setText(journey.personName, {
+					center: true,
+					offset: -5,
+					orientation: 'flip',
+					attributes: {
+						fill: this.settings.journeyPathColor,
+						'font-size': '11px',
+						'font-weight': '500'
+					}
+				});
+			} catch (e) {
+				logger.warn('textpath-journey', 'Could not add text label to journey path', { error: e });
+			}
+		}
+
+		// Bind popup to the polyline
+		polyline.bindPopup(this.createJourneyPopup(journey));
+
+		return polyline;
+	}
+
+	/**
+	 * Add arrow decorations between journey waypoints
+	 */
+	private addJourneyArrows(journey: JourneyPath, layer: L.LayerGroup): void {
+		try {
+			// @ts-expect-error - leaflet-polylinedecorator types not fully available
+			const LPolylineDecorator = L.polylineDecorator;
+			// @ts-expect-error - leaflet-polylinedecorator Symbol types not available
+			const LSymbol = L.Symbol;
+
+			if (!LPolylineDecorator || !LSymbol) return;
+
+			// Build coordinates from waypoints
+			const latlngs = journey.waypoints.map(wp => {
+				if (this.currentCRS === 'pixel' && wp.pixelX !== undefined && wp.pixelY !== undefined) {
+					return L.latLng(wp.pixelY, wp.pixelX);
+				}
+				return L.latLng(wp.lat, wp.lng);
+			});
+
+			// Create decorator for arrows at each segment midpoint
+			const decorator = LPolylineDecorator(latlngs, {
+				patterns: [
+					{
+						offset: '50%',
+						repeat: 0,
+						symbol: LSymbol.arrowHead({
+							pixelSize: 8,
+							polygon: false,
+							pathOptions: {
+								color: this.settings.journeyPathColor,
+								weight: this.settings.journeyPathWeight
+							}
+						})
+					}
+				]
+			});
+
+			layer.addLayer(decorator);
+		} catch (e) {
+			logger.warn('journey-arrows', 'Could not add arrow decorations to journey path', { error: e });
+		}
+	}
+
+	/**
+	 * Create popup content for a journey path
+	 */
+	private createJourneyPopup(journey: JourneyPath): HTMLElement {
+		const container = document.createElement('div');
+		container.className = 'cr-map-popup cr-journey-popup';
+
+		container.createEl('div', {
+			cls: 'cr-map-popup-name',
+			text: journey.personName
+		});
+
+		// Show journey summary
+		const firstWp = journey.waypoints[0];
+		const lastWp = journey.waypoints[journey.waypoints.length - 1];
+		container.createEl('div', {
+			cls: 'cr-map-popup-migration',
+			text: `${journey.waypoints.length} locations: ${firstWp.name} → ... → ${lastWp.name}`
+		});
+
+		// Show years if available
+		if (journey.birthYear || journey.deathYear) {
+			const yearText = journey.birthYear && journey.deathYear
+				? `${journey.birthYear} – ${journey.deathYear}`
+				: journey.birthYear
+					? `Born ${journey.birthYear}`
+					: `Died ${journey.deathYear}`;
+			container.createEl('div', {
+				cls: 'cr-map-popup-years',
+				text: yearText
+			});
+		}
+
+		// List waypoints
+		const waypointList = container.createEl('div', {
+			cls: 'cr-journey-waypoints'
+		});
+
+		for (const wp of journey.waypoints) {
+			const wpEl = waypointList.createEl('div', {
+				cls: 'cr-journey-waypoint'
+			});
+
+			const eventLabel = wp.eventType.charAt(0).toUpperCase() + wp.eventType.slice(1);
+			const dateText = wp.year ? ` (${wp.year})` : '';
+			wpEl.createEl('span', {
+				cls: 'cr-journey-waypoint-event',
+				text: `${eventLabel}${dateText}: `
+			});
+			wpEl.createEl('span', {
+				cls: 'cr-journey-waypoint-place',
+				text: wp.name
+			});
+		}
+
+		// Button to open person note
+		const openBtn = container.createEl('button', {
+			cls: 'cr-map-popup-btn',
+			text: 'Open person'
+		});
+		openBtn.addEventListener('click', () => {
+			this.openNoteById(journey.personId);
+		});
+
+		return container;
+	}
+
+	/**
 	 * Render heat map layer
 	 */
 	private renderHeatMap(markers: MapMarker[]): void {
@@ -835,12 +1021,21 @@ export class MapController {
 			this.renderMarkers(this.currentData.markers);
 		}
 
-		// Migration paths
+		// Migration paths (birth → death)
 		if (this.pathLayer) {
 			if (layers.paths && !this.map.hasLayer(this.pathLayer)) {
 				this.map.addLayer(this.pathLayer);
 			} else if (!layers.paths && this.map.hasLayer(this.pathLayer)) {
 				this.map.removeLayer(this.pathLayer);
+			}
+		}
+
+		// Journey paths (all life events connected chronologically)
+		if (this.journeyLayer) {
+			if (layers.journeys && !this.map.hasLayer(this.journeyLayer)) {
+				this.map.addLayer(this.journeyLayer);
+			} else if (!layers.journeys && this.map.hasLayer(this.journeyLayer)) {
+				this.map.removeLayer(this.journeyLayer);
 			}
 		}
 
@@ -969,6 +1164,7 @@ export class MapController {
 		this.burialClusterGroup?.clearLayers();
 		this.eventsClusterGroup?.clearLayers();
 		this.pathLayer?.clearLayers();
+		this.journeyLayer?.clearLayers();
 
 		if (this.heatLayer && this.map) {
 			this.map.removeLayer(this.heatLayer);
@@ -1004,6 +1200,7 @@ export class MapController {
 		this.burialClusterGroup = null;
 		this.eventsClusterGroup = null;
 		this.pathLayer = null;
+		this.journeyLayer = null;
 		this.fullscreenControl = null;
 		this.miniMap = null;
 		this.searchControl = null;
@@ -1075,6 +1272,7 @@ export class MapController {
 		// Reinitialize cluster groups and layers
 		this.initializeClusterGroups();
 		this.pathLayer = L.layerGroup().addTo(this.map);
+		this.journeyLayer = L.layerGroup();  // Not added by default
 
 		// Reinitialize controls
 		this.initializeFullscreen();
@@ -1668,6 +1866,7 @@ export class MapController {
 		this.burialClusterGroup?.clearLayers();
 		this.eventsClusterGroup?.clearLayers();
 		this.pathLayer?.clearLayers();
+		this.journeyLayer?.clearLayers();
 
 		// Clean up distortable overlay if active
 		if (this.currentDistortableOverlay && this.map) {

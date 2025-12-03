@@ -144,6 +144,56 @@ export interface AggregatedPath extends MigrationPath {
 	personNames: string[];
 }
 
+/**
+ * A waypoint in a person's journey (chronologically ordered life event location)
+ */
+export interface JourneyWaypoint {
+	/** Latitude coordinate */
+	lat: number;
+	/** Longitude coordinate */
+	lng: number;
+	/** Pixel X coordinate (for pixel coordinate system) */
+	pixelX?: number;
+	/** Pixel Y coordinate (for pixel coordinate system) */
+	pixelY?: number;
+	/** Name of the place */
+	name: string;
+	/** cr_id of the place note */
+	placeId?: string;
+	/** Type of life event at this location */
+	eventType: MarkerType;
+	/** Date of the event */
+	date?: string;
+	/** Year extracted from date */
+	year?: number;
+	/** End date for duration events */
+	dateTo?: string;
+	/** End year for duration events */
+	yearTo?: number;
+	/** Description of the event */
+	description?: string;
+}
+
+/**
+ * A journey path connecting all life events for a person in chronological order
+ */
+export interface JourneyPath {
+	/** cr_id of the person */
+	personId: string;
+	/** Display name of the person */
+	personName: string;
+	/** Ordered list of waypoints (locations) in the person's life */
+	waypoints: JourneyWaypoint[];
+	/** Birth year for filtering */
+	birthYear?: number;
+	/** Death year for filtering */
+	deathYear?: number;
+	/** Collection the person belongs to */
+	collection?: string;
+	/** Universe for fictional places */
+	universe?: string;
+}
+
 // ============================================================================
 // Custom Image Map Types
 // ============================================================================
@@ -260,8 +310,10 @@ export interface LayerVisibility {
 	custom: boolean;
 
 	// Other layers
-	/** Show migration paths */
+	/** Show migration paths (birth → death) */
 	paths: boolean;
+	/** Show journey paths (all life events connected chronologically) */
+	journeys: boolean;
 	/** Show heat map layer */
 	heatMap: boolean;
 }
@@ -340,10 +392,12 @@ export interface PersonLifeSpan {
 export interface MapData {
 	/** All markers to display */
 	markers: MapMarker[];
-	/** All migration paths to display */
+	/** All migration paths to display (birth → death) */
 	paths: MigrationPath[];
 	/** Aggregated paths (for line weight visualization) */
 	aggregatedPaths: AggregatedPath[];
+	/** Journey paths (all life events connected chronologically) */
+	journeyPaths: JourneyPath[];
 	/** Available collections for filtering */
 	collections: string[];
 	/** Available universes for filtering */
@@ -469,6 +523,15 @@ export interface MapSettings {
 	/** Show person name labels on migration paths */
 	showPathLabels: boolean;
 
+	/** Show journey paths (all life events) by default */
+	showJourneyPaths: boolean;
+	/** Journey path color */
+	journeyPathColor: string;
+	/** Journey path line weight */
+	journeyPathWeight: number;
+	/** Show person name labels on journey paths */
+	showJourneyLabels: boolean;
+
 	/** Heat map blur radius */
 	heatMapBlur: number;
 	/** Heat map point radius */
@@ -505,6 +568,10 @@ export const DEFAULT_MAP_SETTINGS: MapSettings = {
 	pathColor: '#6366f1',  // indigo
 	pathWeight: 2,
 	showPathLabels: true,
+	showJourneyPaths: false,
+	journeyPathColor: '#8b5cf6',  // violet (distinct from migration paths)
+	journeyPathWeight: 2,
+	showJourneyLabels: true,
 	heatMapBlur: 15,
 	heatMapRadius: 25,
 	customMapsFolder: 'Canvas Roots/Places/Maps'
@@ -599,5 +666,6 @@ export const DEFAULT_LAYER_VISIBILITY: LayerVisibility = {
 
 	// Other layers
 	paths: true,
+	journeys: false,  // Off by default (can be visually busy with many people)
 	heatMap: false
 };

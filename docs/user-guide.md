@@ -1635,6 +1635,36 @@ In Map View, you can toggle visibility of each event type:
 1. Click the **Layers** button in the toolbar
 2. Each event category has its own checkbox
 3. Religious events (baptism, confirmation, ordination) are grouped under "Religious"
+4. **Path layers:**
+   - "Migration paths (birth → death)" - Direct lines from birthplace to death location
+   - "Journey paths (all events)" - Connects all life events chronologically
+
+### Journey Paths (Route Visualization)
+
+Journey paths show a person's complete movement through life by connecting all their events in chronological order.
+
+**How it works:**
+- Birth location is always first
+- Life events are sorted by date (year)
+- Death and burial locations come last
+- Consecutive duplicate locations are filtered out
+
+**Visual style:**
+- Dashed violet lines (distinct from solid indigo migration paths)
+- Arrow decorations showing direction of movement
+- Person name labels along the path
+- Click the path to see all waypoints in a popup
+
+**To enable:**
+1. Open Map View
+2. Click **Layers** in the toolbar
+3. Check "Journey paths (all events)"
+
+**Use cases:**
+- Track immigration routes with multiple stops
+- Visualize military service across locations
+- Show career progression through cities
+- Map pilgrimage or travel routes
 
 **Tips:**
 - Events with both `date_from` and `date_to` represent duration events (e.g., a residence from 1920-1935)

@@ -1744,3 +1744,43 @@ input[type="text"]::-webkit-input-placeholder {
 .cr-map-edit-banner strong {
   color: var(--interactive-accent);
 }
+
+/* --------------------------------------------------------------------------
+   Journey Path Popup
+   -------------------------------------------------------------------------- */
+
+.cr-journey-popup {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.cr-journey-waypoints {
+  margin-top: var(--cr-spacing-sm);
+  margin-bottom: var(--cr-spacing-sm);
+  padding: var(--cr-spacing-xs);
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.cr-journey-waypoint {
+  display: flex;
+  flex-wrap: wrap;
+  padding: var(--cr-spacing-xs) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-small);
+}
+
+.cr-journey-waypoint:last-child {
+  border-bottom: none;
+}
+
+.cr-journey-waypoint-event {
+  font-weight: var(--font-medium);
+  color: var(--text-normal);
+}
+
+.cr-journey-waypoint-place {
+  color: var(--text-muted);
+}

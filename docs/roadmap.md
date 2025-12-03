@@ -60,9 +60,9 @@ The following priority order guides future development:
 - GeoJSON and SVG overlay export
 - Interactive image alignment (Leaflet.DistortableImage) - drag corners to align maps
 - Pixel-based coordinates (L.CRS.Simple) for worldbuilders
+- Route/journey visualization (connect all life events chronologically)
 
 **Future Enhancements (v2+):** See [leaflet-maps-plan.md § Future Considerations](architecture/leaflet-maps-plan.md#future-considerations-v2)
-- Route/journey visualization (connect all life events chronologically)
 - Offline tile caching for OSM
 - Tiled image maps (Zoomify/DeepZoom) for massive images
 

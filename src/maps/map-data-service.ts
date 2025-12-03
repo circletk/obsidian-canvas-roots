@@ -12,6 +12,8 @@ import type {
 	MapMarker,
 	MigrationPath,
 	AggregatedPath,
+	JourneyPath,
+	JourneyWaypoint,
 	MapFilters,
 	CustomMapConfig,
 	MarkerType,
@@ -96,11 +98,14 @@ export class MapDataService {
 		// Build markers
 		const markers = this.buildMarkers(people, filters);
 
-		// Build migration paths
+		// Build migration paths (birth → death)
 		const paths = this.buildPaths(people, filters);
 
 		// Aggregate paths
 		const aggregatedPaths = this.aggregatePaths(paths);
+
+		// Build journey paths (all life events connected chronologically)
+		const journeyPaths = this.buildJourneyPaths(people, filters);
 
 		// Build life span data for time slider
 		const personLifeSpans = this.buildLifeSpans(people, filters);
@@ -128,6 +133,7 @@ export class MapDataService {
 		logger.debug('get-data-complete', 'Map data prepared', {
 			markers: markers.length,
 			paths: paths.length,
+			journeyPaths: journeyPaths.length,
 			collections: collections.length,
 			personLifeSpans: personLifeSpans.length
 		});
@@ -136,6 +142,7 @@ export class MapDataService {
 			markers,
 			paths,
 			aggregatedPaths,
+			journeyPaths,
 			collections,
 			universes,
 			yearRange,
@@ -591,6 +598,180 @@ export class MapDataService {
 		}
 
 		return lifeSpans;
+	}
+
+	/**
+	 * Build journey paths for all people (all life events connected chronologically)
+	 */
+	private buildJourneyPaths(people: PersonData[], filters: MapFilters): JourneyPath[] {
+		const journeyPaths: JourneyPath[] = [];
+
+		for (const person of people) {
+			// Apply collection filter
+			if (filters.collection && person.collection !== filters.collection) {
+				continue;
+			}
+
+			const waypoints: JourneyWaypoint[] = [];
+			let pathUniverse: string | undefined;
+
+			// Add birth waypoint
+			const birthPlace = this.resolvePlace(person.birthPlaceId, person.birthPlace);
+			if (birthPlace && this.hasValidCoordinates(birthPlace)) {
+				// Apply universe filter
+				if (!filters.universe || birthPlace.universe === filters.universe) {
+					const birthYear = this.extractYear(person.born);
+					waypoints.push({
+						lat: birthPlace.lat ?? 0,
+						lng: birthPlace.lng ?? 0,
+						pixelX: birthPlace.pixelX,
+						pixelY: birthPlace.pixelY,
+						name: birthPlace.name,
+						placeId: birthPlace.crId,
+						eventType: 'birth',
+						date: person.born,
+						year: birthYear
+					});
+					pathUniverse = birthPlace.universe;
+				}
+			}
+
+			// Add marriage waypoint (if has date for chronological ordering)
+			const marriagePlace = this.resolvePlace(person.marriagePlaceId, person.marriagePlace);
+			if (marriagePlace && this.hasValidCoordinates(marriagePlace) && person.marriageDate) {
+				if (!filters.universe || marriagePlace.universe === filters.universe) {
+					const marriageYear = this.extractYear(person.marriageDate);
+					waypoints.push({
+						lat: marriagePlace.lat ?? 0,
+						lng: marriagePlace.lng ?? 0,
+						pixelX: marriagePlace.pixelX,
+						pixelY: marriagePlace.pixelY,
+						name: marriagePlace.name,
+						placeId: marriagePlace.crId,
+						eventType: 'marriage',
+						date: person.marriageDate,
+						year: marriageYear
+					});
+					if (!pathUniverse) pathUniverse = marriagePlace.universe;
+				}
+			}
+
+			// Add events from events array
+			if (person.events) {
+				for (const event of person.events) {
+					const placeName = this.extractPlaceString(event.place);
+					const place = this.resolvePlace(undefined, placeName);
+					if (place && this.hasValidCoordinates(place)) {
+						if (!filters.universe || place.universe === filters.universe) {
+							const year = this.extractYear(event.date_from);
+							const yearTo = this.extractYear(event.date_to);
+							waypoints.push({
+								lat: place.lat ?? 0,
+								lng: place.lng ?? 0,
+								pixelX: place.pixelX,
+								pixelY: place.pixelY,
+								name: place.name,
+								placeId: place.crId,
+								eventType: event.event_type,
+								date: event.date_from,
+								year,
+								dateTo: event.date_to,
+								yearTo,
+								description: event.description
+							});
+							if (!pathUniverse) pathUniverse = place.universe;
+						}
+					}
+				}
+			}
+
+			// Add death waypoint
+			const deathPlace = this.resolvePlace(person.deathPlaceId, person.deathPlace);
+			if (deathPlace && this.hasValidCoordinates(deathPlace)) {
+				if (!filters.universe || deathPlace.universe === filters.universe) {
+					const deathYear = this.extractYear(person.died);
+					waypoints.push({
+						lat: deathPlace.lat ?? 0,
+						lng: deathPlace.lng ?? 0,
+						pixelX: deathPlace.pixelX,
+						pixelY: deathPlace.pixelY,
+						name: deathPlace.name,
+						placeId: deathPlace.crId,
+						eventType: 'death',
+						date: person.died,
+						year: deathYear
+					});
+					if (!pathUniverse) pathUniverse = deathPlace.universe;
+				}
+			}
+
+			// Add burial waypoint (after death)
+			const burialPlace = this.resolvePlace(person.burialPlaceId, person.burialPlace);
+			if (burialPlace && this.hasValidCoordinates(burialPlace)) {
+				if (!filters.universe || burialPlace.universe === filters.universe) {
+					// Use death date for burial if no separate date
+					const burialYear = this.extractYear(person.died);
+					waypoints.push({
+						lat: burialPlace.lat ?? 0,
+						lng: burialPlace.lng ?? 0,
+						pixelX: burialPlace.pixelX,
+						pixelY: burialPlace.pixelY,
+						name: burialPlace.name,
+						placeId: burialPlace.crId,
+						eventType: 'burial',
+						date: person.died,
+						year: burialYear
+					});
+					if (!pathUniverse) pathUniverse = burialPlace.universe;
+				}
+			}
+
+			// Sort waypoints chronologically by year
+			// Events without years are placed at the end
+			waypoints.sort((a, b) => {
+				// Birth always comes first
+				if (a.eventType === 'birth') return -1;
+				if (b.eventType === 'birth') return 1;
+				// Death and burial always come last
+				if (a.eventType === 'death' || a.eventType === 'burial') return 1;
+				if (b.eventType === 'death' || b.eventType === 'burial') return -1;
+				// Sort by year
+				if (a.year === undefined && b.year === undefined) return 0;
+				if (a.year === undefined) return 1;
+				if (b.year === undefined) return -1;
+				return a.year - b.year;
+			});
+
+			// Need at least 2 waypoints to make a journey path
+			if (waypoints.length >= 2) {
+				// Remove consecutive duplicate locations (same lat/lng)
+				const uniqueWaypoints: JourneyWaypoint[] = [];
+				for (const wp of waypoints) {
+					const prev = uniqueWaypoints[uniqueWaypoints.length - 1];
+					if (!prev || wp.lat !== prev.lat || wp.lng !== prev.lng) {
+						uniqueWaypoints.push(wp);
+					}
+				}
+
+				// Still need at least 2 unique locations
+				if (uniqueWaypoints.length >= 2) {
+					const birthYear = this.extractYear(person.born);
+					const deathYear = this.extractYear(person.died);
+
+					journeyPaths.push({
+						personId: person.crId,
+						personName: person.name,
+						waypoints: uniqueWaypoints,
+						birthYear,
+						deathYear,
+						collection: person.collection,
+						universe: pathUniverse
+					});
+				}
+			}
+		}
+
+		return journeyPaths;
 	}
 
 	/**

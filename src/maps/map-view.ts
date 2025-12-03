@@ -73,6 +73,7 @@ export class MapView extends ItemView {
 		custom: true,
 		// Other layers
 		paths: true,
+		journeys: false,
 		heatMap: false
 	};
 
@@ -465,10 +466,19 @@ export class MapView extends ItemView {
 
 		// Other layers section
 		menu.addItem((item) => {
-			item.setTitle('Migration paths')
+			item.setTitle('Migration paths (birth → death)')
 				.setChecked(this.layers.paths)
 				.onClick(() => {
 					this.layers.paths = !this.layers.paths;
+					this.mapController?.setLayerVisibility(this.layers);
+				});
+		});
+
+		menu.addItem((item) => {
+			item.setTitle('Journey paths (all events)')
+				.setChecked(this.layers.journeys)
+				.onClick(() => {
+					this.layers.journeys = !this.layers.journeys;
 					this.mapController?.setLayerVisibility(this.layers);
 				});
 		});
@@ -1195,11 +1205,16 @@ export class MapView extends ItemView {
 			immigrationMarkerColor: '#06b6d4', // cyan
 			religiousMarkerColor: '#c084fc',  // light purple
 			customMarkerColor: '#ec4899',     // pink
-			// Path settings
+			// Migration path settings
 			showMigrationPaths: true,
-			pathColor: '#6366f1',
+			pathColor: '#6366f1',       // indigo
 			pathWeight: 2,
 			showPathLabels: true,
+			// Journey path settings
+			showJourneyPaths: false,
+			journeyPathColor: '#8b5cf6', // violet
+			journeyPathWeight: 2,
+			showJourneyLabels: true,
 			// Heat map settings
 			heatMapBlur: 15,
 			heatMapRadius: 25,

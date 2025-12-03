@@ -45,6 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Layer toggles for each marker category (residences, occupations, etc.)
   - Religious events grouped under single "Religious" toggle
 
+- **Journey Paths (Route Visualization)**: Connect all life events chronologically
+  - Shows complete life journey from birth through all events to death
+  - Dashed violet polylines distinguish journeys from migration paths
+  - Arrow decorations show direction of movement between locations
+  - Popup displays all waypoints with event types and dates
+  - Layer toggle: "Journey paths (all events)" in Layers menu
+  - Off by default to avoid visual clutter with many people
+  - Complements Time Slider for tracking individual movement over time
+
 - **Map Filtering & Controls**
   - Filter by collection (family branch)
   - Year range filtering with min/max inputs
