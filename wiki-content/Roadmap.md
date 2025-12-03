@@ -9,6 +9,7 @@ This document outlines planned features for Canvas Roots. For release history an
 - [Development Priorities](#development-priorities)
 - [Planned Features](#planned-features)
   - [Geographic Features (Phase 4)](#geographic-features-phase-4)
+  - [Maps Tab (Control Center)](#maps-tab-control-center)
   - [World-Building Suite](#world-building-suite)
   - [Evidence & Source Management](#evidence--source-management)
   - [Research & Analysis Tools](#research--analysis-tools)
@@ -27,13 +28,14 @@ The following priority order guides future development:
 |:--------:|---------|--------|
 | 1 | [Import/Export Enhancements](#importexport-enhancements) | ✅ Complete (v0.6.0) |
 | 2 | [Geographic Features (Phase 4)](#geographic-features-phase-4) | ✅ Complete (v0.6.0) |
-| 3 | [Custom Relationship Types](#custom-relationship-types) | Planned |
-| 4 | [Schema Validation](#schema-validation--consistency-checks) | Planned |
-| 5 | [Fictional Date Systems](#fictional-date-systems) | Planned |
-| 6 | [Organization Notes](#organization-notes--hierarchy-views) | Planned |
-| 7 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
-| 8 | [Canvas Media Nodes](#canvas-media-nodes) | Planned |
-| 9 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
+| 3 | [Maps Tab (Control Center)](#maps-tab-control-center) | Planned |
+| 4 | [Custom Relationship Types](#custom-relationship-types) | Planned |
+| 5 | [Schema Validation](#schema-validation--consistency-checks) | Planned |
+| 6 | [Fictional Date Systems](#fictional-date-systems) | Planned |
+| 7 | [Organization Notes](#organization-notes--hierarchy-views) | Planned |
+| 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
+| 9 | [Canvas Media Nodes](#canvas-media-nodes) | Planned |
+| 10 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 
 ---
 
@@ -62,6 +64,36 @@ The following priority order guides future development:
 **Future Enhancements (v2+):** See [leaflet-maps-plan.md § Design Decisions](architecture/leaflet-maps-plan.md#design-decisions) for detailed rationale.
 - Offline tile caching for OSM (deferred: complexity, storage constraints, OSM ToS considerations)
 - Tiled image maps (Zoomify/DeepZoom) for massive images (deferred: niche use case, requires external tooling)
+
+---
+
+### Maps Tab (Control Center)
+
+**Summary:** A dedicated Maps tab in the Control Center to consolidate map visualization features.
+
+**Status:** Planned
+
+**Motivation:**
+- Map features currently scattered (Map View via command, migration diagrams in Places tab)
+- Custom image maps lack a central management location
+- Separates map *visualization* from place *data management*
+
+**Planned Contents:**
+
+| Card | Description |
+|------|-------------|
+| **Open Map View** | Primary action button with quick stats (places with coordinates) |
+| **Custom Maps** | Thumbnail grid showing map image previews, names, and universes |
+| **Visualizations** | Migration diagrams and place network tools (moved from Places tab) |
+| **Map Statistics** | Coordinate coverage, custom map count, universe list |
+
+**Custom Maps Gallery:**
+- Thumbnail previews of each custom image map (~150×100px)
+- Map name overlay and universe badge
+- Click to open in Map View
+- "Create custom map" action
+
+**See also:** [maps-tab.md](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/maps-tab.md) for full implementation plan.
 
 ---
 
