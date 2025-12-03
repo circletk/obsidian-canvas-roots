@@ -739,6 +739,65 @@ export class ControlCenterModal extends Modal {
 
 		container.appendChild(relCard);
 
+		// Places Card
+		const placesCard = this.createCard({
+			title: 'Places',
+			icon: 'map-pin'
+		});
+		const placesContent = placesCard.querySelector('.crc-card__content') as HTMLElement;
+
+		this.createStatRow(placesContent, 'Total places', stats.places.totalPlaces);
+		this.createStatRow(placesContent, 'With coordinates', stats.places.placesWithCoordinates);
+
+		// Show category breakdown if there are places
+		if (stats.places.totalPlaces > 0) {
+			const categories = Object.entries(stats.places.byCategory)
+				.sort(([, a], [, b]) => b - a)
+				.slice(0, 5); // Top 5 categories
+
+			if (categories.length > 0) {
+				const categoryLabel = placesContent.createDiv({ cls: 'crc-stat-row crc-mt-2' });
+				categoryLabel.createDiv({ cls: 'crc-stat-label crc-text-muted', text: 'By category:' });
+
+				for (const [category, count] of categories) {
+					this.createStatRow(placesContent, `  ${category}`, count, 'crc-text-muted');
+				}
+			}
+		}
+
+		container.appendChild(placesCard);
+
+		// Maps Card
+		const mapsCard = this.createCard({
+			title: 'Custom maps',
+			icon: 'map'
+		});
+		const mapsContent = mapsCard.querySelector('.crc-card__content') as HTMLElement;
+
+		this.createStatRow(mapsContent, 'Total custom maps', stats.maps.totalMaps);
+
+		if (stats.maps.universes.length > 0) {
+			const universesRow = mapsContent.createDiv({ cls: 'crc-stat-row crc-mt-2' });
+			universesRow.createDiv({ cls: 'crc-stat-label', text: 'Universes' });
+			universesRow.createDiv({
+				cls: 'crc-stat-value crc-text-muted',
+				text: stats.maps.universes.join(', ')
+			});
+		}
+
+		container.appendChild(mapsCard);
+
+		// Canvases Card
+		const canvasesCard = this.createCard({
+			title: 'Canvases',
+			icon: 'layout'
+		});
+		const canvasesContent = canvasesCard.querySelector('.crc-card__content') as HTMLElement;
+
+		this.createStatRow(canvasesContent, 'Total canvases', stats.canvases.totalCanvases);
+
+		container.appendChild(canvasesCard);
+
 		// Vault Health Card
 		const healthCard = this.createCard({
 			title: 'Vault health',

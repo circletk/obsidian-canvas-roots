@@ -35,7 +35,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Map gallery section with thumbnail grid styling
   - New icon types: `lightbulb`, `list-checks`, `map`, `more-vertical`
 
+- **Status Tab Enhancements**: Comprehensive vault overview
+  - **Places card**: Total places, places with coordinates, breakdown by category
+  - **Custom Maps card**: Total maps count and list of universes
+  - **Canvases card**: Total canvas files in vault
+
 ### Changed
+
+- **Data Quality Tab Repositioned**: Moved after Collections tab for better workflow
+  - New tab order: Status → Guide → Import/Export → Staging → People → Places → Maps → Collections → Data Quality → Tree Output → Canvas Settings → Advanced
 
 - **Guide Tab Overhaul**: Streamlined Control Center Guide tab for better usability
   - Reduced from 19 cards (~976 lines) to 5 focused cards (~254 lines)
