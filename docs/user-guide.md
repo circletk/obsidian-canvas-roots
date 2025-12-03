@@ -1,7 +1,7 @@
 # Canvas Roots: User Guide
 
-> **Version:** v0.5.2
-> **Last Updated:** 2025-12-01
+> **Version:** v0.6.0
+> **Last Updated:** 2025-12-02
 
 This guide covers the complete workflow for using Canvas Roots to create and maintain family trees in Obsidian.
 
@@ -1477,6 +1477,143 @@ View comprehensive analytics about person notes in any folder.
 ## Geographic Features
 
 Canvas Roots provides comprehensive place-based features for tracking where people were born, died, married, and lived. These features support both real-world genealogy and world-building with fictional places.
+
+### Interactive Map View
+
+The Map View provides a Leaflet.js-powered interactive map for visualizing where your family members lived, traveled, and died.
+
+#### Opening Map View
+
+**Option 1: Ribbon Icon**
+- Click the map icon in the left ribbon
+
+**Option 2: Command Palette**
+1. Open Command Palette (Ctrl/Cmd + P)
+2. Search for "Canvas Roots: Open Map View"
+
+**Option 3: Context Menu**
+- Right-click on a map note and select "Open in Map View"
+
+#### Map Features
+
+| Feature | Description |
+|---------|-------------|
+| **Markers** | Color-coded pins for birth (green), death (red), marriage (purple), burial (gray), and life events |
+| **Clustering** | Dense marker areas collapse into numbered clusters; click to zoom in |
+| **Migration Paths** | Solid indigo lines connecting birth → death locations with person name labels |
+| **Journey Paths** | Dashed violet lines connecting all life events chronologically |
+| **Heat Map** | Geographic concentration visualization showing where most people lived |
+| **Fullscreen** | Click the fullscreen button to expand the map |
+| **Mini-map** | Overview inset in the corner for context |
+| **Place Search** | Search for places and zoom to their location |
+
+#### Toolbar Controls
+
+The Map View toolbar provides access to all features:
+
+| Button | Function |
+|--------|----------|
+| **Filters** | Filter by collection, year range |
+| **Layers** | Toggle marker types, paths, heat map, journey paths |
+| **Time** | Open time slider for "who was alive when?" animation |
+| **Map** | Switch between OpenStreetMap and custom image maps |
+| **Split** | Open side-by-side map comparison |
+| **Export** | Export as GeoJSON or SVG overlay |
+| **Edit** | Enter edit mode for custom map alignment (custom maps only) |
+| **Refresh** | Reload data from vault |
+
+#### Filtering
+
+**By Collection:**
+1. Click **Filters** in the toolbar
+2. Select a collection from the dropdown
+3. Only people in that collection will be shown
+
+**By Year Range:**
+1. Click **Filters** in the toolbar
+2. Enter minimum and/or maximum years
+3. Click **Apply**
+
+#### Layer Toggles
+
+Control which elements appear on the map:
+
+1. Click **Layers** in the toolbar
+2. Toggle individual marker types:
+   - Births, Deaths, Marriages, Burials
+   - Residences, Occupations, Educations, Military
+   - Immigrations, Religious, Custom events
+3. Toggle path layers:
+   - Migration paths (birth → death)
+   - Journey paths (all events chronologically)
+4. Toggle heat map layer
+
+#### Time Slider Animation
+
+Visualize "who was alive when?" across your family tree:
+
+1. Click **Time** in the toolbar
+2. Use the slider to select a year
+3. Click **Play** to animate through time
+4. Adjust speed with the speed control
+5. Toggle between modes:
+   - **Snapshot**: Only show people alive at the selected year
+   - **Cumulative**: Show everyone born up to the selected year
+
+The person count displays how many people are visible at each point.
+
+#### Map Comparison (Split View)
+
+Compare different views side-by-side:
+
+1. Click **Split** in the toolbar
+2. Choose horizontal or vertical split
+3. Each map instance has independent filters
+4. Use this to compare:
+   - Different time periods
+   - Different collections/branches
+   - Real-world vs. custom maps
+
+#### Export Options
+
+**GeoJSON Export:**
+- Click **Export** → **Export as GeoJSON**
+- Creates a standard GeoJSON file with markers and paths
+- Compatible with GIS tools (QGIS, ArcGIS, etc.)
+
+**SVG Overlay Export:**
+- Click **Export** → **Export as SVG Overlay**
+- Creates an SVG file with markers and paths
+- Can be embedded in notes or edited in vector graphics software
+
+#### Custom Image Maps
+
+For fictional worlds or historical maps, you can use your own map images:
+
+1. Create a map note with frontmatter:
+   ```yaml
+   ---
+   type: map
+   map_id: westeros
+   name: Westeros
+   universe: got
+   image: assets/maps/westeros.png
+   bounds:
+     north: 50
+     south: -50
+     west: -100
+     east: 100
+   ---
+   ```
+
+2. Create place notes with the matching universe and coordinates
+3. In Map View, use the **Map** dropdown to switch to your custom map
+
+**Coordinate Systems:**
+- **Geographic** (default): Uses lat/lng coordinates
+- **Pixel**: Uses pixel coordinates (`pixel_x`, `pixel_y`) - ideal for hand-drawn maps
+
+See [Map Image Alignment](#map-image-alignment-edit-mode) for adjusting custom map positioning.
 
 ### Place Notes
 

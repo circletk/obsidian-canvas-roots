@@ -1,7 +1,7 @@
 # Canvas Roots: Development Roadmap
 
 > **Last Updated:** 2025-12-02
-> **Current Version:** v0.5.2 (v0.6.0 in development)
+> **Current Version:** v0.6.0
 
 This document outlines planned features for Canvas Roots. For release history and completed features, see [CHANGELOG.md](../CHANGELOG.md).
 
@@ -62,9 +62,9 @@ The following priority order guides future development:
 - Pixel-based coordinates (L.CRS.Simple) for worldbuilders
 - Route/journey visualization (connect all life events chronologically)
 
-**Future Enhancements (v2+):** See [leaflet-maps-plan.md § Future Considerations](architecture/leaflet-maps-plan.md#future-considerations-v2)
-- Offline tile caching for OSM
-- Tiled image maps (Zoomify/DeepZoom) for massive images
+**Future Enhancements (v2+):** See [leaflet-maps-plan.md § Design Decisions](architecture/leaflet-maps-plan.md#design-decisions) for detailed rationale.
+- Offline tile caching for OSM (deferred: complexity, storage constraints, OSM ToS considerations)
+- Tiled image maps (Zoomify/DeepZoom) for massive images (deferred: niche use case, requires external tooling)
 
 ---
 
@@ -464,6 +464,26 @@ confidence: medium
 ---
 
 ## Future Considerations
+
+### Events System Foundation
+
+> **Implemented in v0.6.0** as part of Geographic Features. This general-purpose life events system provides infrastructure for future timeline and research features.
+
+**Current Implementation:**
+- `events` array in person frontmatter with `event_type`, `place`, `date_from`, `date_to`, `description`
+- TypeScript types: `LifeEvent`, `EventType`, `JourneyWaypoint`, `JourneyPath` in [map-types.ts](../src/maps/types/map-types.ts)
+- Event parsing in `MapDataService.buildMarkers()` and `buildJourneyPaths()`
+- Import/export support: GEDCOM (RESI, OCCU, EDUC, MILI), GEDCOM X (facts), Gramps XML, CSV
+
+**Future Extensions Enabled:**
+- Timeline views (non-geographic chronological display)
+- Event-based Bases queries ("all military service events")
+- Event notes as first-class entities (like place notes)
+- Chronological Story Mapping (see [Evidence & Source Management](#chronological-story-mapping))
+- Person Timeline view (all events for one person)
+- Family Timeline view (interleaved family events)
+
+---
 
 **Advanced Features:**
 - Alternative parent relationships (adoption, foster, step-parents)

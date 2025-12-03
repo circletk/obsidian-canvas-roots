@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Load custom map images from vault (PNG, JPG, WebP)
   - Universe-based filtering (auto-switch to Westeros map when viewing House Stark)
   - YAML frontmatter configuration for bounds, center, zoom
-  - Coordinate system mapping for placing markers on fictional maps
+  - Two coordinate systems: geographic (lat/lng) or pixel (for hand-drawn maps)
+  - Pixel coordinate system uses `pixel_x` and `pixel_y` in place notes
 
 - **Map Image Alignment (Edit Mode)**: Interactive georeferencing for custom maps
   - Drag corner handles to position, scale, rotate, and distort map images
@@ -621,7 +622,8 @@ Initial alpha release with core genealogical features.
 
 ### Version Status
 
-- **Stable (v0.5.x)**: Geographic features with place notes, statistics, and visualizations. Import cleanup and merge tools. All essential features are stable and production-ready.
+- **Stable (v0.6.x)**: Interactive Map View with Leaflet.js, custom image maps for fictional worlds, time slider animation, journey paths, and map exports.
+- **Stable (v0.5.x)**: Geographic features with place notes, statistics, and visualizations. Import cleanup and merge tools.
 - **Stable (v0.4.x)**: Feature-complete for core genealogical workflows with import cleanup and merge tools.
 - **Stable (v0.3.x)**: Interactive family chart view, CSV import/export, duplicate detection.
 - **Beta (v0.2.x)**: Core genealogical workflows with canvas generation, GEDCOM support, and relationship management.

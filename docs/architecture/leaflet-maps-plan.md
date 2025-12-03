@@ -63,6 +63,9 @@ Add interactive map visualization to Canvas Roots, enabling users to:
 | Image export | PNG/SVG of current map view | ⏸ Deferred (CORS challenges) |
 | Search places on map | Find and zoom to places | ✅ Complete |
 | Multiple map instances | Side-by-side comparison | ✅ Complete |
+| Image alignment (Edit Mode) | Interactive corner dragging with Leaflet.DistortableImage | ✅ Complete |
+| Pixel coordinate system | L.CRS.Simple for custom image maps | ✅ Complete |
+| Journey paths | Connect all life events chronologically | ✅ Complete |
 
 ---
 
@@ -587,7 +590,7 @@ Export markers and migration paths as a standalone SVG file for embedding in not
 
 ### Offline Tile Caching
 
-**Decision:** Defer to v2.
+**Decision:** Defer to v2+.
 
 **Rationale:**
 - Obsidian is offline-first, but tile caching adds significant complexity (~20-40KB additional plugins, storage management UI, expiration logic)
@@ -595,7 +598,32 @@ Export markers and migration paths as a standalone SVG file for embedding in not
 - Users needing offline real-world maps can screenshot/export regions of interest
 - Will revisit once real usage patterns are understood
 
+**Challenges identified:**
+- Storage location unclear (IndexedDB has 50-500MB limits, vault storage would bloat sync)
+- OSM Terms of Service discourage bulk tile downloading; on-demand caching is acceptable
+- Mobile has different storage constraints than desktop
+- Cached tiles should not sync across devices
+
 **v1 approach:** Document clearly that real-world maps require internet connection.
+
+### Tiled Image Maps (Zoomify/DeepZoom)
+
+**Decision:** Defer to v2+.
+
+**Rationale:**
+- Niche use case: only affects users with extremely large images (10,000+ pixels)
+- Current `L.imageOverlay` handles images up to ~4000px well
+- All tiling solutions require external pre-processing tools (VIPS, ImageMagick)
+- Significant UX friction: users must learn tiling workflow before using feature
+- Vault clutter: tiled images create hundreds/thousands of small files
+
+**Challenges identified:**
+- No in-browser tiling solution viable for large images (too slow, memory issues)
+- Multiple competing formats (Zoomify, DeepZoom/DZI, IIIF) with different toolchains
+- Configuration complexity: tile path, format, dimensions, zoom levels
+- Documentation burden: explaining external tooling workflow
+
+**v1 approach:** Users with large maps can pre-scale images or crop to regions of interest.
 
 ### Mobile Testing Strategy
 
@@ -924,15 +952,31 @@ pixel_y: 2400
 - Flat properties work well with Obsidian's Properties view
 
 ### Tiled Image Maps (Zoomify/DeepZoom)
-- Replace `L.imageOverlay` with tiled image loading for massive custom maps
-- Only loads visible tiles at current zoom level, enabling smooth performance with huge images
-- Use cases:
-  - Extremely detailed fantasy world maps (10,000+ pixels)
-  - High-resolution historical maps
-  - Large hand-drawn or commissioned artwork
-- Options:
-  - **Leaflet.Zoomify** - Pre-tiled images via Zoomify format
-  - **Leaflet.DeepZoom** - Microsoft DeepZoom format (DZI files)
-  - **leaflet-iiif** - IIIF Image API support for academic/archival maps
-- Requires: External tool to pre-tile images (e.g., VIPS, ImageMagick, or online converters)
-- Current v1 approach: `L.imageOverlay` works well for reasonably-sized images (~4000px); users with larger maps can pre-scale or crop regions
+
+Replace `L.imageOverlay` with tiled image loading for massive custom maps. Only loads visible tiles at current zoom level, enabling smooth performance with huge images.
+
+**Use cases:**
+- Extremely detailed fantasy world maps (10,000+ pixels)
+- High-resolution historical maps
+- Large hand-drawn or commissioned artwork
+
+**Library options:**
+
+| Library | Format | Pros | Cons |
+|---------|--------|------|------|
+| Leaflet.Zoomify | Zoomify tiles | Well-established, good docs | Older format |
+| Leaflet.DeepZoom | DZI (Microsoft) | Modern format, good tooling | Less Leaflet ecosystem support |
+| leaflet-iiif | IIIF Image API | Academic standard, rich metadata | Complex spec, overkill for most users |
+
+**External tooling required:**
+- **VIPS** (`vips dzsave`) - Fast, command-line, cross-platform
+- **ImageMagick** - Widely available but slower for large images
+- **Online converters** - Easiest but may have size limits, privacy concerns
+
+**If implemented, would need:**
+- Map config frontmatter: `tile_format: zoomify`, `tile_path: tiles/westeros/`
+- Auto-detection of tile directories
+- Documentation with step-by-step tiling instructions
+- Fallback to `L.imageOverlay` for non-tiled images
+
+**Current v1 approach:** `L.imageOverlay` works well for reasonably-sized images (~4000px); users with larger maps can pre-scale or crop regions of interest
