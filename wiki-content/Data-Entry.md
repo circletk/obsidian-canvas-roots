@@ -4,6 +4,18 @@ This page covers how to create person notes with relationship data that Canvas R
 
 > **Reference:** For a complete list of all supported properties, see the [Frontmatter Reference](Frontmatter-Reference).
 
+## Quick Start: Adding Properties via Context Menu
+
+The fastest way to set up a person note is using the context menu:
+
+1. Create a new markdown note for the person
+2. Right-click the file in the file explorer
+3. Select **Canvas Roots → Add essential person properties**
+
+This automatically adds all required fields (`cr_id`, `name`) plus common optional fields (`born`, `died`, `father`, `mother`, `spouse`). You can also select multiple files and add properties to all of them at once.
+
+> **Tip:** See [Context Menus](Context-Menus) for all available right-click actions.
+
 ## Individual Markdown Notes
 
 Create individual notes for each person with YAML frontmatter containing relationship data.
