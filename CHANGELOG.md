@@ -9,6 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.1] - 2025-12-03
 
+### Added
+
+- **Maps Tab in Control Center**: Dedicated tab for map management and visualization
+  - **Open Map View card**: Quick access to Map View with coordinate coverage stats
+  - **Custom Maps gallery**: Thumbnail grid showing all custom map images
+    - Image previews (~150×100px) with name overlay and universe badge
+    - Hover actions: Edit button and context menu button (stacked on right)
+    - Click thumbnail to open map in Map View
+  - **Visualizations card**: Migration diagrams and place network tools
+  - **Map Statistics card**: Coordinate coverage, custom map count, universe list
+
+- **Custom Map Management**: Full CRUD operations for custom map notes
+  - **Create Map Modal**: Create new map notes with image picker, bounds, and universe
+  - **Edit Map Modal**: Update existing map note properties
+  - **Duplicate Map**: Clone a map with auto-generated unique ID (copy, copy 2, etc.)
+  - **Export to JSON**: Export map configuration as JSON file
+  - **Import from JSON**: Import map configuration with duplicate ID detection
+  - **Delete Map**: Remove map with confirmation dialog
+
+- **New UI Components**
+  - `createCollapsible()` helper method for reusable accordion sections
+  - Task grid CSS component for quick action navigation
+  - Guide step badges for visual workflow clarity
+  - Map gallery section with thumbnail grid styling
+  - New icon types: `lightbulb`, `list-checks`, `map`, `more-vertical`
+
 ### Changed
 
 - **Guide Tab Overhaul**: Streamlined Control Center Guide tab for better usability
@@ -17,14 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Task grid component for quick navigation to common features
   - Integrated wiki links for detailed documentation
   - Streamlined "Getting Started" with clear 3-step workflow
-
-### Added
-
-- **New UI Components**
-  - `createCollapsible()` helper method for reusable accordion sections
-  - Task grid CSS component for quick action navigation
-  - Guide step badges for visual workflow clarity
-  - New icon types: `lightbulb`, `list-checks`, `map`
 
 ---
 

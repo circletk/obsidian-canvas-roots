@@ -73,7 +73,8 @@ export type LucideIconName =
 	| 'file-code'      // Templates/code files
 	| 'lightbulb'      // Ideas/concepts
 	| 'list-checks'    // Task lists
-	| 'map';           // Map view
+	| 'map'            // Map view
+	| 'more-vertical'; // Overflow menu
 
 /**
  * Tab configuration for Control Center navigation
@@ -136,6 +137,12 @@ export const TAB_CONFIGS: TabConfig[] = [
 		name: 'Places',
 		icon: 'map-pin',
 		description: 'Geographic locations and place statistics'
+	},
+	{
+		id: 'maps',
+		name: 'Maps',
+		icon: 'map',
+		description: 'Map visualizations and custom maps'
 	},
 	{
 		id: 'collections',

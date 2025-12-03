@@ -1,4 +1,4 @@
-import { App, Modal, Notice, Setting, TFile, TFolder, setIcon, ToggleComponent } from 'obsidian';
+import { App, Menu, MenuItem, Modal, Notice, Setting, TFile, TFolder, setIcon, ToggleComponent } from 'obsidian';
 import CanvasRootsPlugin from '../../main';
 import { TAB_CONFIGS, createLucideIcon, setLucideIcon, LucideIconName } from './lucide-icons';
 import { createPersonNote, PersonData } from '../core/person-note-writer';
@@ -33,6 +33,7 @@ import { MigrationDiagramModal } from './migration-diagram-modal';
 import { PlaceNetworkModal } from './place-network-modal';
 import { TemplateSnippetsModal } from './template-snippets-modal';
 import { CreatePersonModal } from './create-person-modal';
+import { CreateMapModal } from './create-map-modal';
 
 const logger = getLogger('ControlCenter');
 
@@ -255,6 +256,9 @@ export class ControlCenterModal extends Modal {
 				break;
 			case 'places':
 				void this.showPlacesTab();
+				break;
+			case 'maps':
+				void this.showMapsTab();
 				break;
 			default:
 				this.showPlaceholderTab(tabId);
@@ -3903,24 +3907,6 @@ export class ControlCenterModal extends Modal {
 				}));
 
 		new Setting(actionsContent)
-			.setName('Migration diagram')
-			.setDesc('Visualize migration patterns from birth to death locations')
-			.addButton(button => button
-				.setButtonText('View diagram')
-				.onClick(() => {
-					new MigrationDiagramModal(this.app).open();
-				}));
-
-		new Setting(actionsContent)
-			.setName('Place hierarchy')
-			.setDesc('Visualize place relationships as a network diagram')
-			.addButton(button => button
-				.setButtonText('View hierarchy')
-				.onClick(() => {
-					new PlaceNetworkModal(this.app).open();
-				}));
-
-		new Setting(actionsContent)
 			.setName('Templater templates')
 			.setDesc('Copy ready-to-use templates for Templater integration')
 			.addButton(button => button
@@ -4497,6 +4483,830 @@ export class ControlCenterModal extends Modal {
 					text: `+${typeIssues.length - 5} more...`,
 					cls: 'crc-text--muted crc-text--small'
 				});
+			}
+		}
+	}
+
+	// ==========================================================================
+	// Maps Tab
+	// ==========================================================================
+
+	/**
+	 * Show the Maps tab content
+	 */
+	private async showMapsTab(): Promise<void> {
+		const container = this.contentContainer;
+
+		// Card 1: Open Map View
+		const mapViewCard = this.createCard({
+			title: 'Open Map View',
+			icon: 'map',
+			subtitle: 'Interactive geographic visualization'
+		});
+
+		const mapViewContent = mapViewCard.querySelector('.crc-card__content') as HTMLElement;
+
+		// Quick stats
+		const placeService = new PlaceGraphService(this.app);
+		placeService.reloadCache();
+		const stats = placeService.calculateStatistics();
+
+		const statsDiv = mapViewContent.createDiv({ cls: 'crc-stats-row crc-mb-3' });
+		statsDiv.createEl('span', {
+			text: `${stats.withCoordinates} places with coordinates`,
+			cls: 'crc-text--muted'
+		});
+
+		new Setting(mapViewContent)
+			.setName('Open Map View')
+			.setDesc('View all geographic data on an interactive map')
+			.addButton(button => button
+				.setButtonText('Open map')
+				.setCta()
+				.onClick(() => {
+					this.app.commands.executeCommandById('canvas-roots:open-map-view');
+					this.close();
+				}));
+
+		new Setting(mapViewContent)
+			.setName('Open new Map View')
+			.setDesc('Open a second map view for side-by-side comparison')
+			.addButton(button => button
+				.setButtonText('Open new map')
+				.onClick(() => {
+					this.app.commands.executeCommandById('canvas-roots:open-new-map-view');
+					this.close();
+				}));
+
+		container.appendChild(mapViewCard);
+
+		// Card 2: Custom Maps
+		const customMapsCard = this.createCard({
+			title: 'Custom maps',
+			icon: 'globe',
+			subtitle: 'Image maps for fictional worlds'
+		});
+
+		const customMapsContent = customMapsCard.querySelector('.crc-card__content') as HTMLElement;
+
+		// Create map button
+		new Setting(customMapsContent)
+			.setName('Create custom map')
+			.setDesc('Create a new map note for a fictional or historical world')
+			.addButton(button => button
+				.setButtonText('Create map')
+				.onClick(() => {
+					new CreateMapModal(this.app, {
+						onCreated: () => {
+							// Refresh the maps grid after creation
+							void this.loadCustomMapsGrid(mapsGridContainer);
+						}
+					}).open();
+				}))
+			.addButton(button => button
+				.setButtonText('Import JSON')
+				.onClick(() => {
+					void this.importMapFromJson(mapsGridContainer);
+				}));
+
+		// Gallery section with heading
+		const gallerySection = customMapsContent.createDiv({ cls: 'cr-map-gallery-section' });
+		gallerySection.createEl('h4', { text: 'Gallery', cls: 'cr-map-gallery-heading' });
+
+		// Placeholder for loading maps
+		const mapsGridContainer = gallerySection.createDiv();
+		mapsGridContainer.createEl('p', {
+			text: 'Loading custom maps...',
+			cls: 'crc-text--muted'
+		});
+
+		container.appendChild(customMapsCard);
+
+		// Load custom maps asynchronously
+		void this.loadCustomMapsGrid(mapsGridContainer);
+
+		// Card 3: Visualizations
+		const vizCard = this.createCard({
+			title: 'Visualizations',
+			icon: 'activity',
+			subtitle: 'Migration and network diagrams'
+		});
+
+		const vizContent = vizCard.querySelector('.crc-card__content') as HTMLElement;
+
+		new Setting(vizContent)
+			.setName('Migration diagram')
+			.setDesc('Visualize migration patterns from birth to death locations')
+			.addButton(button => button
+				.setButtonText('View diagram')
+				.onClick(() => {
+					new MigrationDiagramModal(this.app).open();
+				}));
+
+		new Setting(vizContent)
+			.setName('Place hierarchy')
+			.setDesc('Visualize place relationships as a network diagram')
+			.addButton(button => button
+				.setButtonText('View hierarchy')
+				.onClick(() => {
+					new PlaceNetworkModal(this.app).open();
+				}));
+
+		container.appendChild(vizCard);
+
+		// Card 4: Map Statistics
+		const statsCard = this.createCard({
+			title: 'Map statistics',
+			icon: 'bar-chart',
+			subtitle: 'Geographic data overview'
+		});
+
+		const statsContent = statsCard.querySelector('.crc-card__content') as HTMLElement;
+		this.renderMapStatistics(statsContent, stats);
+
+		container.appendChild(statsCard);
+	}
+
+	/**
+	 * Load custom maps into a thumbnail grid
+	 */
+	private async loadCustomMapsGrid(container: HTMLElement): Promise<void> {
+		container.empty();
+
+		// Find all map notes (type: map in frontmatter)
+		const customMaps = await this.getCustomMaps();
+
+		if (customMaps.length === 0) {
+			const emptyState = container.createDiv({ cls: 'crc-empty-state' });
+			emptyState.createEl('p', {
+				text: 'No custom maps found.',
+				cls: 'crc-text--muted'
+			});
+			emptyState.createEl('p', {
+				text: 'Create a note with type: map in frontmatter to define custom image maps for fictional worlds.',
+				cls: 'crc-text--muted crc-text--small'
+			});
+
+			// Link to wiki
+			const wikiLink = emptyState.createEl('a', {
+				text: 'Learn more about custom maps →',
+				href: 'https://github.com/banisterious/obsidian-canvas-roots/wiki/Geographic-Features#custom-image-maps',
+				cls: 'crc-link external-link crc-mt-2'
+			});
+			wikiLink.setAttr('target', '_blank');
+			return;
+		}
+
+		// Create thumbnail grid
+		const grid = container.createDiv({ cls: 'cr-map-grid' });
+
+		for (const mapNote of customMaps) {
+			const thumbnail = grid.createDiv({ cls: 'cr-map-thumbnail' });
+
+			// Try to load image preview
+			if (mapNote.imagePath) {
+				const imageFile = this.app.vault.getAbstractFileByPath(mapNote.imagePath);
+				if (imageFile instanceof TFile) {
+					const imgUrl = this.app.vault.getResourcePath(imageFile);
+					const img = thumbnail.createEl('img', {
+						attr: {
+							src: imgUrl,
+							alt: mapNote.name
+						}
+					});
+					img.onerror = () => {
+						// Replace with placeholder on error
+						img.remove();
+						const placeholder = thumbnail.createDiv({ cls: 'cr-map-thumbnail__placeholder' });
+						setLucideIcon(placeholder, 'map', 32);
+					};
+				} else {
+					// Image not found - show placeholder
+					const placeholder = thumbnail.createDiv({ cls: 'cr-map-thumbnail__placeholder' });
+					setLucideIcon(placeholder, 'map', 32);
+				}
+			} else {
+				// No image path - show placeholder
+				const placeholder = thumbnail.createDiv({ cls: 'cr-map-thumbnail__placeholder' });
+				setLucideIcon(placeholder, 'map', 32);
+			}
+
+			// Overlay with name and universe
+			const overlay = thumbnail.createDiv({ cls: 'cr-map-thumbnail__overlay' });
+			overlay.createDiv({ cls: 'cr-map-thumbnail__name', text: mapNote.name });
+			if (mapNote.universe) {
+				overlay.createDiv({ cls: 'cr-map-thumbnail__universe', text: mapNote.universe });
+			}
+
+			// Action buttons container (stacked vertically on right)
+			const actionsContainer = thumbnail.createDiv({ cls: 'cr-map-thumbnail__actions' });
+
+			// Edit button
+			const editBtn = actionsContainer.createDiv({ cls: 'cr-map-thumbnail__action-btn' });
+			setLucideIcon(editBtn, 'edit', 14);
+			editBtn.setAttribute('aria-label', 'Edit map');
+			editBtn.addEventListener('click', async (e) => {
+				e.stopPropagation(); // Prevent thumbnail click
+				const file = this.app.vault.getAbstractFileByPath(mapNote.filePath);
+				if (file instanceof TFile) {
+					const cache = this.app.metadataCache.getFileCache(file);
+					const frontmatter = cache?.frontmatter;
+					new CreateMapModal(this.app, {
+						editFile: file,
+						editFrontmatter: frontmatter,
+						onCreated: () => {
+							// Refresh the maps grid after editing
+							void this.loadCustomMapsGrid(container);
+						}
+					}).open();
+				}
+			});
+
+			// Menu button
+			const menuBtn = actionsContainer.createDiv({ cls: 'cr-map-thumbnail__action-btn' });
+			setLucideIcon(menuBtn, 'more-vertical', 14);
+			menuBtn.setAttribute('aria-label', 'More options');
+			menuBtn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				this.showMapContextMenu(mapNote, container, e);
+			});
+
+			// Click to open in Map View with this specific map
+			thumbnail.addEventListener('click', async () => {
+				this.close();
+				await this.plugin.activateMapView(mapNote.id);
+			});
+
+			// Right-click context menu
+			thumbnail.addEventListener('contextmenu', (e) => {
+				e.preventDefault();
+				this.showMapContextMenu(mapNote, container, e);
+			});
+		}
+	}
+
+	/**
+	 * Show context menu for a custom map
+	 */
+	private showMapContextMenu(
+		mapNote: { name: string; filePath: string; imagePath?: string; universe?: string; id?: string },
+		gridContainer: HTMLElement,
+		event: MouseEvent
+	): void {
+		const menu = new Menu();
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Open in Map View')
+				.setIcon('map')
+				.onClick(async () => {
+					this.close();
+					await this.plugin.activateMapView(mapNote.id);
+				});
+		});
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Edit map')
+				.setIcon('edit')
+				.onClick(async () => {
+					const file = this.app.vault.getAbstractFileByPath(mapNote.filePath);
+					if (file instanceof TFile) {
+						const cache = this.app.metadataCache.getFileCache(file);
+						const frontmatter = cache?.frontmatter;
+						new CreateMapModal(this.app, {
+							editFile: file,
+							editFrontmatter: frontmatter,
+							onCreated: () => {
+								// Refresh the maps grid after editing
+								void this.loadCustomMapsGrid(gridContainer);
+							}
+						}).open();
+					}
+				});
+		});
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Duplicate map')
+				.setIcon('copy')
+				.onClick(async () => {
+					await this.duplicateMap(mapNote.filePath, gridContainer);
+				});
+		});
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Export to JSON')
+				.setIcon('download')
+				.onClick(async () => {
+					await this.exportMapToJson(mapNote.filePath);
+				});
+		});
+
+		menu.addSeparator();
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Open note')
+				.setIcon('file-text')
+				.onClick(async () => {
+					const file = this.app.vault.getAbstractFileByPath(mapNote.filePath);
+					if (file instanceof TFile) {
+						await this.app.workspace.getLeaf(false).openFile(file);
+						this.close();
+					}
+				});
+		});
+
+		menu.addItem((item: MenuItem) => {
+			item
+				.setTitle('Delete map')
+				.setIcon('trash')
+				.onClick(async () => {
+					await this.deleteMap(mapNote.filePath, mapNote.name, gridContainer);
+				});
+		});
+
+		menu.showAtMouseEvent(event);
+	}
+
+	/**
+	 * Get all custom map notes from the vault
+	 */
+	private async getCustomMaps(): Promise<Array<{
+		name: string;
+		filePath: string;
+		imagePath?: string;
+		universe?: string;
+		id?: string;
+	}>> {
+		const maps: Array<{
+			name: string;
+			filePath: string;
+			imagePath?: string;
+			universe?: string;
+			id?: string;
+		}> = [];
+
+		const files = this.app.vault.getMarkdownFiles();
+
+		for (const file of files) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			const frontmatter = cache?.frontmatter;
+
+			if (frontmatter?.type === 'map') {
+				maps.push({
+					name: frontmatter.name || file.basename,
+					filePath: file.path,
+					imagePath: frontmatter.image || frontmatter.image_path || frontmatter.imagePath,
+					universe: frontmatter.universe,
+					id: frontmatter.map_id
+				});
+			}
+		}
+
+		// Sort by name
+		maps.sort((a, b) => a.name.localeCompare(b.name));
+
+		return maps;
+	}
+
+	/**
+	 * Duplicate a custom map note
+	 */
+	private async duplicateMap(filePath: string, gridContainer: HTMLElement): Promise<void> {
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (!(file instanceof TFile)) {
+			new Notice('Map file not found');
+			return;
+		}
+
+		// Read original file content
+		const content = await this.app.vault.read(file);
+		const cache = this.app.metadataCache.getFileCache(file);
+		const frontmatter = cache?.frontmatter;
+
+		if (!frontmatter) {
+			new Notice('Could not read map frontmatter');
+			return;
+		}
+
+		// Generate new name and ID
+		const originalName = frontmatter.name || file.basename;
+		const newName = `${originalName} (copy)`;
+		const originalId = frontmatter.map_id || '';
+		const newId = originalId ? `${originalId}-copy` : this.generateMapId(newName);
+
+		// Check if copy already exists, increment suffix if needed
+		let finalName = newName;
+		let finalId = newId;
+		let suffix = 1;
+		const parentPath = file.parent?.path || '';
+
+		while (true) {
+			const testPath = parentPath
+				? `${parentPath}/${finalName}.md`
+				: `${finalName}.md`;
+			const existingFile = this.app.vault.getAbstractFileByPath(testPath);
+			if (!existingFile) break;
+
+			suffix++;
+			finalName = `${originalName} (copy ${suffix})`;
+			finalId = originalId ? `${originalId}-copy-${suffix}` : this.generateMapId(finalName);
+		}
+
+		// Update frontmatter in content
+		let newContent = content;
+
+		// Replace name in frontmatter
+		if (frontmatter.name) {
+			newContent = newContent.replace(
+				/^(name:\s*).+$/m,
+				`$1${finalName}`
+			);
+		} else {
+			// Add name if not present
+			newContent = newContent.replace(
+				/^(---\s*\n)/,
+				`$1name: ${finalName}\n`
+			);
+		}
+
+		// Replace map_id in frontmatter
+		if (frontmatter.map_id) {
+			newContent = newContent.replace(
+				/^(map_id:\s*).+$/m,
+				`$1${finalId}`
+			);
+		} else {
+			// Add map_id if not present
+			newContent = newContent.replace(
+				/^(---\s*\n)/,
+				`$1map_id: ${finalId}\n`
+			);
+		}
+
+		// Create new file in same directory
+		const newFilePath = parentPath
+			? `${parentPath}/${finalName}.md`
+			: `${finalName}.md`;
+
+		try {
+			const newFile = await this.app.vault.create(newFilePath, newContent);
+			new Notice(`Created "${finalName}"`);
+
+			// Refresh the grid
+			await this.loadCustomMapsGrid(gridContainer);
+
+			// Open the new map in edit mode
+			const newCache = this.app.metadataCache.getFileCache(newFile);
+			new CreateMapModal(this.app, {
+				editFile: newFile,
+				editFrontmatter: newCache?.frontmatter,
+				onCreated: () => {
+					void this.loadCustomMapsGrid(gridContainer);
+				}
+			}).open();
+		} catch (error) {
+			new Notice(`Failed to duplicate map: ${getErrorMessage(error)}`);
+		}
+	}
+
+	/**
+	 * Generate a URL-friendly map ID from a name
+	 */
+	private generateMapId(name: string): string {
+		return name
+			.toLowerCase()
+			.replace(/[^a-z0-9\s-]/g, '')
+			.replace(/\s+/g, '-')
+			.replace(/-+/g, '-')
+			.replace(/^-|-$/g, '');
+	}
+
+	/**
+	 * Export a custom map's configuration to JSON
+	 */
+	private async exportMapToJson(filePath: string): Promise<void> {
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (!(file instanceof TFile)) {
+			new Notice('Map file not found');
+			return;
+		}
+
+		const cache = this.app.metadataCache.getFileCache(file);
+		const frontmatter = cache?.frontmatter;
+
+		if (!frontmatter) {
+			new Notice('Could not read map frontmatter');
+			return;
+		}
+
+		// Build export object with relevant map properties
+		const exportData: Record<string, unknown> = {
+			name: frontmatter.name || file.basename,
+			map_id: frontmatter.map_id,
+			type: 'map',
+			universe: frontmatter.universe,
+			image: frontmatter.image || frontmatter.image_path || frontmatter.imagePath,
+			coordinate_system: frontmatter.coordinate_system || 'geographic',
+			exported_at: new Date().toISOString(),
+			exported_from: 'Canvas Roots'
+		};
+
+		// Add coordinate system specific fields
+		if (frontmatter.coordinate_system === 'pixel') {
+			exportData.width = frontmatter.width;
+			exportData.height = frontmatter.height;
+		} else {
+			// Geographic bounds
+			if (frontmatter.bounds) {
+				exportData.bounds = frontmatter.bounds;
+			} else {
+				exportData.bounds = {
+					north: frontmatter.north,
+					south: frontmatter.south,
+					east: frontmatter.east,
+					west: frontmatter.west
+				};
+			}
+		}
+
+		// Add optional fields if present
+		if (frontmatter.default_zoom !== undefined) {
+			exportData.default_zoom = frontmatter.default_zoom;
+		}
+		if (frontmatter.min_zoom !== undefined) {
+			exportData.min_zoom = frontmatter.min_zoom;
+		}
+		if (frontmatter.max_zoom !== undefined) {
+			exportData.max_zoom = frontmatter.max_zoom;
+		}
+		if (frontmatter.center) {
+			exportData.center = frontmatter.center;
+		}
+
+		// Remove undefined values
+		const cleanExport = Object.fromEntries(
+			Object.entries(exportData).filter(([, v]) => v !== undefined)
+		);
+
+		const jsonContent = JSON.stringify(cleanExport, null, 2);
+
+		// Create filename from map name
+		const mapName = frontmatter.name || file.basename;
+		const safeFileName = mapName.replace(/[^a-z0-9\s-]/gi, '').replace(/\s+/g, '-');
+		const exportFileName = `${safeFileName}-map-export.json`;
+
+		// Save to vault root or Downloads equivalent
+		try {
+			// Check if file already exists
+			const existingFile = this.app.vault.getAbstractFileByPath(exportFileName);
+			if (existingFile) {
+				await this.app.vault.modify(existingFile as TFile, jsonContent);
+			} else {
+				await this.app.vault.create(exportFileName, jsonContent);
+			}
+			new Notice(`Exported "${mapName}" to ${exportFileName}`);
+		} catch (error) {
+			new Notice(`Failed to export: ${getErrorMessage(error)}`);
+		}
+	}
+
+	/**
+	 * Import a custom map from a JSON file
+	 */
+	private async importMapFromJson(gridContainer: HTMLElement): Promise<void> {
+		// Create file input element
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.accept = '.json';
+
+		input.addEventListener('change', async () => {
+			const file = input.files?.[0];
+			if (!file) return;
+
+			try {
+				const text = await file.text();
+				const data = JSON.parse(text) as Record<string, unknown>;
+
+				// Validate required fields
+				if (!data.name || typeof data.name !== 'string') {
+					new Notice('Invalid JSON: missing "name" field');
+					return;
+				}
+
+				// Check for map_id or generate one
+				let mapId = data.map_id as string | undefined;
+				if (!mapId) {
+					mapId = this.generateMapId(data.name as string);
+				}
+
+				// Check if a map with this ID already exists
+				const existingMaps = await this.getCustomMaps();
+				const existingMap = existingMaps.find(m => m.id === mapId);
+				if (existingMap) {
+					new Notice(`A map with ID "${mapId}" already exists. Please edit the JSON or delete the existing map.`);
+					return;
+				}
+
+				// Build frontmatter
+				const frontmatterLines: string[] = [
+					'---',
+					'type: map',
+					`name: ${data.name}`,
+					`map_id: ${mapId}`
+				];
+
+				if (data.universe) {
+					frontmatterLines.push(`universe: ${data.universe}`);
+				}
+				if (data.image) {
+					frontmatterLines.push(`image: ${data.image}`);
+				}
+				if (data.coordinate_system) {
+					frontmatterLines.push(`coordinate_system: ${data.coordinate_system}`);
+				}
+
+				// Handle bounds (geographic) or dimensions (pixel)
+				if (data.coordinate_system === 'pixel') {
+					if (data.width !== undefined) {
+						frontmatterLines.push(`width: ${data.width}`);
+					}
+					if (data.height !== undefined) {
+						frontmatterLines.push(`height: ${data.height}`);
+					}
+				} else {
+					// Geographic bounds
+					if (data.bounds && typeof data.bounds === 'object') {
+						const bounds = data.bounds as Record<string, number>;
+						if (bounds.north !== undefined) frontmatterLines.push(`north: ${bounds.north}`);
+						if (bounds.south !== undefined) frontmatterLines.push(`south: ${bounds.south}`);
+						if (bounds.east !== undefined) frontmatterLines.push(`east: ${bounds.east}`);
+						if (bounds.west !== undefined) frontmatterLines.push(`west: ${bounds.west}`);
+					}
+				}
+
+				// Optional fields
+				if (data.default_zoom !== undefined) {
+					frontmatterLines.push(`default_zoom: ${data.default_zoom}`);
+				}
+				if (data.min_zoom !== undefined) {
+					frontmatterLines.push(`min_zoom: ${data.min_zoom}`);
+				}
+				if (data.max_zoom !== undefined) {
+					frontmatterLines.push(`max_zoom: ${data.max_zoom}`);
+				}
+				if (data.center && typeof data.center === 'object') {
+					const center = data.center as Record<string, number>;
+					frontmatterLines.push(`center:`);
+					if (center.lat !== undefined) frontmatterLines.push(`  lat: ${center.lat}`);
+					if (center.lng !== undefined) frontmatterLines.push(`  lng: ${center.lng}`);
+				}
+
+				frontmatterLines.push('---');
+				frontmatterLines.push('');
+				frontmatterLines.push(`# ${data.name}`);
+				frontmatterLines.push('');
+				frontmatterLines.push('*Imported from JSON*');
+
+				const content = frontmatterLines.join('\n');
+
+				// Determine file path - use configured maps folder or vault root
+				const mapsDir = this.plugin.settings.mapsFolder || '';
+				const safeFileName = (data.name as string).replace(/[^a-z0-9\s-]/gi, '').replace(/\s+/g, '-');
+				const filePath = mapsDir
+					? `${mapsDir}/${safeFileName}.md`
+					: `${safeFileName}.md`;
+
+				// Check if file already exists
+				const existingFile = this.app.vault.getAbstractFileByPath(filePath);
+				if (existingFile) {
+					new Notice(`File "${filePath}" already exists`);
+					return;
+				}
+
+				// Ensure directory exists
+				if (mapsDir) {
+					const folder = this.app.vault.getAbstractFileByPath(mapsDir);
+					if (!folder) {
+						await this.app.vault.createFolder(mapsDir);
+					}
+				}
+
+				// Create the file
+				await this.app.vault.create(filePath, content);
+				new Notice(`Imported "${data.name}" from JSON`);
+
+				// Refresh the grid
+				await this.loadCustomMapsGrid(gridContainer);
+
+			} catch (error) {
+				if (error instanceof SyntaxError) {
+					new Notice('Invalid JSON file');
+				} else {
+					new Notice(`Failed to import: ${getErrorMessage(error)}`);
+				}
+			}
+		});
+
+		// Trigger file picker
+		input.click();
+	}
+
+	/**
+	 * Delete a custom map note with confirmation
+	 */
+	private async deleteMap(filePath: string, mapName: string, gridContainer: HTMLElement): Promise<void> {
+		const file = this.app.vault.getAbstractFileByPath(filePath);
+		if (!(file instanceof TFile)) {
+			new Notice('Map file not found');
+			return;
+		}
+
+		// Show confirmation dialog
+		const confirmed = await this.showDeleteConfirmation(mapName);
+		if (!confirmed) {
+			return;
+		}
+
+		try {
+			await this.app.vault.trash(file, true); // Move to system trash
+			new Notice(`Deleted "${mapName}"`);
+			await this.loadCustomMapsGrid(gridContainer);
+		} catch (error) {
+			new Notice(`Failed to delete: ${getErrorMessage(error)}`);
+		}
+	}
+
+	/**
+	 * Show a confirmation dialog for deleting a map
+	 */
+	private showDeleteConfirmation(mapName: string): Promise<boolean> {
+		return new Promise((resolve) => {
+			const modal = new Modal(this.app);
+			modal.titleEl.setText('Delete map');
+
+			modal.contentEl.createEl('p', {
+				text: `Are you sure you want to delete "${mapName}"?`
+			});
+			modal.contentEl.createEl('p', {
+				text: 'The map note will be moved to trash. The image file will not be deleted.',
+				cls: 'crc-text--muted'
+			});
+
+			const buttonContainer = modal.contentEl.createDiv({ cls: 'modal-button-container' });
+
+			buttonContainer.createEl('button', { text: 'Cancel' })
+				.addEventListener('click', () => {
+					modal.close();
+					resolve(false);
+				});
+
+			const deleteBtn = buttonContainer.createEl('button', {
+				text: 'Delete',
+				cls: 'mod-warning'
+			});
+			deleteBtn.addEventListener('click', () => {
+				modal.close();
+				resolve(true);
+			});
+
+			modal.open();
+		});
+	}
+
+	/**
+	 * Render map statistics
+	 */
+	private renderMapStatistics(container: HTMLElement, stats: ReturnType<PlaceGraphService['calculateStatistics']>): void {
+		const statsGrid = container.createDiv({ cls: 'crc-stats-grid' });
+
+		// Places with coordinates
+		const coordPercent = stats.totalPlaces > 0
+			? Math.round((stats.withCoordinates / stats.totalPlaces) * 100)
+			: 0;
+		this.createStatItem(statsGrid, 'With coordinates', `${stats.withCoordinates}/${stats.totalPlaces} (${coordPercent}%)`, 'globe');
+
+		// Places without coordinates
+		const withoutCoords = stats.totalPlaces - stats.withCoordinates;
+		this.createStatItem(statsGrid, 'Without coordinates', withoutCoords.toString(), 'map-pin');
+
+		// Universes
+		const universeCount = Object.keys(stats.byUniverse).length;
+		if (universeCount > 0) {
+			this.createStatItem(statsGrid, 'Universes', universeCount.toString(), 'globe');
+
+			// List universes
+			const universeSection = container.createDiv({ cls: 'crc-mt-3' });
+			universeSection.createEl('h4', { text: 'Universes', cls: 'crc-section-title' });
+			const universeList = universeSection.createEl('ul', { cls: 'crc-list' });
+
+			for (const [universe, count] of Object.entries(stats.byUniverse).sort((a, b) => b[1] - a[1])) {
+				const item = universeList.createEl('li');
+				item.createEl('span', { text: universe });
+				item.createEl('span', { text: ` (${count} places)`, cls: 'crc-text--muted' });
 			}
 		}
 	}
