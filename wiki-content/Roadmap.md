@@ -8,12 +8,12 @@ This document outlines planned features for Canvas Roots. For release history an
 
 - [Development Priorities](#development-priorities)
 - [Planned Features](#planned-features)
-  - [Geographic Features (Phase 4)](#geographic-features-phase-4)
-  - [Maps Tab (Control Center)](#maps-tab-control-center)
-  - [World-Building Suite](#world-building-suite)
+  - [Geographic Features (Phase 4)](#geographic-features-phase-4) ✅
+  - [Maps Tab (Control Center)](#maps-tab-control-center) ✅
+  - [Import/Export Enhancements](#importexport-enhancements) ✅
   - [Evidence & Source Management](#evidence--source-management)
+  - [World-Building Suite](#world-building-suite)
   - [Research & Analysis Tools](#research--analysis-tools)
-  - [Import/Export Enhancements](#importexport-enhancements)
 - [Future Considerations](#future-considerations)
 - [Known Limitations](#known-limitations)
 - [Contributing](#contributing)
@@ -29,11 +29,11 @@ The following priority order guides future development:
 | 1 | [Import/Export Enhancements](#importexport-enhancements) | ✅ Complete (v0.6.0) |
 | 2 | [Geographic Features (Phase 4)](#geographic-features-phase-4) | ✅ Complete (v0.6.0) |
 | 3 | [Maps Tab (Control Center)](#maps-tab-control-center) | ✅ Complete (v0.6.2) |
-| 4 | [Custom Relationship Types](#custom-relationship-types) | Planned |
-| 5 | [Schema Validation](#schema-validation--consistency-checks) | Planned |
+| 4 | [Schema Validation](#schema-validation--consistency-checks) | Planned |
+| 5 | [Custom Relationship Types](#custom-relationship-types) | Planned |
 | 6 | [Fictional Date Systems](#fictional-date-systems) | Planned |
-| 7 | [Organization Notes](#organization-notes--hierarchy-views) | Planned |
-| 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
+| 7 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
+| 8 | [Organization Notes](#organization-notes--hierarchy-views) | Planned |
 | 9 | [Canvas Media Nodes](#canvas-media-nodes) | Planned |
 | 10 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 
