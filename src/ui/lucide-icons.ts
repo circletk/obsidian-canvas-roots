@@ -115,12 +115,6 @@ export const TAB_CONFIGS: TabConfig[] = [
 		description: 'Review and promote imported data'
 	},
 	{
-		id: 'data-quality',
-		name: 'Data quality',
-		icon: 'shield-check',
-		description: 'Analyze data quality and find issues'
-	},
-	{
 		id: 'people',
 		name: 'People',
 		icon: 'users',
@@ -143,6 +137,12 @@ export const TAB_CONFIGS: TabConfig[] = [
 		name: 'Collections',
 		icon: 'folder',
 		description: 'Browse and organize family groups and collections'
+	},
+	{
+		id: 'data-quality',
+		name: 'Data quality',
+		icon: 'shield-check',
+		description: 'Analyze data quality and find issues'
 	},
 	{
 		id: 'tree-generation',
