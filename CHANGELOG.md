@@ -7,6 +7,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.7.0] - Unreleased
+
+World-Building Suite release: Custom Relationships, Fictional Date Systems, and Organization Notes.
+
+### Added
+
+- **Custom Relationships**: Extended relationship types beyond standard family links
+  - **Built-in Relationship Types**: 12 pre-defined relationship types across 4 categories:
+    - Legal/Guardianship: Guardian/Ward, Adoptive Parent/Child, Foster Parent/Child
+    - Religious/Spiritual: Godparent/Godchild, Mentor/Disciple
+    - Professional: Master/Apprentice
+    - Social: Witness (symmetric)
+  - **Relationships Tab**: Dedicated Control Center tab for relationship management
+    - Custom relationship types table with color swatches and category grouping
+    - Toggle to show/hide built-in relationship types
+    - Custom relationships table showing all defined relationships in vault
+    - Statistics card with relationship counts by type
+  - **Add Relationship Modal**: Add custom relationships from person note context menu
+    - Dropdown grouped by category
+    - Person picker for target selection
+    - Optional notes field
+  - **Frontmatter Storage**: Relationships stored in `relationships` array with `type`, `target`, `target_id`, and optional `notes`
+  - **Canvas Edge Support**: Custom relationships can be rendered as colored edges on canvas trees
+  - **Commands**: "Add custom relationship to current person", "Open relationships tab"
+  - **Context Menu**: "Add custom relationship..." option for person notes
+
+- **Fictional Date Systems**: Custom calendars and eras for world-building
+  - Era definitions with name, abbreviation, and epoch year
+  - Date parsing for `{abbrev} {year}` format (e.g., "TA 2941", "AC 283")
+  - Age calculation within a single calendar system
+  - Built-in presets: Middle-earth, Westeros, Star Wars, Generic Fantasy calendars
+  - Universe-scoped calendar systems
+  - Date Systems card in Canvas Settings tab for management
+  - Test date parsing input for validation
+  - Toggle for enabling/disabling built-in systems
+  - Custom date system creation with era table editor
+
+- **Organization Notes**: Define and track non-genealogical hierarchies
+  - New note type `type: organization` for houses, guilds, corporations, military units
+  - **8 Organization Types**: noble_house, guild, corporation, military, religious, political, educational, custom
+    - Each type has unique color and icon
+    - Built-in types can be hidden, custom types can be added
+  - **Organization Hierarchy**: Parent organization relationships via `parent_org` field
+    - Sub-organization tracking
+    - Hierarchy navigation
+  - **Person Membership System**: Track people's affiliations with organizations
+    - `memberships` array in person frontmatter
+    - Role, from date, to date, and notes fields
+    - Multiple memberships per person supported
+  - **Organizations Tab in Control Center**:
+    - Organizations list grouped by type with color indicators
+    - Statistics card with total organizations, people with memberships, total memberships
+    - Type breakdown with counts per organization type
+    - Organization types table with toggle for built-in types
+    - Data tools card with "Create base template" button
+  - **Obsidian Bases Integration**: Pre-configured organizations.base template
+    - 17 views: By Type, Noble Houses, Guilds, Corporations, Military Units, Religious Orders, etc.
+    - Filter by active/dissolved, universe, top-level vs sub-organizations
+    - Formulas for display name, active status, hierarchy path
+  - **Context Menu**: "Add organization membership..." option for person notes
+  - **Commands**: "Create organization note", "Open organizations tab", "Create organizations base template"
+
+### Changed
+
+- **Status Tab**: Renamed "Relationships" card to "Family links" to distinguish from custom relationships
+  - Clarifies that family links (father, mother, spouse) are separate from custom relationships
+- **Tab Reorganization**: Merged Staging tab content into Import/Export tab
+  - Staging area management now accessible from Import/Export tab
+  - Reduced navigation clutter while maintaining functionality
+
+### Removed
+
+- **Advanced Tab**: Retired from Control Center to reduce tab count
+  - Logging settings moved to plugin's native Settings tab (Settings → Canvas Roots → Logging)
+  - "Create base template" button moved to Data Quality tab under "Data tools" section
+  - Log export folder and obfuscation settings now accessible in plugin settings
+
+---
+
 ## [0.6.3] - 2025-12-03
 
 ### Added

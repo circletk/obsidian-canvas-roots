@@ -42,6 +42,7 @@ const CONFIG = {
     'relationship-calculator.css', // Relationship calculator modal
     'family-chart-view.css', // Interactive family chart view
     'data-quality.css',  // Data quality analysis tab
+    'relationships.css', // Custom relationships tab
     'canvas-navigation.css', // Canvas navigation and split wizard
     'map-view.css',      // Leaflet map view (includes bundled Leaflet CSS)
     'animations.css',    // Keyframes and transitions

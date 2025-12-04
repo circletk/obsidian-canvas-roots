@@ -12,6 +12,8 @@ This document outlines planned features for Canvas Roots. For release history an
   - [Maps Tab (Control Center)](#maps-tab-control-center) ✅
   - [Import/Export Enhancements](#importexport-enhancements) ✅
   - [Schema Validation](#schema-validation--consistency-checks) ✅
+  - [Custom Relationship Types](#custom-relationship-types) ✅
+  - [Fictional Date Systems](#fictional-date-systems) ✅
   - [Evidence & Source Management](#evidence--source-management)
   - [World-Building Suite](#world-building-suite)
   - [Research & Analysis Tools](#research--analysis-tools)
@@ -31,10 +33,10 @@ The following priority order guides future development:
 | 2 | [Geographic Features (Phase 4)](#geographic-features-phase-4) | ✅ Complete (v0.6.0) |
 | 3 | [Maps Tab (Control Center)](#maps-tab-control-center) | ✅ Complete (v0.6.2) |
 | 4 | [Schema Validation](#schema-validation--consistency-checks) | ✅ Complete (v0.6.3) |
-| 5 | [Custom Relationship Types](#custom-relationship-types) | Planned |
-| 6 | [Fictional Date Systems](#fictional-date-systems) | Planned |
-| 7 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
-| 8 | [Organization Notes](#organization-notes--hierarchy-views) | Planned |
+| 5 | [Custom Relationship Types](#custom-relationship-types) | ✅ Complete (v0.7.0) |
+| 6 | [Fictional Date Systems](#fictional-date-systems) | ✅ Complete (v0.7.0) |
+| 7 | [Organization Notes](#organization-notes--hierarchy-views) | 🚧 In Progress (v0.7.0) |
+| 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | Planned |
 | 9 | [Canvas Media Nodes](#canvas-media-nodes) | Planned |
 | 10 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 
@@ -96,43 +98,34 @@ The following priority order guides future development:
 
 A collection of features designed for fiction writers, game masters, and alternate history researchers. These features work together to support complex fictional universes.
 
-#### Custom Relationship Types
+#### Custom Relationship Types ✅
+
+> **Complete in v0.7.0.** See [Custom Relationships](Custom-Relationships) wiki page for full documentation.
 
 **Summary:** Define non-familial relationships beyond parent/child/spouse.
+
+**Implemented Features:**
+- 12 built-in relationship types across 4 categories (Legal, Religious, Professional, Social)
+- Relationships Tab in Control Center for management
+- Add Relationship Modal with category-grouped dropdown
+- Frontmatter storage in `relationships` array
+- Canvas edge support with colored edges
+- Statistics card with relationship counts
 
 **Schema:**
 ```yaml
 # In person note frontmatter
 relationships:
-  - type: mentor
-    target: "[[Gandalf]]"
-    from: "TA 2941"
-    to: "TA 3019"
-  - type: liege
-    target: "[[Aragorn]]"
-    from: "TA 3019"
+  - type: godparent
+    target: "[[Jane Doe]]"
+    target_id: person-jane-doe
+    notes: "Became godparent at baptism in 1920"
 ```
 
-**Relationship Categories:**
-| Category | Examples |
-|----------|----------|
-| Feudal/Political | liege, vassal, sworn knight, ward, hostage |
-| Religious/Spiritual | mentor, disciple, confessor, godparent |
-| Professional | master, apprentice, patron, protégé |
-| Social | rival, ally, betrothed, companion |
-| Historical | guardian, foster-parent |
-
-**Canvas Visualization:**
-- Colored edges distinct from family relationships
-- Configurable edge colors per relationship type
-- Dashed vs. solid line styles
-- Toggle visibility by relationship type
-- Optional edge labels
-
-**Integration Points:**
-- Bases views filter/group by relationship type
-- Relationship calculator optionally traverses custom relationships
-- Statistics panel shows relationship type distribution
+**Future Enhancements (v0.8.0+):**
+- Create custom relationship types with user-defined colors
+- Automatic inverse relationship creation
+- Bulk relationship management
 
 ---
 
@@ -165,40 +158,32 @@ relationships:
 
 ---
 
-#### Fictional Date Systems
+#### Fictional Date Systems ✅
+
+> **Complete in v0.7.0.** See [Fictional Date Systems](Fictional-Date-Systems) wiki page for full documentation.
 
 **Summary:** Custom calendars and eras for world-building and historical research.
 
-**Configuration:**
-```yaml
-date_formats:
-  middle_earth:
-    pattern: "{era} {year}"
-    eras:
-      - name: "Third Age"
-        abbrev: "TA"
-        epoch: 0
-      - name: "Fourth Age"
-        abbrev: "FA"
-        epoch: 3021
-```
+**Implemented Features:**
+- Era definitions with name, abbreviation, epoch offset, and direction (forward/backward)
+- Date parsing for `{abbrev} {year}` format (e.g., "TA 2941", "AC 283")
+- Built-in presets: Middle-earth, Westeros, Star Wars, Generic Fantasy calendars
+- Universe-scoped calendar systems
+- Date Systems card in Canvas Settings tab
+- Test date parsing input for validation
+- Custom date system creation with era table editor
+- Canonical year conversion for sorting/comparison
+- Age calculation within calendar systems
 
 **Usage in Person Notes:**
 ```yaml
 born: "TA 2890"
-died: "TA 2941"
+died: "FoA 61"
 ```
 
-**Features:**
-- Internal canonical representation for calculations
-- Age calculations within each calendar system
-- Sorting/filtering in Bases views
-- Graceful fallback for unrecognized formats
-- Migration path from existing ISO dates
-
-**Integration Points:**
+**Future Enhancements (v0.8.0+):**
 - Leaflet.js timeline slider with fictional dates
-- Timeline layout algorithm
+- Bases integration for sorting/filtering by era and year
 - "Who was alive in [year]?" queries
 
 ---

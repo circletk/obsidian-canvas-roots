@@ -17,6 +17,7 @@ import { FamilyGraphService } from './src/core/family-graph';
 import { CanvasGenerator } from './src/core/canvas-generator';
 import { BASE_TEMPLATE } from './src/constants/base-template';
 import { PLACES_BASE_TEMPLATE } from './src/constants/places-base-template';
+import { ORGANIZATIONS_BASE_TEMPLATE } from './src/constants/organizations-base-template';
 import { ExcalidrawExporter } from './src/excalidraw/excalidraw-exporter';
 import { BidirectionalLinker } from './src/core/bidirectional-linker';
 import { generateCrId } from './src/core/uuid';
@@ -33,6 +34,7 @@ import { CreatePlaceModal } from './src/ui/create-place-modal';
 import { CreatePersonModal } from './src/ui/create-person-modal';
 import { PlaceGraphService } from './src/core/place-graph';
 import { SchemaService, ValidationService } from './src/schemas';
+import { AddRelationshipModal } from './src/ui/add-relationship-modal';
 
 const logger = getLogger('CanvasRootsPlugin');
 
@@ -154,6 +156,15 @@ export default class CanvasRootsPlugin extends Plugin {
 			name: 'Create base template',
 			callback: () => {
 				void this.createBaseTemplate();
+			}
+		});
+
+		// Add command: Create Organizations Base Template
+		this.addCommand({
+			id: 'create-organizations-base-template',
+			name: 'Create organizations base template',
+			callback: () => {
+				void this.createOrganizationsBaseTemplate();
 			}
 		});
 
@@ -381,6 +392,61 @@ export default class CanvasRootsPlugin extends Plugin {
 				} catch (error) {
 					new Notice(`Schema validation failed: ${getErrorMessage(error)}`);
 				}
+			}
+		});
+
+		// Add command: Add Custom Relationship
+		this.addCommand({
+			id: 'add-custom-relationship',
+			name: 'Add custom relationship to current person',
+			callback: () => {
+				const activeFile = this.app.workspace.getActiveFile();
+
+				if (!activeFile || activeFile.extension !== 'md') {
+					new Notice('No active markdown file. Please open a person note first.');
+					return;
+				}
+
+				// Check if the file has a cr_id (is a person note)
+				const cache = this.app.metadataCache.getFileCache(activeFile);
+				if (!cache?.frontmatter?.cr_id) {
+					new Notice('Current file is not a person note (missing cr_id)');
+					return;
+				}
+
+				new AddRelationshipModal(this.app, this, activeFile).open();
+			}
+		});
+
+		// Add command: Open Relationships Tab
+		this.addCommand({
+			id: 'open-relationships-tab',
+			name: 'Open relationships tab',
+			callback: () => {
+				const modal = new ControlCenterModal(this.app, this);
+				modal.openToTab('relationships');
+			}
+		});
+
+		// Add command: Create Organization Note
+		this.addCommand({
+			id: 'create-organization-note',
+			name: 'Create organization note',
+			callback: async () => {
+				const { CreateOrganizationModal } = await import('./src/organizations');
+				new CreateOrganizationModal(this.app, this, () => {
+					// Optionally open to organizations tab after creation
+				}).open();
+			}
+		});
+
+		// Add command: Open Organizations Tab
+		this.addCommand({
+			id: 'open-organizations-tab',
+			name: 'Open organizations tab',
+			callback: () => {
+				const modal = new ControlCenterModal(this.app, this);
+				modal.openToTab('organizations');
 			}
 		});
 
@@ -975,6 +1041,29 @@ export default class CanvasRootsPlugin extends Plugin {
 													})();
 												});
 												picker.open();
+											});
+									});
+
+									relationshipSubmenu.addSeparator();
+
+									relationshipSubmenu.addItem((relItem) => {
+										relItem
+											.setTitle('Add custom relationship...')
+											.setIcon('link-2')
+											.onClick(() => {
+												new AddRelationshipModal(this.app, this, file).open();
+											});
+									});
+
+									relationshipSubmenu.addItem((relItem) => {
+										relItem
+											.setTitle('Add organization membership...')
+											.setIcon('building')
+											.onClick(async () => {
+												const { AddMembershipModal } = await import('./src/organizations/ui/add-membership-modal');
+												new AddMembershipModal(this.app, this, file, () => {
+													new Notice('Membership added');
+												}).open();
 											});
 									});
 								});
@@ -1639,6 +1728,15 @@ export default class CanvasRootsPlugin extends Plugin {
 											await this.createPlacesBaseTemplate(file);
 										});
 								});
+
+								basesSubmenu.addItem((baseItem) => {
+									baseItem
+										.setTitle('New organizations base from template')
+										.setIcon('building')
+										.onClick(async () => {
+											await this.createOrganizationsBaseTemplate(file);
+										});
+								});
 							});
 
 							submenu.addSeparator();
@@ -1756,6 +1854,15 @@ export default class CanvasRootsPlugin extends Plugin {
 								.setIcon('map-pin')
 								.onClick(async () => {
 									await this.createPlacesBaseTemplate(file);
+								});
+						});
+
+						menu.addItem((item) => {
+							item
+								.setTitle('Canvas Roots: New organizations base from template')
+								.setIcon('building')
+								.onClick(async () => {
+									await this.createOrganizationsBaseTemplate(file);
 								});
 						});
 
@@ -3886,6 +3993,72 @@ export default class CanvasRootsPlugin extends Plugin {
 				new Notice('Disk full. Free up space and try again.');
 			} else {
 				new Notice(`Failed to create Places base template: ${errorMsg}`);
+			}
+		}
+	}
+
+	/**
+	 * Create an organizations base template file in the specified folder
+	 */
+	private async createOrganizationsBaseTemplate(folder?: TFolder) {
+		try {
+			// Validate: Check if Bases feature is available
+			// Bases is a core Obsidian feature (1.9.0+), not a community plugin
+			const baseFiles = this.app.vault.getFiles().filter(f => f.extension === 'base');
+			// @ts-expect-error - accessing internal plugins
+			const basesInternalPlugin = this.app.internalPlugins?.plugins?.['bases'];
+			const isBasesAvailable = baseFiles.length > 0 ||
+				(basesInternalPlugin?.enabled === true);
+
+			if (!isBasesAvailable) {
+				const proceed = await this.confirmBaseCreation();
+				if (!proceed) return;
+			}
+
+			// Determine the target path
+			const folderPath = folder ? folder.path + '/' : '';
+			const defaultPath = folderPath + 'organizations.base';
+
+			// Check if file already exists
+			const existingFile = this.app.vault.getAbstractFileByPath(defaultPath);
+			if (existingFile) {
+				new Notice(`Organizations base template already exists at ${defaultPath}`);
+				// Open the existing file
+				if (existingFile instanceof TFile) {
+					const leaf = this.app.workspace.getLeaf(false);
+					await leaf.openFile(existingFile);
+				}
+				return;
+			}
+
+			// Validate folder exists if specified
+			if (folder && !this.app.vault.getAbstractFileByPath(folder.path)) {
+				new Notice(`Folder not found: ${folder.path}`);
+				return;
+			}
+
+			// Create the file with template content
+			const file = await this.app.vault.create(defaultPath, ORGANIZATIONS_BASE_TEMPLATE);
+
+			new Notice('Organizations base template created with 17 pre-configured views!');
+			logger.info('organizations-base-template', `Created organizations base template at ${defaultPath}`);
+
+			// Open the newly created file
+			const leaf = this.app.workspace.getLeaf(false);
+			await leaf.openFile(file);
+		} catch (error: unknown) {
+			const errorMsg = getErrorMessage(error);
+			logger.error('organizations-base-template', 'Failed to create organizations base template', error);
+
+			// Provide specific error messages
+			if (errorMsg.includes('already exists')) {
+				new Notice('A file with this name already exists.');
+			} else if (errorMsg.includes('permission') || errorMsg.includes('EACCES')) {
+				new Notice('Permission denied. Check file system permissions.');
+			} else if (errorMsg.includes('ENOSPC')) {
+				new Notice('Disk full. Free up space and try again.');
+			} else {
+				new Notice(`Failed to create Organizations base template: ${errorMsg}`);
 			}
 		}
 	}

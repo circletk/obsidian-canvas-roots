@@ -16,7 +16,7 @@ export type LucideIconName =
 	| 'git-compare'    // Relationship calculator
 	| 'file-text'      // GEDCOM tab
 	| 'user'           // Person Details tab
-	| 'settings'       // Advanced tab
+	| 'settings'       // Canvas settings tab
 	| 'book-open'      // Guide tab
 	| 'users'          // Multiple people icon
 	| 'calendar'       // Date picker
@@ -76,7 +76,15 @@ export type LucideIconName =
 	| 'map'            // Map view
 	| 'more-vertical' // Overflow menu
 	| 'clipboard-check' // Schema validation
-	| 'file-check'; // Schema note
+	| 'file-check' // Schema note
+	| 'link-2' // Relationships
+	| 'building' // Organizations tab
+	| 'building-2' // Corporation
+	| 'hammer' // Guild
+	| 'church' // Religious
+	| 'landmark' // Political
+	| 'graduation-cap' // Educational
+	| 'shield'; // Military
 
 /**
  * Tab configuration for Control Center navigation
@@ -111,12 +119,6 @@ export const TAB_CONFIGS: TabConfig[] = [
 		description: 'Import and export genealogical data (GEDCOM, CSV)'
 	},
 	{
-		id: 'staging',
-		name: 'Staging',
-		icon: 'package',
-		description: 'Review and promote imported data'
-	},
-	{
 		id: 'people',
 		name: 'People',
 		icon: 'users',
@@ -141,6 +143,18 @@ export const TAB_CONFIGS: TabConfig[] = [
 		description: 'Validation schemas for data consistency'
 	},
 	{
+		id: 'relationships',
+		name: 'Relationships',
+		icon: 'link-2',
+		description: 'Custom relationship types and connections'
+	},
+	{
+		id: 'organizations',
+		name: 'Organizations',
+		icon: 'building',
+		description: 'Manage organizations and memberships'
+	},
+	{
 		id: 'collections',
 		name: 'Collections',
 		icon: 'folder',
@@ -163,12 +177,6 @@ export const TAB_CONFIGS: TabConfig[] = [
 		name: 'Canvas settings',
 		icon: 'settings',
 		description: 'Canvas layout and arrow styling settings'
-	},
-	{
-		id: 'advanced',
-		name: 'Advanced',
-		icon: 'settings',
-		description: 'Advanced features and settings'
 	}
 ];
 

@@ -1,6 +1,6 @@
 # Canvas Roots: Genealogical Family Tree Plugin for Obsidian
 
-[![Version](https://img.shields.io/badge/version-0.6.3-blue.svg)](https://github.com/banisterious/obsidian-canvas-roots/releases) [![Status](https://img.shields.io/badge/status-stable-green.svg)](docs/roadmap.md)
+[![Version](https://img.shields.io/badge/version-0.7.0-blue.svg)](https://github.com/banisterious/obsidian-canvas-roots/releases) [![Status](https://img.shields.io/badge/status-stable-green.svg)](docs/roadmap.md)
 
 **Canvas Roots** transforms structured genealogical data in your Markdown notes into beautifully laid-out family trees on the Obsidian Canvas. Designed for genealogists, historians, and world-builders.
 
@@ -81,6 +81,9 @@
 | **Lineage Tracking** | Track patrilineal, matrilineal, or all descendants |
 | **Relationship Calculator** | Find connections with proper genealogical terms (cousin, 2nd cousin once removed, etc.) |
 | **Relationship History** | Track all changes with timestamps and one-click undo |
+| **Custom Relationships** | Extended relationships beyond family (godparent, guardian, mentor, apprentice) with colored canvas edges |
+| **Fictional Date Systems** | Custom calendars and eras for world-building (Middle-earth, Westeros, Star Wars, or custom) |
+| **Organization Notes** | Track non-genealogical hierarchies: noble houses, guilds, corporations, military units, religious orders |
 
 ### Canvas Features
 
@@ -96,7 +99,7 @@
 
 | Feature | Description |
 |---------|-------------|
-| **Obsidian Bases** | Ready-to-use Base template with 22 pre-configured views |
+| **Obsidian Bases** | Ready-to-use Base templates: People (22 views), Places (14 views), Organizations (17 views) |
 | **Context Menu Actions** | Right-click person notes, folders, and canvases for quick actions |
 | **YAML-First Data** | Compatible with Dataview, Bases, and other Obsidian tools |
 | **Privacy Protection** | Optional anonymization of living persons in exports |
@@ -111,10 +114,8 @@ See [Roadmap](https://github.com/banisterious/obsidian-canvas-roots/wiki/Roadmap
 
 | Feature | Description |
 |---------|-------------|
-| **Custom Relationships** | Non-familial relationships (mentor, liege, rival) with colored canvas edges |
-| **Fictional Dates** | Custom calendars and eras for world-building (e.g., "Third Age 2941") |
+| **Organization Chart Visualization** | D3-based interactive org chart visualization for organizations |
 | **Source Media Gallery** | Centralized evidence management with thumbnails and citation generation |
-| **Organization Charts** | Track houses, guilds, and factions with hierarchical D3 visualizations |
 | **Canvas Media Nodes** | Media files as first-class canvas entities with intelligent placement |
 | **Oral History Tools** | Timestamped transcript citations, interview subject graphs, chronological story mapping |
 

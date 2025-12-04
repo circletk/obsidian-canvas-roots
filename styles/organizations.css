@@ -1,0 +1,254 @@
+/**
+ * Organizations Styles
+ * Organization notes UI in Control Center
+ */
+
+/* Organization sections grouped by type */
+.cr-org-section {
+  margin-bottom: 16px;
+}
+
+.cr-org-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.cr-org-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.cr-org-section-title {
+  font-size: 0.75em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+/* Organization list */
+.cr-org-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual organization item */
+.cr-org-item {
+  display: flex;
+  align-items: stretch;
+  padding: 10px 12px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+  transition: background-color 0.15s ease;
+}
+
+.cr-org-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.cr-org-item-color {
+  width: 4px;
+  border-radius: 2px;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.cr-org-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.cr-org-item-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cr-org-item-name {
+  font-weight: 500;
+  color: var(--text-normal);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.cr-org-item-name:hover {
+  color: var(--text-accent);
+  text-decoration: underline;
+}
+
+.cr-org-item-motto {
+  font-style: italic;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.cr-org-item-info {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.cr-org-item-universe {
+  padding: 1px 6px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-modifier-border);
+  font-size: 0.85em;
+}
+
+.cr-org-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+/* Stats grid */
+.cr-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cr-stat-item {
+  text-align: center;
+  padding: 12px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+}
+
+.cr-stat-value {
+  font-size: 1.5em;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.cr-stat-label {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Stats breakdown */
+.cr-stats-breakdown {
+  margin-top: 16px;
+}
+
+.cr-type-breakdown-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cr-type-breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-s);
+}
+
+.cr-type-breakdown-row:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.cr-type-breakdown-row .cr-type-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cr-type-breakdown-row span:last-child {
+  margin-left: auto;
+}
+
+/* Organization types table */
+.cr-org-types-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
+.cr-org-types-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cr-org-types-table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+.cr-org-types-table tbody tr:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Type name with swatch */
+.cr-type-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-type-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.cr-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+}
+
+/* Create organization modal */
+.cr-create-org-modal {
+  max-width: 500px;
+}
+
+.cr-create-org-details {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+}
+
+.cr-create-org-details summary {
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.cr-create-org-details[open] summary {
+  margin-bottom: 12px;
+}
+
+.cr-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--background-modifier-border);
+}

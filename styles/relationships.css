@@ -1,0 +1,516 @@
+/**
+ * Relationships Tab Styles
+ * Custom relationship types and connections in Control Center
+ */
+
+/* Relationship types gallery */
+.crc-relationship-types-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.crc-relationship-category-group {
+  margin-bottom: 16px;
+}
+
+.crc-relationship-category-header {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.crc-relationship-category-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Individual relationship type item */
+.crc-relationship-type-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+  transition: background-color 0.15s ease;
+}
+
+.crc-relationship-type-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Color swatch */
+.crc-relationship-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-s);
+  flex-shrink: 0;
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* Type info */
+.crc-relationship-type-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.crc-relationship-type-name {
+  font-weight: 500;
+  color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crc-relationship-type-meta {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Badges */
+.crc-relationship-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  font-size: 0.7em;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.crc-relationship-badge-builtin {
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.crc-relationship-badge-custom {
+  background-color: var(--color-accent);
+  color: var(--text-on-accent);
+}
+
+.crc-relationship-badge-symmetric {
+  background-color: var(--background-modifier-success);
+  color: var(--text-on-accent);
+}
+
+/* Type actions */
+.crc-relationship-type-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.crc-relationship-type-item:hover .crc-relationship-type-actions {
+  opacity: 1;
+}
+
+.crc-relationship-type-actions button {
+  padding: 4px 8px;
+  font-size: 0.8em;
+}
+
+/* Line style preview */
+.crc-relationship-line-preview {
+  width: 32px;
+  height: 2px;
+  flex-shrink: 0;
+}
+
+.crc-relationship-line-solid {
+  background: currentColor;
+}
+
+.crc-relationship-line-dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0,
+    currentColor 6px,
+    transparent 6px,
+    transparent 10px
+  );
+}
+
+.crc-relationship-line-dotted {
+  background: repeating-linear-gradient(
+    90deg,
+    currentColor 0,
+    currentColor 2px,
+    transparent 2px,
+    transparent 6px
+  );
+}
+
+/* Relationships overview table */
+.crc-relationships-table-container {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+
+.crc-relationships-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.crc-relationships-table th,
+.crc-relationships-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.crc-relationships-table th {
+  font-weight: 600;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.crc-relationships-table tr:hover td {
+  background-color: var(--background-modifier-hover);
+}
+
+.crc-relationships-table .crc-relationship-link {
+  color: var(--text-accent);
+  cursor: pointer;
+}
+
+.crc-relationships-table .crc-relationship-link:hover {
+  text-decoration: underline;
+}
+
+/* Type badge in table */
+.crc-relationship-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-s);
+  font-size: 0.85em;
+}
+
+.crc-relationship-type-badge .crc-relationship-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Statistics cards */
+.crc-relationship-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.crc-relationship-stat-card {
+  padding: 12px 16px;
+  border-radius: var(--radius-m);
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.crc-relationship-stat-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.crc-relationship-stat-value {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.crc-relationship-stat-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.crc-relationship-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85em;
+}
+
+.crc-relationship-stat-label {
+  color: var(--text-muted);
+}
+
+.crc-relationship-stat-count {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+/* Empty state */
+.crc-relationships-empty {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-muted);
+}
+
+.crc-relationships-empty p {
+  margin: 8px 0;
+}
+
+/* Add/edit relationship type form */
+.crc-relationship-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.crc-relationship-form-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.crc-relationship-form-row .setting-item {
+  flex: 1;
+  border: none;
+  padding: 0;
+}
+
+.crc-relationship-color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crc-relationship-color-input {
+  width: 40px;
+  height: 32px;
+  padding: 2px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+/* Category filter */
+.crc-relationship-category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.crc-relationship-category-filter button {
+  padding: 4px 12px;
+  border-radius: var(--radius-s);
+  font-size: 0.85em;
+  background-color: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.crc-relationship-category-filter button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.crc-relationship-category-filter button.is-active {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+  border-color: var(--interactive-accent);
+}
+
+/* Inverse relationship display */
+.crc-relationship-inverse {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+
+.crc-relationship-inverse svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Date range display */
+.crc-relationship-date-range {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+/* Add Relationship Modal */
+.cr-add-relationship-modal {
+  max-width: 500px;
+}
+
+.cr-add-relationship-modal h2 {
+  margin: 0 0 8px 0;
+}
+
+.cr-add-relationship-modal .setting-item {
+  border: none;
+  padding: 12px 0;
+}
+
+.cr-target-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background-color: var(--background-secondary);
+  border-radius: var(--radius-s);
+  min-width: 150px;
+}
+
+.cr-modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Relationship Types Table */
+.crc-relationship-types-table-container {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.crc-relationship-types-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.crc-relationship-types-table th,
+.crc-relationship-types-table td {
+  padding: 6px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--background-modifier-border);
+  white-space: nowrap;
+}
+
+.crc-relationship-types-table th {
+  font-weight: 600;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.crc-relationship-types-table tbody tr:hover td {
+  background-color: var(--background-modifier-hover);
+}
+
+/* Type name with color swatch */
+.crc-type-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.crc-type-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Actions cell */
+.crc-type-actions-cell {
+  width: 60px;
+  text-align: right;
+}
+
+.crc-type-actions-cell .crc-icon-button {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.crc-relationship-types-table tbody tr:hover .crc-type-actions-cell .crc-icon-button {
+  opacity: 1;
+}
+
+.crc-icon-button {
+  padding: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-s);
+  color: var(--text-muted);
+}
+
+.crc-icon-button:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.crc-icon-button--danger:hover {
+  color: var(--text-error);
+}
+
+/* Badge styles */
+.crc-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  font-size: 0.75em;
+  font-weight: 500;
+}
+
+.crc-badge--muted {
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.crc-badge--accent {
+  background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* Card toolbar (top actions bar) */
+.crc-card-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Inline toggle with label */
+.crc-toggle-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9em;
+  color: var(--text-muted);
+}
+
+.crc-toggle-inline label {
+  cursor: pointer;
+}

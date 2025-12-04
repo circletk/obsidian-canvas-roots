@@ -16,6 +16,7 @@ import type { SpouseRelationship } from '../models/person';
 import type { StyleOverrides } from './canvas-style-overrides';
 import { mergeStyleSettings } from './canvas-style-overrides';
 import type { CanvasNavigationMetadata } from './canvas-navigation';
+import type { RelationshipTypeDefinition } from '../relationships';
 
 const logger = getLogger('CanvasGenerator');
 
@@ -437,6 +438,8 @@ export class CanvasGenerator {
 			spouseEdgeColor: import('../settings').CanvasColor;
 			showSpouseEdges: boolean;
 			spouseEdgeLabelFormat: SpouseEdgeLabelFormat;
+			showRelationshipEdges?: boolean;
+			relationshipTypes?: Map<string, RelationshipTypeDefinition>;
 		}
 	): CanvasEdge[] {
 		const edges: CanvasEdge[] = [];
@@ -460,12 +463,17 @@ export class CanvasGenerator {
 			// Filter edges to reduce clutter:
 			// 1. Skip "child" edges (only show parent→child, not child→parent)
 			// 2. Conditionally skip spouse edges based on settings
+			// 3. Conditionally skip relationship edges based on settings
 			if (edge.type === 'child') {
 				continue; // Skip child edges - we'll show parent edges instead
 			}
 
 			if (edge.type === 'spouse' && !options.showSpouseEdges) {
 				continue; // Skip spouse edges when setting is disabled (default)
+			}
+
+			if (edge.type === 'relationship' && !options.showRelationshipEdges) {
+				continue; // Skip custom relationship edges when setting is disabled
 			}
 
 			// Determine edge sides based on direction and relationship
@@ -479,7 +487,7 @@ export class CanvasGenerator {
 					fromSide = 'bottom';
 					toSide = 'top';
 				} else {
-					// Spouse relationships: horizontal (side-to-side)
+					// Spouse and custom relationships: horizontal (side-to-side)
 					// Use horizontal edges to avoid crossing vertical parent-child lines
 					if (fromPos.x < toPos.x) {
 						fromSide = 'right';
@@ -496,7 +504,7 @@ export class CanvasGenerator {
 					fromSide = 'right';
 					toSide = 'left';
 				} else {
-					// Spouse: vertical
+					// Spouse and custom relationships: vertical
 					if (fromPos.y < toPos.y) {
 						fromSide = 'bottom';
 						toSide = 'top';
@@ -508,15 +516,30 @@ export class CanvasGenerator {
 			}
 
 			// Determine arrow endpoints based on relationship type and settings
-			const arrowStyle = edge.type === 'parent' 
-				? options.parentChildArrowStyle
-				: options.spouseArrowStyle;
+			let arrowStyle: ArrowStyle;
+			if (edge.type === 'parent') {
+				arrowStyle = options.parentChildArrowStyle;
+			} else if (edge.type === 'relationship') {
+				// Custom relationships use directed arrows by default
+				arrowStyle = 'directed';
+			} else {
+				arrowStyle = options.spouseArrowStyle;
+			}
 			const [fromEnd, toEnd] = this.getArrowEndpoints(arrowStyle);
 
 			// Determine edge color based on relationship type and settings
-			const edgeColor = edge.type === 'parent'
-				? options.parentChildEdgeColor
-				: options.spouseEdgeColor;
+			let edgeColor: string | undefined;
+			if (edge.type === 'parent') {
+				edgeColor = options.parentChildEdgeColor === 'none' ? undefined : options.parentChildEdgeColor;
+			} else if (edge.type === 'relationship') {
+				// Custom relationships use their defined color
+				if (edge.relationshipTypeId && options.relationshipTypes) {
+					const relType = options.relationshipTypes.get(edge.relationshipTypeId);
+					edgeColor = relType?.color;
+				}
+			} else {
+				edgeColor = options.spouseEdgeColor === 'none' ? undefined : options.spouseEdgeColor;
+			}
 
 			// Generate label for edge
 			let edgeLabel: string | undefined;
@@ -528,6 +551,9 @@ export class CanvasGenerator {
 					const spouseRelationship = fromPerson.spouses.find(s => s.personId === edge.to);
 					edgeLabel = this.formatMarriageLabel(spouseRelationship, options.spouseEdgeLabelFormat);
 				}
+			} else if (edge.type === 'relationship') {
+				// Use the relationship label from the edge
+				edgeLabel = edge.relationshipLabel;
 			} else if (options.showLabels) {
 				edgeLabel = this.getEdgeLabel(edge.type);
 			}
@@ -540,7 +566,7 @@ export class CanvasGenerator {
 				toNode: toCanvasId,
 				toSide,
 				toEnd,
-				color: edgeColor === 'none' ? undefined : edgeColor,
+				color: edgeColor,
 				label: edgeLabel
 			});
 		}
@@ -686,13 +712,15 @@ export class CanvasGenerator {
 	/**
 	 * Gets label text for edge based on relationship type
 	 *
-	 * Note: We hide all labels because:
+	 * Note: We hide labels for parent/spouse/child because:
 	 * - The visual layout (top-to-bottom for parent-child, side-by-side for spouses) makes relationships clear
 	 * - Labels clutter the diagram and cause overlaps
 	 * - Edge colors already distinguish relationship types
+	 * Custom relationships use their own labels from edge.relationshipLabel
 	 */
-	private getEdgeLabel(_type: 'parent' | 'spouse' | 'child'): string {
-		// Return empty string to hide all labels - visual layout is self-explanatory
+	private getEdgeLabel(_type: 'parent' | 'spouse' | 'child' | 'relationship'): string {
+		// Return empty string to hide labels - visual layout is self-explanatory
+		// Custom relationship labels are handled separately via edge.relationshipLabel
 		return '';
 	}
 

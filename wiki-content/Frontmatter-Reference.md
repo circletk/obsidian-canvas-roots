@@ -1,6 +1,6 @@
 # Frontmatter Reference
 
-This document defines all frontmatter properties recognized by Canvas Roots for person notes, place notes, and map notes.
+This document defines all frontmatter properties recognized by Canvas Roots for person notes, place notes, organization notes, and map notes.
 
 ---
 
@@ -18,8 +18,12 @@ erDiagram
     PERSON }o--o| PLACE : "death_place"
     PERSON }o--o| PLACE : "burial_place"
     PERSON ||--o{ EVENT : "events"
+    PERSON ||--o{ MEMBERSHIP : "memberships"
     EVENT }o--o| PLACE : "place"
     PLACE ||--o| PLACE : "parent_place"
+    ORGANIZATION ||--o| ORGANIZATION : "parent_org"
+    ORGANIZATION }o--o| PLACE : "seat"
+    MEMBERSHIP }o--|| ORGANIZATION : "org"
 
     PERSON {
         string cr_id PK
@@ -49,14 +53,36 @@ erDiagram
         float lat
         float long
     }
+
+    ORGANIZATION {
+        string cr_id PK
+        string name
+        string org_type
+        string parent_org FK
+        string founded
+        string dissolved
+        string seat FK
+        string universe
+    }
+
+    MEMBERSHIP {
+        string org FK
+        string org_id FK
+        string role
+        string from
+        string to
+    }
 ```
 
 **Key relationships:**
 - **Person → Person**: Family relationships (father, mother, spouse, child) with dual wikilink + `_id` storage
 - **Person → Place**: Geographic links for life events (birth, death, burial, marriage locations)
 - **Person → Event → Place**: Life events (residence, occupation, education, military, etc.) with locations
+- **Person → Membership → Organization**: Organization affiliations with roles and dates
+- **Organization → Organization**: Hierarchical structure (sub-organizations under parent)
+- **Organization → Place**: Seat location linking to place notes
 - **Place → Place**: Hierarchical structure (city → state → country)
-- **Collection**: Shared grouping property across both entity types
+- **Collection**: Shared grouping property across entity types
 
 ---
 
@@ -683,8 +709,118 @@ This schema validates that all person notes have logically consistent dates.
 
 ---
 
+## Organization Note Properties
+
+Organization notes define non-genealogical hierarchies such as noble houses, guilds, and corporations. See [Organization Notes](Organization-Notes) for complete documentation.
+
+### Identity
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `type` | `string` | Must be `"organization"` | `"organization"` |
+| `cr_id` | `string` | Unique identifier | `"org-house-stark"` |
+
+### Basic Information
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `name` | `string` | Display name of the organization | `"House Stark"` |
+| `org_type` | `string` | Organization type (see below) | `"noble_house"` |
+| `motto` | `string` | Organization motto or slogan | `"Winter is Coming"` |
+| `universe` | `string` | Fictional universe for filtering | `"westeros"` |
+
+### Organization Types
+
+| Type ID | Description |
+|---------|-------------|
+| `noble_house` | Feudal houses, dynasties |
+| `guild` | Trade guilds, craftsmen |
+| `corporation` | Modern companies |
+| `military` | Armies, regiments, navies |
+| `religious` | Churches, monasteries |
+| `political` | Kingdoms, republics |
+| `educational` | Schools, universities |
+| `custom` | User-defined |
+
+### Hierarchy
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `parent_org` | `string` | Wikilink to parent organization | `"[[The North]]"` |
+
+### Dates
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `founded` | `string` | Founding date (supports fictional dates) | `"Age of Heroes"` |
+| `dissolved` | `string` | Dissolution date | `"298 AC"` |
+
+### Location
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `seat` | `string` | Wikilink to primary location (place note) | `"[[Winterfell]]"` |
+
+---
+
+## Person Membership Properties
+
+Person notes can include an array of organization memberships.
+
+### Membership Array
+
+```yaml
+memberships:
+  - org: "[[House Stark]]"
+    org_id: org-house-stark
+    role: Lord of Winterfell
+    from: "283 AC"
+    to: "298 AC"
+  - org: "[[Small Council]]"
+    org_id: org-small-council
+    role: Hand of the King
+    from: "298 AC"
+    to: "298 AC"
+```
+
+### Membership Properties
+
+| Property | Type | Required | Description | Example |
+|----------|------|----------|-------------|---------|
+| `org` | `string` | Yes | Wikilink to organization note | `"[[House Stark]]"` |
+| `org_id` | `string` | No | Organization's `cr_id` for robust linking | `"org-house-stark"` |
+| `role` | `string` | No | Role or position within organization | `"Lord of Winterfell"` |
+| `from` | `string` | No | Start date of membership | `"283 AC"` |
+| `to` | `string` | No | End date (leave empty if current) | `"298 AC"` |
+| `notes` | `string` | No | Additional context | `"First to declare for Robert"` |
+
+---
+
+## Example Organization Note
+
+```yaml
+---
+type: organization
+cr_id: org-house-stark
+name: House Stark
+org_type: noble_house
+parent_org: "[[The North]]"
+founded: "Age of Heroes"
+motto: "Winter is Coming"
+seat: "[[Winterfell]]"
+universe: westeros
+---
+
+# House Stark
+
+The principal house of the North...
+```
+
+---
+
 ## See Also
 
+- [Organization Notes](Organization-Notes) - Complete organization documentation
 - [Schema Validation](Schema-Validation) - Creating and using validation schemas
 - [Geographic Features](Geographic-Features) - Place notes and map features
 - [Data Management](Data-Management) - Managing your family data

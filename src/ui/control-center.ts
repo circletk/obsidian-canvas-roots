@@ -37,6 +37,10 @@ import { CreateMapModal } from './create-map-modal';
 import { CreateSchemaModal } from './create-schema-modal';
 import { SchemaService, ValidationService } from '../schemas';
 import type { SchemaNote, ValidationResult, ValidationSummary } from '../schemas';
+import { RelationshipService, RELATIONSHIP_CATEGORY_NAMES, DEFAULT_RELATIONSHIP_TYPES } from '../relationships';
+import type { RelationshipTypeDefinition, ParsedRelationship, RelationshipStats, RelationshipCategory } from '../relationships';
+import { createDateSystemsCard } from '../dates';
+import { renderOrganizationsTab } from '../organizations';
 
 const logger = getLogger('ControlCenter');
 
@@ -245,14 +249,8 @@ export class ControlCenterModal extends Modal {
 			case 'import-export':
 				this.showImportExportTab();
 				break;
-			case 'staging':
-				this.showStagingTab();
-				break;
 			case 'data-quality':
 				this.showDataQualityTab();
-				break;
-			case 'advanced':
-				this.showAdvancedTab();
 				break;
 			case 'places':
 				void this.showPlacesTab();
@@ -262,6 +260,12 @@ export class ControlCenterModal extends Modal {
 				break;
 			case 'schemas':
 				void this.showSchemasTab();
+				break;
+			case 'relationships':
+				void this.showRelationshipsTab();
+				break;
+			case 'organizations':
+				void this.showOrganizationsTab();
 				break;
 			default:
 				this.showPlaceholderTab(tabId);
@@ -728,14 +732,14 @@ export class ControlCenterModal extends Modal {
 
 		container.appendChild(peopleCard);
 
-		// Relationships Card
+		// Family Links Card (standard genealogical relationships)
 		const relCard = this.createCard({
-			title: 'Relationships',
+			title: 'Family links',
 			icon: 'link'
 		});
 		const relContent = relCard.querySelector('.crc-card__content') as HTMLElement;
 
-		this.createStatRow(relContent, 'Total relationships', stats.relationships.totalRelationships);
+		this.createStatRow(relContent, 'Total links', stats.relationships.totalRelationships);
 		this.createStatRow(relContent, 'Father links', stats.relationships.totalFatherLinks);
 		this.createStatRow(relContent, 'Mother links', stats.relationships.totalMotherLinks);
 		this.createStatRow(relContent, 'Spouse links', stats.relationships.totalSpouseLinks);
@@ -1552,6 +1556,14 @@ export class ControlCenterModal extends Modal {
 				}));
 
 		container.appendChild(spouseEdgeCard);
+
+		// Fictional Date Systems Card
+		const dateSystemsCard = createDateSystemsCard(
+			container,
+			this.plugin,
+			(options) => this.createCard(options)
+		);
+		container.appendChild(dateSystemsCard);
 
 		// Link to full settings
 		const fullSettingsBtn = container.createEl('button', {
@@ -6212,6 +6224,377 @@ export class ControlCenterModal extends Modal {
 		}
 	}
 
+	// ==========================================================================
+	// RELATIONSHIPS TAB
+	// ==========================================================================
+
+	/**
+	 * Show Relationships tab with type management and relationship overview
+	 */
+	private async showRelationshipsTab(): Promise<void> {
+		const container = this.contentContainer;
+		const relationshipService = new RelationshipService(this.plugin);
+
+		// Relationship Types card
+		await this.renderRelationshipTypesCard(container, relationshipService);
+
+		// Relationships Overview card
+		await this.renderRelationshipsOverviewCard(container, relationshipService);
+
+		// Statistics card
+		await this.renderRelationshipStatsCard(container, relationshipService);
+	}
+
+	/**
+	 * Show Organizations tab with organization list and statistics
+	 */
+	private async showOrganizationsTab(): Promise<void> {
+		const container = this.contentContainer;
+		await renderOrganizationsTab(
+			container,
+			this.plugin,
+			(options) => this.createCard(options),
+			(tabId) => this.showTab(tabId)
+		);
+	}
+
+	/**
+	 * Render Custom Relationship Types management card with table layout
+	 */
+	private async renderRelationshipTypesCard(container: HTMLElement, service: RelationshipService): Promise<void> {
+		const card = this.createCard({
+			title: 'Custom relationship types',
+			icon: 'link-2'
+		});
+		const content = card.querySelector('.crc-card__content') as HTMLElement;
+
+		// Toolbar at top: Add button + toggle
+		const toolbar = content.createDiv({ cls: 'crc-card-toolbar' });
+
+		const addBtn = toolbar.createEl('button', { cls: 'mod-cta' });
+		setIcon(addBtn.createSpan({ cls: 'crc-button-icon' }), 'plus');
+		addBtn.createSpan({ text: 'Add type' });
+		addBtn.addEventListener('click', () => {
+			new Notice('Create relationship type (coming soon)');
+		});
+
+		// Toggle built-in visibility
+		const toggleContainer = toolbar.createDiv({ cls: 'crc-toggle-inline' });
+		const toggleLabel = toggleContainer.createEl('label', { text: 'Show built-in types' });
+		const toggle = new ToggleComponent(toggleContainer);
+		toggle.setValue(this.plugin.settings.showBuiltInRelationshipTypes);
+		toggle.onChange(async (value) => {
+			this.plugin.settings.showBuiltInRelationshipTypes = value;
+			await this.plugin.saveSettings();
+			this.showTab('relationships'); // Refresh the tab properly
+		});
+		toggleLabel.htmlFor = toggle.toggleEl.id;
+
+		const types = service.getAllRelationshipTypes();
+
+		if (types.length === 0) {
+			const emptyMsg = this.plugin.settings.showBuiltInRelationshipTypes
+				? 'No relationship types defined.'
+				: 'No custom relationship types defined. Toggle "Show built-in types" to see default types.';
+			content.createEl('p', {
+				cls: 'crc-text-muted',
+				text: emptyMsg
+			});
+		} else {
+			// Create table
+			const tableContainer = content.createDiv({ cls: 'crc-relationship-types-table-container' });
+			const table = tableContainer.createEl('table', { cls: 'crc-relationship-types-table' });
+
+			// Header
+			const thead = table.createEl('thead');
+			const headerRow = thead.createEl('tr');
+			headerRow.createEl('th', { text: 'Type' });
+			headerRow.createEl('th', { text: 'Category' });
+			headerRow.createEl('th', { text: 'Inverse' });
+			headerRow.createEl('th', { text: 'Source' });
+			headerRow.createEl('th', { text: '' }); // Actions column
+
+			// Body
+			const tbody = table.createEl('tbody');
+
+			for (const type of types) {
+				const row = tbody.createEl('tr');
+
+				// Type name with color swatch
+				const nameCell = row.createEl('td');
+				const nameWrapper = nameCell.createDiv({ cls: 'crc-type-name-wrapper' });
+				const swatch = nameWrapper.createDiv({ cls: 'crc-type-swatch' });
+				swatch.style.backgroundColor = type.color;
+				nameWrapper.createSpan({ text: type.name });
+
+				// Category
+				row.createEl('td', { text: RELATIONSHIP_CATEGORY_NAMES[type.category], cls: 'crc-text-muted' });
+
+				// Inverse/symmetric
+				const inverseCell = row.createEl('td');
+				if (type.symmetric) {
+					inverseCell.createSpan({ text: '↔ symmetric', cls: 'crc-text-muted' });
+				} else if (type.inverse) {
+					inverseCell.createSpan({ text: `→ ${type.inverse}`, cls: 'crc-text-muted' });
+				} else {
+					inverseCell.createSpan({ text: '—', cls: 'crc-text-muted' });
+				}
+
+				// Source (built-in vs custom)
+				const sourceCell = row.createEl('td');
+				if (type.builtIn) {
+					sourceCell.createSpan({ text: 'built-in', cls: 'crc-badge crc-badge--muted' });
+				} else {
+					sourceCell.createSpan({ text: 'custom', cls: 'crc-badge crc-badge--accent' });
+				}
+
+				// Actions (only for custom types)
+				const actionsCell = row.createEl('td', { cls: 'crc-type-actions-cell' });
+				if (!type.builtIn) {
+					const editBtn = actionsCell.createEl('button', { cls: 'crc-icon-button clickable-icon' });
+					setIcon(editBtn, 'edit');
+					editBtn.setAttribute('aria-label', 'Edit');
+					editBtn.addEventListener('click', () => {
+						new Notice('Edit relationship type (coming soon)');
+					});
+
+					const deleteBtn = actionsCell.createEl('button', { cls: 'crc-icon-button clickable-icon crc-icon-button--danger' });
+					setIcon(deleteBtn, 'trash');
+					deleteBtn.setAttribute('aria-label', 'Delete');
+					deleteBtn.addEventListener('click', async () => {
+						if (confirm(`Delete relationship type "${type.name}"?`)) {
+							try {
+								await service.deleteRelationshipType(type.id);
+								new Notice(`Deleted relationship type: ${type.name}`);
+								void this.showRelationshipsTab();
+							} catch (error) {
+								new Notice(`Failed to delete: ${getErrorMessage(error)}`);
+							}
+						}
+					});
+				}
+			}
+		}
+
+		container.appendChild(card);
+	}
+
+	/**
+	 * Render Custom Relationships card with table of all custom relationships
+	 */
+	private async renderRelationshipsOverviewCard(container: HTMLElement, service: RelationshipService): Promise<void> {
+		const card = this.createCard({
+			title: 'Custom relationships',
+			icon: 'users'
+		});
+		const content = card.querySelector('.crc-card__content') as HTMLElement;
+
+		// Loading
+		const loading = content.createDiv({ cls: 'crc-loading' });
+		loading.createSpan({ text: 'Loading relationships...' });
+
+		try {
+			const relationships = await service.getAllRelationships();
+			const stats = await service.getStats();
+
+			loading.remove();
+
+			if (relationships.length === 0) {
+				const emptyState = content.createDiv({ cls: 'crc-empty-state' });
+				setIcon(emptyState.createSpan({ cls: 'crc-empty-icon' }), 'link-2');
+				emptyState.createEl('p', { text: 'No custom relationships found.' });
+				emptyState.createEl('p', {
+					cls: 'crc-text-muted',
+					text: 'Custom relationships (godparent, guardian, mentor, etc.) are defined in person note frontmatter. Standard family links (spouse, parent, child) are handled separately on canvas trees.'
+				});
+			} else {
+				// Summary row
+				const summaryRow = content.createDiv({ cls: 'crc-relationship-summary-row' });
+				summaryRow.createSpan({
+					text: `${stats.totalDefined} defined relationships`,
+					cls: 'crc-relationship-stat'
+				});
+				summaryRow.createSpan({
+					text: `${stats.totalInferred} inferred`,
+					cls: 'crc-relationship-stat crc-text-muted'
+				});
+				summaryRow.createSpan({
+					text: `${stats.peopleWithRelationships} people`,
+					cls: 'crc-relationship-stat'
+				});
+
+				// Table
+				const tableContainer = content.createDiv({ cls: 'crc-table-container' });
+				const table = tableContainer.createEl('table', { cls: 'crc-table' });
+
+				// Header
+				const thead = table.createEl('thead');
+				const headerRow = thead.createEl('tr');
+				headerRow.createEl('th', { text: 'From' });
+				headerRow.createEl('th', { text: 'Type' });
+				headerRow.createEl('th', { text: 'To' });
+				headerRow.createEl('th', { text: 'Dates' });
+
+				// Body
+				const tbody = table.createEl('tbody');
+
+				// Limit display to first 50
+				const displayRels = relationships.slice(0, 50);
+				for (const rel of displayRels) {
+					const row = tbody.createEl('tr');
+					if (rel.isInferred) {
+						row.classList.add('crc-table-row--muted');
+					}
+
+					// From
+					const fromCell = row.createEl('td');
+					const fromLink = fromCell.createEl('a', {
+						text: rel.sourceName,
+						cls: 'crc-person-link'
+					});
+					fromLink.addEventListener('click', (e) => {
+						e.preventDefault();
+						this.app.workspace.openLinkText(rel.sourceFilePath, '');
+					});
+
+					// Type
+					const typeCell = row.createEl('td');
+					const typeBadge = typeCell.createSpan({ cls: 'crc-relationship-badge' });
+					typeBadge.style.backgroundColor = rel.type.color;
+					typeBadge.style.color = this.getContrastColor(rel.type.color);
+					typeBadge.textContent = rel.type.name;
+					if (rel.isInferred) {
+						typeCell.createSpan({ text: ' (inferred)', cls: 'crc-text-muted' });
+					}
+
+					// To
+					const toCell = row.createEl('td');
+					if (rel.targetFilePath) {
+						const toLink = toCell.createEl('a', {
+							text: rel.targetName,
+							cls: 'crc-person-link'
+						});
+						toLink.addEventListener('click', (e) => {
+							e.preventDefault();
+							this.app.workspace.openLinkText(rel.targetFilePath!, '');
+						});
+					} else {
+						toCell.createSpan({ text: rel.targetName, cls: 'crc-text-muted' });
+					}
+
+					// Dates
+					const datesCell = row.createEl('td');
+					const dateParts: string[] = [];
+					if (rel.from) dateParts.push(rel.from);
+					if (rel.to) dateParts.push(rel.to);
+					datesCell.textContent = dateParts.length > 0 ? dateParts.join(' – ') : '—';
+				}
+
+				if (relationships.length > 50) {
+					content.createEl('p', {
+						cls: 'crc-text-muted',
+						text: `Showing 50 of ${relationships.length} relationships.`
+					});
+				}
+			}
+		} catch (error) {
+			loading.remove();
+			content.createEl('p', {
+				cls: 'crc-error',
+				text: `Failed to load relationships: ${getErrorMessage(error)}`
+			});
+		}
+
+		container.appendChild(card);
+	}
+
+	/**
+	 * Render Relationship Statistics card
+	 */
+	private async renderRelationshipStatsCard(container: HTMLElement, service: RelationshipService): Promise<void> {
+		const card = this.createCard({
+			title: 'Statistics',
+			icon: 'bar-chart'
+		});
+		const content = card.querySelector('.crc-card__content') as HTMLElement;
+
+		try {
+			const stats = await service.getStats();
+
+			if (stats.totalDefined === 0) {
+				content.createEl('p', {
+					cls: 'crc-text-muted',
+					text: 'No relationship statistics available yet.'
+				});
+			} else {
+				// By Type
+				const byTypeSection = content.createDiv({ cls: 'crc-stats-section' });
+				byTypeSection.createEl('h4', { text: 'By type', cls: 'crc-section-subtitle' });
+
+				const typeList = byTypeSection.createDiv({ cls: 'crc-stats-list' });
+				const sortedTypes = Object.entries(stats.byType)
+					.sort((a, b) => b[1] - a[1])
+					.slice(0, 10);
+
+				for (const [typeId, count] of sortedTypes) {
+					const typeDef = service.getRelationshipType(typeId);
+					const item = typeList.createDiv({ cls: 'crc-stats-item' });
+
+					const swatch = item.createSpan({ cls: 'crc-stats-swatch' });
+					swatch.style.backgroundColor = typeDef?.color || '#666';
+
+					item.createSpan({ text: typeDef?.name || typeId, cls: 'crc-stats-label' });
+					item.createSpan({ text: count.toString(), cls: 'crc-stats-value' });
+				}
+
+				// By Category
+				const byCatSection = content.createDiv({ cls: 'crc-stats-section' });
+				byCatSection.createEl('h4', { text: 'By category', cls: 'crc-section-subtitle' });
+
+				const catList = byCatSection.createDiv({ cls: 'crc-stats-list' });
+				for (const [cat, count] of Object.entries(stats.byCategory)) {
+					if (count > 0) {
+						const item = catList.createDiv({ cls: 'crc-stats-item' });
+						item.createSpan({
+							text: RELATIONSHIP_CATEGORY_NAMES[cat as RelationshipCategory],
+							cls: 'crc-stats-label'
+						});
+						item.createSpan({ text: count.toString(), cls: 'crc-stats-value' });
+					}
+				}
+			}
+		} catch (error) {
+			content.createEl('p', {
+				cls: 'crc-error',
+				text: `Failed to load statistics: ${getErrorMessage(error)}`
+			});
+		}
+
+		container.appendChild(card);
+	}
+
+	/**
+	 * Get contrasting text color for a background color
+	 */
+	private getContrastColor(hexColor: string): string {
+		// Remove # if present
+		const hex = hexColor.replace('#', '');
+
+		// Convert to RGB
+		const r = parseInt(hex.substring(0, 2), 16);
+		const g = parseInt(hex.substring(2, 4), 16);
+		const b = parseInt(hex.substring(4, 6), 16);
+
+		// Calculate luminance
+		const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+		return luminance > 0.5 ? '#000000' : '#ffffff';
+	}
+
+	// ==========================================================================
+	// IMPORT/EXPORT TAB
+	// ==========================================================================
+
 	/**
 	 * State for Import/Export tab
 	 */
@@ -6302,6 +6685,135 @@ export class ControlCenterModal extends Modal {
 		this.renderExportContent(exportContentContainer);
 
 		container.appendChild(exportCard);
+
+		// === STAGING AREA CARD ===
+		// Only show if staging folder is configured
+		if (this.plugin.settings.stagingFolder) {
+			this.renderStagingAreaCard(container);
+		}
+	}
+
+	/**
+	 * Render the staging area card within Import/Export tab
+	 */
+	private renderStagingAreaCard(container: HTMLElement): void {
+		const settings = this.plugin.settings;
+		const stagingService = new StagingService(this.app, settings);
+		const folderFilter = new FolderFilterService(settings);
+		const crossImportService = new CrossImportDetectionService(
+			this.app,
+			settings,
+			folderFilter,
+			stagingService
+		);
+
+		const stats = stagingService.getStagingStats();
+		const subfolders = stagingService.getStagingSubfolders();
+
+		const stagingCard = this.createCard({
+			title: 'Staging area',
+			icon: 'package',
+			subtitle: stats.totalPeople > 0
+				? `${stats.totalPeople} people in ${stats.subfolderCount} import(s)`
+				: 'No data in staging'
+		});
+		const stagingContent = stagingCard.querySelector('.crc-card__content') as HTMLElement;
+
+		if (stats.totalPeople === 0) {
+			stagingContent.createEl('p', {
+				text: 'Import data to your staging folder to review it here before promoting to your main tree.',
+				cls: 'crc-text-muted'
+			});
+		} else {
+			// Staging folder path info
+			const infoEl = stagingContent.createDiv({ cls: 'crc-staging-info crc-mb-4' });
+			infoEl.createEl('span', {
+				text: `Staging folder: ${settings.stagingFolder}`,
+				cls: 'crc-text-muted'
+			});
+
+			// Render subfolders list
+			const subfoldersContainer = stagingContent.createDiv({ cls: 'crc-staging-list' });
+
+			if (subfolders.length === 0) {
+				// Files are directly in staging folder
+				this.renderStagingRootFiles(subfoldersContainer, stagingService, crossImportService);
+			} else {
+				// Render each subfolder
+				for (const subfolder of subfolders) {
+					this.renderStagingSubfolder(subfoldersContainer, subfolder, stagingService, crossImportService);
+				}
+			}
+
+			// Bulk actions section
+			const actionsSection = stagingContent.createDiv({ cls: 'crc-staging-actions crc-mt-4' });
+			actionsSection.createEl('h4', {
+				text: 'Bulk actions',
+				cls: 'crc-staging-actions-header'
+			});
+
+			// Check all for duplicates
+			new Setting(actionsSection)
+				.setName('Check all for duplicates')
+				.setDesc('Scan all staging data against your main tree')
+				.addButton(btn => btn
+					.setButtonText('Check all')
+					.onClick(() => {
+						this.runCrossImportCheck(crossImportService);
+					})
+				);
+
+			// Promote all
+			new Setting(actionsSection)
+				.setName('Promote all to main tree')
+				.setDesc('Move all staging data to your main people folder (skips duplicates)')
+				.addButton(btn => btn
+					.setButtonText('Promote all')
+					.setWarning()
+					.onClick(() => {
+						void this.promoteAllStagingAndRefresh(stagingService, crossImportService, container);
+					})
+				);
+
+			// Delete all
+			new Setting(actionsSection)
+				.setName('Delete all staging data')
+				.setDesc('Permanently remove all data from staging')
+				.addButton(btn => btn
+					.setButtonText('Delete all')
+					.setWarning()
+					.onClick(() => {
+						void this.deleteAllStagingAndRefresh(stagingService, container);
+					})
+				);
+		}
+
+		container.appendChild(stagingCard);
+	}
+
+	/**
+	 * Promote all staging and refresh Import/Export tab
+	 */
+	private async promoteAllStagingAndRefresh(
+		stagingService: StagingService,
+		crossImportService: CrossImportDetectionService,
+		_container: HTMLElement
+	): Promise<void> {
+		await this.promoteAllStaging(stagingService, crossImportService);
+		// Refresh the Import/Export tab
+		this.showImportExportTab();
+	}
+
+	/**
+	 * Delete all staging and refresh Import/Export tab
+	 */
+	private async deleteAllStagingAndRefresh(
+		stagingService: StagingService,
+		_container: HTMLElement
+	): Promise<void> {
+		await this.deleteAllStaging(stagingService);
+		// Refresh the Import/Export tab
+		this.showImportExportTab();
 	}
 
 	/**
@@ -8466,183 +8978,8 @@ export class ControlCenterModal extends Modal {
 	}
 
 	// ==========================================================================
-	// STAGING TAB
+	// STAGING HELPERS (used by Import/Export tab)
 	// ==========================================================================
-
-	/**
-	 * Show Staging tab - manage imported data before promoting to main tree
-	 */
-	private showStagingTab(): void {
-		const container = this.contentContainer;
-		const settings = this.plugin.settings;
-
-		// Check if staging is configured
-		if (!settings.stagingFolder) {
-			this.showStagingNotConfigured(container);
-			return;
-		}
-
-		// Create staging service instances
-		const folderFilter = new FolderFilterService(settings);
-		const stagingService = new StagingService(this.app, settings);
-		const crossImportService = new CrossImportDetectionService(
-			this.app,
-			settings,
-			folderFilter,
-			stagingService
-		);
-
-		// Get staging data
-		const subfolders = stagingService.getStagingSubfolders();
-		const stats = stagingService.getStagingStats();
-
-		// Header card with summary
-		const headerCard = this.createCard({
-			title: 'Staging area',
-			icon: 'package',
-			subtitle: `${stats.totalPeople} people in ${stats.subfolderCount} import(s)`
-		});
-
-		const headerContent = headerCard.querySelector('.crc-card__content') as HTMLElement;
-
-		if (stats.totalPeople === 0) {
-			headerContent.createEl('p', {
-				text: 'No data in staging. Import GEDCOM or CSV files to the staging folder to review them here before promoting to your main tree.',
-				cls: 'crc-text-muted'
-			});
-
-			// Quick link to import tabs
-			const linkContainer = headerContent.createDiv({ cls: 'crc-staging-links' });
-			const importLink = linkContainer.createEl('button', {
-				text: 'Go to Import/Export',
-				cls: 'mod-cta'
-			});
-			importLink.addEventListener('click', () => this.switchTab('import-export'));
-		} else {
-			// Show staging folder info
-			const infoEl = headerContent.createDiv({ cls: 'crc-staging-info' });
-			infoEl.createEl('span', {
-				text: `Staging folder: ${settings.stagingFolder}`,
-				cls: 'crc-text-muted'
-			});
-		}
-
-		container.appendChild(headerCard);
-
-		// If no data, stop here
-		if (stats.totalPeople === 0) {
-			return;
-		}
-
-		// Subfolders card
-		const subfoldersCard = this.createCard({
-			title: 'Imports',
-			icon: 'folder'
-		});
-
-		const subfoldersContent = subfoldersCard.querySelector('.crc-card__content') as HTMLElement;
-
-		if (subfolders.length === 0) {
-			// Files are directly in staging folder, not in subfolders
-			this.renderStagingRootFiles(subfoldersContent, stagingService, crossImportService);
-		} else {
-			// Render each subfolder
-			for (const subfolder of subfolders) {
-				this.renderStagingSubfolder(subfoldersContent, subfolder, stagingService, crossImportService);
-			}
-		}
-
-		container.appendChild(subfoldersCard);
-
-		// Bulk actions card
-		const actionsCard = this.createCard({
-			title: 'Bulk actions',
-			icon: 'zap'
-		});
-
-		const actionsContent = actionsCard.querySelector('.crc-card__content') as HTMLElement;
-
-		// Check all for duplicates
-		new Setting(actionsContent)
-			.setName('Check all for duplicates')
-			.setDesc('Scan all staging data against your main tree')
-			.addButton(btn => btn
-				.setButtonText('Check all')
-				.onClick(() => {
-					this.runCrossImportCheck(crossImportService);
-				})
-			);
-
-		// Promote all (if no pending matches)
-		new Setting(actionsContent)
-			.setName('Promote all to main tree')
-			.setDesc('Move all staging data to your main people folder (skips duplicates)')
-			.addButton(btn => btn
-				.setButtonText('Promote all')
-				.setWarning()
-				.onClick(() => {
-					void this.promoteAllStaging(stagingService, crossImportService);
-				})
-			);
-
-		// Delete all staging
-		new Setting(actionsContent)
-			.setName('Delete all staging data')
-			.setDesc('Permanently remove all data from staging')
-			.addButton(btn => btn
-				.setButtonText('Delete all')
-				.setWarning()
-				.onClick(() => {
-					void this.deleteAllStaging(stagingService);
-				})
-			);
-
-		container.appendChild(actionsCard);
-	}
-
-	/**
-	 * Show message when staging is not configured
-	 */
-	private showStagingNotConfigured(container: HTMLElement): void {
-		const card = this.createCard({
-			title: 'Staging not configured',
-			icon: 'package'
-		});
-
-		const content = card.querySelector('.crc-card__content') as HTMLElement;
-
-		content.createEl('p', {
-			text: 'A staging folder allows you to import GEDCOM or CSV data for review before adding it to your main family tree.',
-			cls: 'crc-text-muted'
-		});
-
-		content.createEl('p', {
-			text: 'This helps you:',
-			cls: 'crc-staging-benefits-intro'
-		});
-
-		const benefitsList = content.createEl('ul', { cls: 'crc-staging-benefits' });
-		benefitsList.createEl('li', { text: 'Review imported data before it affects your tree' });
-		benefitsList.createEl('li', { text: 'Check for duplicates against existing people' });
-		benefitsList.createEl('li', { text: 'Promote clean data or discard unwanted imports' });
-
-		new Setting(content)
-			.setName('Configure staging folder')
-			.setDesc('Set a folder for staging imported data')
-			.addButton(btn => btn
-				.setButtonText('Open settings')
-				.setCta()
-				.onClick(() => {
-					// Open plugin settings
-					// @ts-expect-error - Obsidian API
-					this.app.setting.open();
-					// @ts-expect-error - Obsidian API
-					this.app.setting.openTabById(this.plugin.manifest.id);
-				})
-			);
-
-		container.appendChild(card);
-	}
 
 	/**
 	 * Render files directly in staging root (no subfolders)
@@ -8816,7 +9153,7 @@ export class ControlCenterModal extends Modal {
 				}
 				new Notice(message);
 				// Refresh the tab
-				this.showStagingTab();
+				this.showImportExportTab();
 			} else {
 				new Notice(`Promotion failed: ${result.errors.join(', ')}`);
 			}
@@ -8854,7 +9191,7 @@ export class ControlCenterModal extends Modal {
 				}
 				new Notice(message);
 				// Refresh the tab
-				this.showStagingTab();
+				this.showImportExportTab();
 			} else {
 				new Notice(`Promotion failed: ${result.errors.join(', ')}`);
 			}
@@ -8890,7 +9227,7 @@ export class ControlCenterModal extends Modal {
 			if (result.success) {
 				new Notice(`Deleted ${result.filesDeleted} files from staging`);
 				// Refresh the tab
-				this.showStagingTab();
+				this.showImportExportTab();
 			} else {
 				new Notice(`Delete failed: ${result.error}`);
 			}
@@ -8923,7 +9260,7 @@ export class ControlCenterModal extends Modal {
 			if (result.success) {
 				new Notice(`Deleted ${result.filesDeleted} files`);
 				// Refresh the tab
-				this.showStagingTab();
+				this.showImportExportTab();
 			} else {
 				new Notice(`Delete failed: ${result.error}`);
 			}
@@ -8942,208 +9279,6 @@ export class ControlCenterModal extends Modal {
 			const modal = new ConfirmationModal(this.app, title, message, resolve);
 			modal.open();
 		});
-	}
-
-	/**
-	 * Show Advanced tab
-	 */
-	private showAdvancedTab(): void {
-		const container = this.contentContainer;
-
-		// Logging Card
-		const loggingCard = this.createCard({
-			title: 'Logging',
-			icon: 'file-text'
-		});
-
-		const loggingContent = loggingCard.querySelector('.crc-card__content') as HTMLElement;
-
-		// Log Level Selector
-		new Setting(loggingContent)
-			.setName('Log level')
-			.setDesc('Controls console output verbosity. Logs are always collected for export.')
-			.addDropdown(dropdown => {
-				const logLevels: LogLevel[] = ['off', 'error', 'warn', 'info', 'debug'];
-				logLevels.forEach(level => {
-					dropdown.addOption(level, level.toUpperCase());
-				});
-				dropdown
-					.setValue(LoggerFactory.getLogLevel())
-					.onChange((value) => {
-						const newLevel = value as LogLevel;
-						LoggerFactory.setLogLevel(newLevel);
-						logger.info('settings', 'Log level changed from Control Center', {
-							level: newLevel
-						});
-						new Notice(`Log level set to ${newLevel.toUpperCase()}`);
-					});
-			});
-
-		// Export Path Setting (vault-relative folder)
-		new Setting(loggingContent)
-			.setName('Export folder')
-			.setDesc('Vault folder for exported log files (e.g., ".canvas-roots/logs")')
-			.addText(text => {
-				text.setPlaceholder('.canvas-roots/logs');
-				text.setValue(this.plugin.settings.logExportPath);
-				text.onChange(async (value) => {
-					// Normalize the path (remove leading/trailing slashes)
-					const normalized = value.replace(/^\/+|\/+$/g, '');
-					this.plugin.settings.logExportPath = normalized;
-					await this.plugin.saveSettings();
-					logger.info('settings', 'Log export folder changed', { folder: normalized });
-				});
-			});
-
-		// Obfuscation Toggle
-		new Setting(loggingContent)
-			.setName('Obfuscate log exports')
-			.setDesc('Replace personally identifiable information (names, dates, paths) with placeholders when exporting logs. Recommended for sharing logs publicly.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.obfuscateLogExports)
-				.onChange(async (value) => {
-					this.plugin.settings.obfuscateLogExports = value;
-					await this.plugin.saveSettings();
-					logger.info('settings', 'Log export obfuscation changed', { enabled: value });
-					if (value) {
-						new Notice('Log exports will be obfuscated (secure)');
-					} else {
-						new Notice('⚠️ Warning: Log exports will contain unobfuscated personal information!', 5000);
-					}
-				}));
-
-		// Log Statistics
-		const statsGroup = loggingContent.createDiv({ cls: 'crc-form-group crc-mt-4' });
-		const logs = LoggerFactory.getLogs();
-		const logCount = logs.length;
-		const errorCount = logs.filter(l => l.level === 'error').length;
-		const warnCount = logs.filter(l => l.level === 'warn').length;
-
-		statsGroup.createEl('p', {
-			text: `Total logs collected: ${logCount}`,
-			cls: 'crc-text-muted'
-		});
-		statsGroup.createEl('p', {
-			text: `Errors: ${errorCount} | Warnings: ${warnCount}`,
-			cls: 'crc-text-muted'
-		});
-
-		// Export and Clear Buttons
-		const buttonGroup = loggingContent.createDiv({
-			cls: 'crc-form-group crc-mt-4'
-		});
-		buttonGroup.setAttr('style', 'display: flex; gap: 8px;');
-
-		const exportButton = buttonGroup.createEl('button', {
-			text: 'Export logs',
-			cls: 'crc-btn crc-btn--primary'
-		});
-
-		exportButton.addEventListener('click', () => {
-			void this.handleExportLogs();
-		});
-
-		const clearButton = buttonGroup.createEl('button', {
-			text: 'Clear logs',
-			cls: 'crc-btn crc-btn--secondary'
-		});
-
-		clearButton.addEventListener('click', () => {
-			logger.info('maintenance', 'Logs cleared from Control Center');
-			LoggerFactory.clearLogs();
-			new Notice('Logs cleared');
-			this.showTab('advanced'); // Refresh the tab
-		});
-
-		container.appendChild(loggingCard);
-
-		// Data Tools Card
-		const toolsCard = this.createCard({
-			title: 'Data tools',
-			icon: 'file-code'
-		});
-
-		const toolsContent = toolsCard.querySelector('.crc-card__content') as HTMLElement;
-
-		// Create Base template button
-		const createBaseBtn = toolsContent.createEl('button', {
-			cls: 'crc-btn crc-btn--primary crc-btn--block',
-			text: 'Create base template'
-		});
-		createBaseBtn.addEventListener('click', () => {
-			this.close();
-			this.app.commands.executeCommandById('canvas-roots:create-base-template');
-		});
-		toolsContent.createEl('p', {
-			cls: 'crc-form-help',
-			text: 'Create a ready-to-use Obsidian Bases template for managing family members in table view'
-		});
-
-		container.appendChild(toolsCard);
-	}
-
-	/**
-	 * Export logs to a file in the vault
-	 */
-	private async handleExportLogs(): Promise<void> {
-		try {
-			logger.info('export', 'Exporting logs from Control Center');
-
-			const now = new Date();
-			const pad = (n: number) => n.toString().padStart(2, '0');
-			const obfuscated = this.plugin.settings.obfuscateLogExports ? '-obfuscated' : '';
-			const filename = `canvas-roots-logs${obfuscated}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.json`;
-
-			let logs = LoggerFactory.getLogs();
-
-			// Obfuscate logs if setting is enabled (secure by default)
-			if (this.plugin.settings.obfuscateLogExports) {
-				const { obfuscateLogs } = await import('../core/logging');
-				logs = obfuscateLogs(logs);
-				logger.info('export', 'Logs obfuscated for PII protection', { logCount: logs.length });
-			} else {
-				// Warn user about exporting unobfuscated logs
-				new Notice('⚠️ Warning: Exporting logs WITHOUT obfuscation may expose personal information!', 5000);
-			}
-
-			// Safely stringify logs handling circular references
-			const seen = new WeakSet();
-			const logData = JSON.stringify(logs, (_key, value) => {
-				if (typeof value === 'object' && value !== null) {
-					if (seen.has(value)) {
-						return '[Circular]';
-					}
-					seen.add(value);
-				}
-				return value;
-			}, 2);
-
-			// Get export folder (vault-relative path)
-			const exportFolder = this.plugin.settings.logExportPath || '.canvas-roots/logs';
-			const exportPath = `${exportFolder}/${filename}`;
-
-			// Ensure the export folder exists
-			const folderExists = await this.app.vault.adapter.exists(exportFolder);
-			if (!folderExists) {
-				await this.app.vault.createFolder(exportFolder);
-				logger.info('export', 'Created log export folder', { folder: exportFolder });
-			}
-
-			// Write the log file using Obsidian's vault adapter
-			await this.app.vault.adapter.write(exportPath, logData);
-
-			logger.info('export', 'Logs exported successfully', {
-				filename,
-				path: exportPath,
-				logCount: logs.length
-			});
-
-			new Notice(`Logs exported to ${exportPath}`);
-		} catch (error: unknown) {
-			const message = error instanceof Error ? error.message : String(error);
-			logger.error('export', 'Failed to export logs', error);
-			new Notice(`Error exporting logs: ${message}`);
-		}
 	}
 
 	/**
@@ -10107,6 +10242,22 @@ export class ControlCenterModal extends Modal {
 				.setWarning()
 				.onClick(() => {
 					this.runBatchOperation('orphans', selectedScope, selectedFolder);
+				})
+			);
+
+		// Data Tools section
+		const toolsSection = container.createDiv({ cls: 'crc-section' });
+		toolsSection.createEl('h3', { text: 'Data tools' });
+
+		new Setting(toolsSection)
+			.setName('Create base template')
+			.setDesc('Create a ready-to-use Obsidian Bases template for managing family members in table view')
+			.addButton(btn => btn
+				.setButtonText('Create template')
+				.setCta()
+				.onClick(() => {
+					this.close();
+					this.app.commands.executeCommandById('canvas-roots:create-base-template');
 				})
 			);
 	}

@@ -85,7 +85,11 @@ export interface FamilyTree {
 export interface FamilyEdge {
 	from: string; // cr_id
 	to: string;   // cr_id
-	type: 'parent' | 'spouse' | 'child';
+	type: 'parent' | 'spouse' | 'child' | 'relationship';
+	/** For custom relationships, the relationship type ID */
+	relationshipTypeId?: string;
+	/** Display label for the relationship */
+	relationshipLabel?: string;
 }
 
 /**

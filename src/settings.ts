@@ -1,6 +1,9 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import CanvasRootsPlugin from '../main';
 import type { LogLevel } from './core/logging';
+import type { RelationshipTypeDefinition } from './relationships';
+import type { FictionalDateSystem } from './dates';
+import type { OrganizationTypeDefinition } from './organizations';
 
 export interface RecentTreeInfo {
 	canvasPath: string;
@@ -125,6 +128,17 @@ export interface CanvasRootsSettings {
 	// Place category defaults
 	defaultPlaceCategory: PlaceCategory;
 	placeCategoryRules: PlaceCategoryRule[];
+	// Custom relationship types
+	customRelationshipTypes: RelationshipTypeDefinition[];
+	showBuiltInRelationshipTypes: boolean;
+	// Fictional date systems
+	enableFictionalDates: boolean;
+	fictionalDateSystems: FictionalDateSystem[];
+	showBuiltInDateSystems: boolean;
+	// Organization settings
+	organizationsFolder: string;
+	customOrganizationTypes: OrganizationTypeDefinition[];
+	showBuiltInOrganizationTypes: boolean;
 }
 
 /**
@@ -229,7 +243,18 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	enableStagingIsolation: true,  // When staging folder is set, auto-exclude from normal operations
 	// Place category defaults
 	defaultPlaceCategory: 'real',  // Default place category when creating new places
-	placeCategoryRules: []         // Folder/collection-based category rules
+	placeCategoryRules: [],        // Folder/collection-based category rules
+	// Custom relationship types
+	customRelationshipTypes: [],   // User-defined relationship types (built-ins are always available)
+	showBuiltInRelationshipTypes: true,  // Whether to show built-in types in UI
+	// Fictional date systems
+	enableFictionalDates: true,    // Enable fictional date parsing and display
+	fictionalDateSystems: [],      // User-defined date systems (built-ins are always available)
+	showBuiltInDateSystems: true,  // Whether to show built-in date systems (Middle-earth, Westeros, etc.)
+	// Organization settings
+	organizationsFolder: 'Canvas Roots/Organizations',  // Default folder for organization notes
+	customOrganizationTypes: [],   // User-defined organization types (built-ins are always available)
+	showBuiltInOrganizationTypes: true  // Whether to show built-in organization types in UI
 };
 
 export class CanvasRootsSettingTab extends PluginSettingTab {
@@ -578,6 +603,29 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					// Update logger immediately
 					const { LoggerFactory } = await import('./core/logging');
 					LoggerFactory.setLogLevel(value);
+				}));
+
+		new Setting(containerEl)
+			.setName('Log export folder')
+			.setDesc('Vault folder for exported log files (e.g., ".canvas-roots/logs")')
+			.addText(text => text
+				.setPlaceholder('.canvas-roots/logs')
+				.setValue(this.plugin.settings.logExportPath)
+				.onChange(async (value) => {
+					// Normalize the path (remove leading/trailing slashes)
+					const normalized = value.replace(/^\/+|\/+$/g, '');
+					this.plugin.settings.logExportPath = normalized;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Obfuscate log exports')
+			.setDesc('Replace personally identifiable information (names, dates, paths) with placeholders when exporting logs. Recommended for sharing logs publicly.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.obfuscateLogExports)
+				.onChange(async (value) => {
+					this.plugin.settings.obfuscateLogExports = value;
+					await this.plugin.saveSettings();
 				}));
 
 		// Privacy

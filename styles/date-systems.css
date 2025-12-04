@@ -1,0 +1,286 @@
+/**
+ * Fictional Date Systems Styles
+ * Date system management UI in Control Center
+ */
+
+/* Date systems list container */
+.cr-date-systems-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.cr-date-systems-section {
+  margin-bottom: 8px;
+}
+
+/* Built-in systems table */
+.cr-date-systems-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  margin-top: 8px;
+}
+
+.cr-date-systems-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cr-date-systems-table td {
+  padding: 8px 10px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--background-modifier-border-hover);
+}
+
+.cr-date-systems-table tbody tr:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.cr-date-systems-table__actions {
+  width: 40px;
+  text-align: center;
+}
+
+/* Individual date system item */
+.cr-date-system-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: var(--radius-s);
+  background-color: var(--background-secondary);
+  transition: background-color 0.15s ease;
+}
+
+.cr-date-system-item:hover {
+  background-color: var(--background-modifier-hover);
+}
+
+.cr-date-system-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-date-system-item-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+}
+
+.cr-date-system-item-name {
+  font-weight: 500;
+  color: var(--text-normal);
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cr-date-system-item-eras,
+.cr-date-system-item-universe {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  padding-left: 28px; /* Align with name (icon width + gap) */
+}
+
+.cr-date-system-item-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+/* Add button container */
+.cr-date-systems-add {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+/* Test parsing section */
+.cr-date-test-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.cr-date-test-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  font-size: 0.95em;
+}
+
+.cr-date-test-input:focus {
+  outline: none;
+  border-color: var(--interactive-accent);
+}
+
+.cr-date-test-result {
+  padding: 8px 12px;
+  border-radius: var(--radius-s);
+  font-size: 0.9em;
+  color: var(--text-muted);
+  background-color: var(--background-secondary);
+}
+
+.cr-date-test-result--success {
+  color: var(--text-success);
+  background-color: var(--background-modifier-success);
+}
+
+.cr-date-test-result--error {
+  color: var(--text-error);
+  background-color: var(--background-modifier-error);
+}
+
+.cr-date-test-result-detail {
+  font-size: 0.85em;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Modal styles */
+.cr-date-system-modal .modal-content {
+  padding: 0;
+}
+
+.cr-date-system-form {
+  padding: 0 16px;
+}
+
+/* Eras table */
+.cr-eras-container {
+  margin-bottom: 12px;
+}
+
+.cr-eras-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.cr-eras-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-weight: 500;
+  font-size: 0.85em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cr-eras-table td {
+  padding: 6px 8px;
+  vertical-align: middle;
+}
+
+.cr-eras-table tr:nth-child(even) {
+  background-color: var(--background-secondary-alt);
+}
+
+.cr-era-input {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  font-size: 0.9em;
+}
+
+.cr-era-input--short {
+  width: 80px;
+}
+
+.cr-era-select {
+  padding: 4px 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  background-color: var(--background-primary);
+  font-size: 0.9em;
+}
+
+.cr-add-era-btn {
+  margin-top: 8px;
+  padding: 6px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+/* Button icon styles */
+.cr-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-s);
+  background-color: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.cr-btn-icon:hover {
+  background-color: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.cr-btn-icon--danger:hover {
+  background-color: var(--background-modifier-error);
+  color: var(--text-error);
+}
+
+.cr-btn-icon--small {
+  width: 24px;
+  height: 24px;
+}
+
+/* Empty state */
+.cr-empty-state {
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  padding: 16px;
+}
+
+/* Subsection heading */
+.cr-subsection-heading {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin: 16px 0 8px 0;
+  padding: 0;
+}
+
+/* Badge styles */
+.cr-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-s);
+  font-size: 0.7em;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cr-badge--muted {
+  background-color: var(--background-modifier-border);
+  color: var(--text-muted);
+}
