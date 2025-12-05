@@ -1,12 +1,12 @@
 /**
  * Template Snippets Modal
- * Provides copyable Templater-compatible templates for person and place notes
+ * Provides copyable Templater-compatible templates for Canvas Roots note types
  */
 
 import { App, Modal, Notice } from 'obsidian';
 import { createLucideIcon } from './lucide-icons';
 
-type TemplateType = 'person' | 'place';
+type TemplateType = 'person' | 'place' | 'source' | 'organization' | 'proof';
 
 interface TemplateSnippet {
 	name: string;
@@ -47,32 +47,35 @@ export class TemplateSnippetsModal extends Modal {
 		// Tab selector
 		const tabContainer = contentEl.createDiv({ cls: 'crc-template-tabs' });
 
-		const personTab = tabContainer.createEl('button', {
-			text: 'Person notes',
-			cls: 'crc-template-tab crc-template-tab--active'
-		});
-		const placeTab = tabContainer.createEl('button', {
-			text: 'Place notes',
-			cls: 'crc-template-tab'
-		});
+		const tabs: Array<{ type: TemplateType; label: string; el?: HTMLButtonElement }> = [
+			{ type: 'person', label: 'Person' },
+			{ type: 'place', label: 'Place' },
+			{ type: 'source', label: 'Source' },
+			{ type: 'organization', label: 'Organization' },
+			{ type: 'proof', label: 'Proof summary' }
+		];
+
+		for (const tab of tabs) {
+			tab.el = tabContainer.createEl('button', {
+				text: tab.label,
+				cls: `crc-template-tab${tab.type === 'person' ? ' crc-template-tab--active' : ''}`
+			});
+		}
 
 		// Template content container
 		const templateContainer = contentEl.createDiv({ cls: 'crc-template-container' });
 
 		// Tab switching
-		personTab.addEventListener('click', () => {
-			this.selectedType = 'person';
-			personTab.addClass('crc-template-tab--active');
-			placeTab.removeClass('crc-template-tab--active');
-			this.renderTemplates(templateContainer);
-		});
-
-		placeTab.addEventListener('click', () => {
-			this.selectedType = 'place';
-			placeTab.addClass('crc-template-tab--active');
-			personTab.removeClass('crc-template-tab--active');
-			this.renderTemplates(templateContainer);
-		});
+		for (const tab of tabs) {
+			tab.el?.addEventListener('click', () => {
+				this.selectedType = tab.type;
+				for (const t of tabs) {
+					t.el?.removeClass('crc-template-tab--active');
+				}
+				tab.el?.addClass('crc-template-tab--active');
+				this.renderTemplates(templateContainer);
+			});
+		}
 
 		// Initial render
 		this.renderTemplates(templateContainer);
@@ -116,9 +119,24 @@ export class TemplateSnippetsModal extends Modal {
 	private renderTemplates(container: HTMLElement): void {
 		container.empty();
 
-		const templates = this.selectedType === 'person'
-			? this.getPersonTemplates()
-			: this.getPlaceTemplates();
+		let templates: TemplateSnippet[];
+		switch (this.selectedType) {
+			case 'person':
+				templates = this.getPersonTemplates();
+				break;
+			case 'place':
+				templates = this.getPlaceTemplates();
+				break;
+			case 'source':
+				templates = this.getSourceTemplates();
+				break;
+			case 'organization':
+				templates = this.getOrganizationTemplates();
+				break;
+			case 'proof':
+				templates = this.getProofTemplates();
+				break;
+		}
 
 		for (const template of templates) {
 			const templateCard = container.createDiv({ cls: 'crc-template-card' });
@@ -394,6 +412,380 @@ collection:
 # <% tp.file.title %>
 
 <% tp.file.cursor() %>`
+			}
+		];
+	}
+
+	/**
+	 * Get source note templates
+	 */
+	private getSourceTemplates(): TemplateSnippet[] {
+		return [
+			{
+				name: 'Basic source note',
+				description: 'Minimal template for documenting a source',
+				template: `---
+type: source
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+source_type: <% tp.system.suggester(["Census", "Vital record", "Church record", "Newspaper", "Photo", "Correspondence", "Military", "Court record", "Land deed", "Probate", "Immigration", "Obituary", "Oral history"], ["census", "vital_record", "church_record", "newspaper", "photo", "correspondence", "military", "court_record", "land_deed", "probate", "immigration", "obituary", "oral_history"]) %>
+source_date:
+confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+---
+
+# <% tp.file.title %>
+
+<% tp.file.cursor() %>`
+			},
+			{
+				name: 'Census source',
+				description: 'Template for census records',
+				template: `---
+type: source
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+source_type: census
+source_date: <% tp.system.prompt("Census date (YYYY-MM-DD)?", "", false) %>
+source_date_accessed: <% tp.date.now("YYYY-MM-DD") %>
+source_repository: <% tp.system.suggester(["Ancestry.com", "FamilySearch", "FindMyPast", "MyHeritage", "National Archives", "Other"], ["Ancestry.com", "FamilySearch", "FindMyPast", "MyHeritage", "National Archives", ""]) %>
+collection:
+location:
+confidence: high
+source_quality: derivative
+media:
+---
+
+# <% tp.file.title %>
+
+## Census information
+
+| Field | Value |
+|-------|-------|
+| Census year |  |
+| State/country |  |
+| County |  |
+| Township/city |  |
+| Enumeration district |  |
+| Sheet/page |  |
+
+## Household members
+
+| Name | Relation | Age | Birthplace | Occupation |
+|------|----------|-----|------------|------------|
+|  |  |  |  |  |
+
+## Transcription
+
+<% tp.file.cursor() %>
+
+## Research notes
+
+`
+			},
+			{
+				name: 'Vital record source',
+				description: 'Template for birth, death, or marriage certificates',
+				template: `---
+type: source
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+source_type: vital_record
+source_date: <% tp.system.prompt("Event date (YYYY-MM-DD)?", "", false) %>
+source_repository:
+location:
+confidence: high
+source_quality: primary
+media:
+---
+
+# <% tp.file.title %>
+
+## Document information
+
+| Field | Value |
+|-------|-------|
+| Event type | <% tp.system.suggester(["Birth", "Death", "Marriage"], ["Birth", "Death", "Marriage"]) %> |
+| Event date |  |
+| Event place |  |
+| Certificate number |  |
+
+## People named
+
+-
+
+## Transcription
+
+<% tp.file.cursor() %>`
+			},
+			{
+				name: 'Full source note',
+				description: 'Complete template with all source fields',
+				template: `---
+type: source
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+source_type: <% tp.system.suggester(["Census", "Vital record", "Church record", "Newspaper", "Photo", "Correspondence", "Military", "Court record", "Land deed", "Probate", "Immigration", "Obituary", "Oral history", "Custom"], ["census", "vital_record", "church_record", "newspaper", "photo", "correspondence", "military", "court_record", "land_deed", "probate", "immigration", "obituary", "oral_history", "custom"]) %>
+source_date:
+source_date_accessed: <% tp.date.now("YYYY-MM-DD") %>
+source_repository:
+source_repository_url:
+collection:
+location:
+confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+source_quality: <% tp.system.suggester(["Primary (original record)", "Secondary (later account)", "Derivative (copy/transcription)"], ["primary", "secondary", "derivative"]) %>
+media:
+media_2:
+citation_override:
+---
+
+# <% tp.file.title %>
+
+## Source information
+
+<% tp.file.cursor() %>
+
+## Transcription
+
+## Research notes
+
+`
+			}
+		];
+	}
+
+	/**
+	 * Get organization note templates
+	 */
+	private getOrganizationTemplates(): TemplateSnippet[] {
+		return [
+			{
+				name: 'Basic organization note',
+				description: 'Minimal template for any organization type',
+				template: `---
+type: organization
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+name: "<% tp.file.title %>"
+org_type: <% tp.system.suggester(["Noble house", "Guild", "Corporation", "Military", "Religious", "Political", "Educational", "Custom"], ["noble_house", "guild", "corporation", "military", "religious", "political", "educational", "custom"]) %>
+---
+
+# <% tp.file.title %>
+
+<% tp.file.cursor() %>`
+			},
+			{
+				name: 'Noble house',
+				description: 'Template for feudal houses and dynasties',
+				template: `---
+type: organization
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+name: "<% tp.file.title %>"
+org_type: noble_house
+parent_org:
+founded:
+dissolved:
+motto:
+seat:
+universe: "<% tp.system.prompt("Universe/World name?", "", false) %>"
+---
+
+# <% tp.file.title %>
+
+## History
+
+<% tp.file.cursor() %>
+
+## Notable members
+
+## Heraldry
+
+`
+			},
+			{
+				name: 'Military unit',
+				description: 'Template for armies, regiments, and military organizations',
+				template: `---
+type: organization
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+name: "<% tp.file.title %>"
+org_type: military
+parent_org:
+founded:
+dissolved:
+seat:
+universe:
+---
+
+# <% tp.file.title %>
+
+## Overview
+
+<% tp.file.cursor() %>
+
+## History
+
+## Campaigns
+
+## Notable members
+
+`
+			},
+			{
+				name: 'Full organization note',
+				description: 'Complete template with all organization fields',
+				template: `---
+type: organization
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+name: "<% tp.file.title %>"
+org_type: <% tp.system.suggester(["Noble house", "Guild", "Corporation", "Military", "Religious", "Political", "Educational", "Custom"], ["noble_house", "guild", "corporation", "military", "religious", "political", "educational", "custom"]) %>
+parent_org:
+founded: <% tp.system.prompt("Founded date?", "", false) %>
+dissolved:
+motto:
+seat:
+universe:
+collection:
+---
+
+# <% tp.file.title %>
+
+## Overview
+
+<% tp.file.cursor() %>
+
+## History
+
+## Notable members
+
+## See also
+
+`
+			}
+		];
+	}
+
+	/**
+	 * Get proof summary note templates
+	 */
+	private getProofTemplates(): TemplateSnippet[] {
+		return [
+			{
+				name: 'Basic proof summary',
+				description: 'Minimal template for documenting a genealogical conclusion',
+				template: `---
+type: proof_summary
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+subject_person:
+fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse", "Occupation", "Residence"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse", "occupation", "residence"]) %>
+conclusion:
+status: draft
+confidence: possible
+evidence: []
+---
+
+# <% tp.file.title %>
+
+## Conclusion
+
+<% tp.file.cursor() %>
+
+## Evidence analysis
+
+## Reasoning
+
+`
+			},
+			{
+				name: 'Proof summary with evidence',
+				description: 'Template with pre-structured evidence entries',
+				template: `---
+type: proof_summary
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+subject_person: "[[<% tp.system.prompt("Subject person note name?", "", false) %>]]"
+fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse", "Occupation", "Residence"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse", "occupation", "residence"]) %>
+conclusion: "<% tp.system.prompt("What is your conclusion?", "", false) %>"
+status: <% tp.system.suggester(["Draft", "Complete", "Needs review", "Conflicted"], ["draft", "complete", "needs_review", "conflicted"]) %>
+confidence: <% tp.system.suggester(["Proven", "Probable", "Possible", "Disproven"], ["proven", "probable", "possible", "disproven"]) %>
+date_written: <% tp.date.now("YYYY-MM-DD") %>
+evidence:
+  - source:
+    information:
+    supports: <% tp.system.suggester(["Strongly supports", "Moderately supports", "Weakly supports", "Conflicts with"], ["strongly", "moderately", "weakly", "conflicts"]) %>
+    notes:
+---
+
+# <% tp.file.title %>
+
+## Conclusion
+
+<% tp.file.cursor() %>
+
+## Evidence analysis
+
+### Source 1
+
+**Information:**
+
+**Assessment:**
+
+### Source 2
+
+**Information:**
+
+**Assessment:**
+
+## Reasoning
+
+## Resolution (if conflicted)
+
+`
+			},
+			{
+				name: 'Conflict resolution proof',
+				description: 'Template for documenting how conflicting evidence was resolved',
+				template: `---
+type: proof_summary
+cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
+title: "<% tp.file.title %>"
+subject_person:
+fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse"]) %>
+conclusion:
+status: conflicted
+confidence: possible
+date_written: <% tp.date.now("YYYY-MM-DD") %>
+evidence:
+  - source:
+    information:
+    supports: strongly
+    notes:
+  - source:
+    information:
+    supports: conflicts
+    notes:
+---
+
+# <% tp.file.title %>
+
+## The conflict
+
+Describe the conflicting evidence here.
+
+<% tp.file.cursor() %>
+
+## Evidence analysis
+
+### Supporting evidence
+
+### Conflicting evidence
+
+## Resolution
+
+Explain how you resolved the conflict and why you chose one conclusion over another.
+
+## Confidence assessment
+
+`
 			}
 		];
 	}
