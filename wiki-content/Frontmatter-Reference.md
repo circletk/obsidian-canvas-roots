@@ -246,7 +246,7 @@ Canvas Roots can generate genealogical reference numbers:
 
 ## Place Note Properties
 
-> **Status:** Phase 1 implemented. See [geographic-features-plan.md](../docs/planning/geographic-features-plan.md) for future enhancements.
+> **Status:** Complete. See [Geographic Features](Geographic-Features) for full documentation.
 
 ### Identity
 
