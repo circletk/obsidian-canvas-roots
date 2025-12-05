@@ -281,10 +281,10 @@ export class ValidationService {
 				: `"${condition.property}" is not set`;
 		}
 		if (condition.equals !== undefined) {
-			return `"${condition.property}" equals "${condition.equals}"`;
+			return `"${condition.property}" equals "${String(condition.equals)}"`;
 		}
 		if (condition.notEquals !== undefined) {
-			return `"${condition.property}" is not "${condition.notEquals}"`;
+			return `"${condition.property}" is not "${String(condition.notEquals)}"`;
 		}
 		return 'condition is met';
 	}
@@ -481,7 +481,7 @@ export class ValidationService {
 
 	/**
 	 * Evaluate a constraint expression against frontmatter
-	 * Uses a sandboxed evaluation for security
+	 * Uses a safe expression parser (no eval)
 	 */
 	private evaluateConstraint(
 		frontmatter: Record<string, unknown>,
@@ -491,9 +491,8 @@ export class ValidationService {
 			// Create a sandboxed context with only frontmatter properties
 			const sandbox = this.createSandbox(frontmatter);
 
-			// Use Function constructor with restricted scope
-			const fn = new Function(...Object.keys(sandbox), `return (${constraint.rule});`);
-			const result = fn(...Object.values(sandbox));
+			// Parse and evaluate the expression safely
+			const result = this.safeEvaluate(constraint.rule, sandbox);
 
 			return Boolean(result);
 		} catch (error) {
@@ -504,6 +503,163 @@ export class ValidationService {
 			// If constraint can't be evaluated, treat as passed (don't block on bad rules)
 			return true;
 		}
+	}
+
+	/**
+	 * Safely evaluate a simple expression without using eval or Function constructor
+	 * Supports: comparisons (==, !=, <, >, <=, >=), logical operators (&&, ||, !),
+	 * property access, string/number literals, and basic arithmetic
+	 */
+	private safeEvaluate(expression: string, context: Record<string, unknown>): unknown {
+		const trimmed = expression.trim();
+
+		// Handle logical NOT
+		if (trimmed.startsWith('!')) {
+			return !this.safeEvaluate(trimmed.slice(1), context);
+		}
+
+		// Handle parentheses
+		if (trimmed.startsWith('(') && trimmed.endsWith(')')) {
+			// Find matching closing paren
+			let depth = 1;
+			let i = 1;
+			while (i < trimmed.length && depth > 0) {
+				if (trimmed[i] === '(') depth++;
+				else if (trimmed[i] === ')') depth--;
+				i++;
+			}
+			if (i === trimmed.length && depth === 0) {
+				return this.safeEvaluate(trimmed.slice(1, -1), context);
+			}
+		}
+
+		// Handle logical OR (lowest precedence)
+		const orIndex = this.findOperator(trimmed, '||');
+		if (orIndex !== -1) {
+			const left = this.safeEvaluate(trimmed.slice(0, orIndex), context);
+			const right = this.safeEvaluate(trimmed.slice(orIndex + 2), context);
+			return left || right;
+		}
+
+		// Handle logical AND
+		const andIndex = this.findOperator(trimmed, '&&');
+		if (andIndex !== -1) {
+			const left = this.safeEvaluate(trimmed.slice(0, andIndex), context);
+			const right = this.safeEvaluate(trimmed.slice(andIndex + 2), context);
+			return left && right;
+		}
+
+		// Handle comparisons
+		const comparisons: [string, (a: unknown, b: unknown) => boolean][] = [
+			['===', (a, b) => a === b],
+			['!==', (a, b) => a !== b],
+			['==', (a, b) => a == b],
+			['!=', (a, b) => a != b],
+			['<=', (a, b) => Number(a) <= Number(b)],
+			['>=', (a, b) => Number(a) >= Number(b)],
+			['<', (a, b) => Number(a) < Number(b)],
+			['>', (a, b) => Number(a) > Number(b)],
+		];
+
+		for (const [op, fn] of comparisons) {
+			const idx = this.findOperator(trimmed, op);
+			if (idx !== -1) {
+				const left = this.safeEvaluate(trimmed.slice(0, idx), context);
+				const right = this.safeEvaluate(trimmed.slice(idx + op.length), context);
+				return fn(left, right);
+			}
+		}
+
+		// Handle arithmetic (for completeness)
+		const addIndex = this.findOperator(trimmed, '+');
+		if (addIndex !== -1) {
+			const left = this.safeEvaluate(trimmed.slice(0, addIndex), context);
+			const right = this.safeEvaluate(trimmed.slice(addIndex + 1), context);
+			return Number(left) + Number(right);
+		}
+
+		const subIndex = this.findOperator(trimmed, '-');
+		if (subIndex !== -1 && subIndex > 0) {
+			const left = this.safeEvaluate(trimmed.slice(0, subIndex), context);
+			const right = this.safeEvaluate(trimmed.slice(subIndex + 1), context);
+			return Number(left) - Number(right);
+		}
+
+		// Handle literals and variable references
+		return this.evaluatePrimitive(trimmed, context);
+	}
+
+	/**
+	 * Find operator index, respecting parentheses and string literals
+	 */
+	private findOperator(expr: string, op: string): number {
+		let depth = 0;
+		let inString: string | null = null;
+
+		for (let i = 0; i < expr.length - op.length + 1; i++) {
+			const char = expr[i];
+
+			// Handle string literals
+			if ((char === '"' || char === "'") && (i === 0 || expr[i - 1] !== '\\')) {
+				if (inString === char) {
+					inString = null;
+				} else if (!inString) {
+					inString = char;
+				}
+				continue;
+			}
+
+			if (inString) continue;
+
+			// Handle parentheses
+			if (char === '(') depth++;
+			else if (char === ')') depth--;
+
+			// Check for operator at this position
+			if (depth === 0 && expr.slice(i, i + op.length) === op) {
+				// Avoid matching part of longer operators
+				if (op === '=' && (expr[i + 1] === '=' || expr[i - 1] === '=' || expr[i - 1] === '!' || expr[i - 1] === '<' || expr[i - 1] === '>')) {
+					continue;
+				}
+				if (op === '|' && expr[i + 1] === '|') continue;
+				if (op === '&' && expr[i + 1] === '&') continue;
+				return i;
+			}
+		}
+
+		return -1;
+	}
+
+	/**
+	 * Evaluate a primitive value (literal or variable reference)
+	 */
+	private evaluatePrimitive(expr: string, context: Record<string, unknown>): unknown {
+		const trimmed = expr.trim();
+
+		// Null/undefined literals
+		if (trimmed === 'null') return null;
+		if (trimmed === 'undefined') return undefined;
+		if (trimmed === 'true') return true;
+		if (trimmed === 'false') return false;
+
+		// Number literals
+		if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+			return parseFloat(trimmed);
+		}
+
+		// String literals
+		if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+			(trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+			return trimmed.slice(1, -1);
+		}
+
+		// Variable reference (property from context)
+		if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(trimmed)) {
+			return context[trimmed];
+		}
+
+		// Unsupported expression
+		throw new Error(`Unsupported expression: ${trimmed}`);
 	}
 
 	/**

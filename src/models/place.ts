@@ -37,10 +37,12 @@ export type KnownPlaceType =
 	| 'church';
 
 /**
- * Place type: can be a known type or any custom string
+ * Place type: can be any string value
+ * Known types (KnownPlaceType) have predefined hierarchy levels
  * Custom types are treated as leaf-level in hierarchy (level 99)
+ * Use isKnownPlaceType() to check if a type is a known type
  */
-export type PlaceType = KnownPlaceType | string;
+export type PlaceType = string;
 
 /**
  * Real-world geographic coordinates

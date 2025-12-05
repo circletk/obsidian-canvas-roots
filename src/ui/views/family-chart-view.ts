@@ -344,15 +344,19 @@ export class FamilyChartView extends ItemView {
 		// Apply theme-appropriate styling
 		const isDarkMode = document.body.classList.contains('theme-dark');
 
-		// Set CSS variables and colors directly on the container
-		// family-chart relies on these CSS variables for card colors
-		this.chartContainerEl.style.setProperty('--female-color', 'rgb(196, 138, 146)');
-		this.chartContainerEl.style.setProperty('--male-color', 'rgb(120, 159, 172)');
-		this.chartContainerEl.style.setProperty('--genderless-color', 'lightgray');
-		this.chartContainerEl.style.setProperty('--background-color', isDarkMode ? 'rgb(33, 33, 33)' : 'rgb(250, 250, 250)');
-		this.chartContainerEl.style.setProperty('--text-color', isDarkMode ? '#fff' : '#333');
-		this.chartContainerEl.style.backgroundColor = isDarkMode ? 'rgb(33, 33, 33)' : 'rgb(250, 250, 250)';
-		this.chartContainerEl.style.color = isDarkMode ? '#fff' : '#333';
+		// Set CSS variables - family-chart relies on these for card colors
+		this.chartContainerEl.setCssProps({
+			'--female-color': 'rgb(196, 138, 146)',
+			'--male-color': 'rgb(120, 159, 172)',
+			'--genderless-color': 'lightgray',
+			'--background-color': isDarkMode ? 'rgb(33, 33, 33)' : 'rgb(250, 250, 250)',
+			'--text-color': isDarkMode ? '#fff' : '#333'
+		});
+		// Set direct styles on container
+		this.chartContainerEl.setCssStyles({
+			backgroundColor: isDarkMode ? 'rgb(33, 33, 33)' : 'rgb(250, 250, 250)',
+			color: isDarkMode ? '#fff' : '#333'
+		});
 
 		// Create the chart
 		this.f3Chart = f3.createChart(this.chartContainerEl, this.chartData)

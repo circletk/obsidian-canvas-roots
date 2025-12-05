@@ -17,11 +17,11 @@
 - [4. Obsidian-Specific Guidelines](#4-obsidian-specific-guidelines)
 - [5. Obsidian UI Guidelines](#5-obsidian-ui-guidelines)
   - [5.1. Sentence Case Requirement](#sentence-case-requirement)
-  - [5.2. Settings Headings](#settings-headings)
-  - [5.3. Use .setHeading() for Headings](#use-setheading-for-headings)
-- [6. Settings and UI Text (Deprecated)](#6-settings-and-ui-text-deprecated)
-- [7. Linting Commands](#7-linting-commands)
-- [8. Common Issues and Solutions](#8-common-issues-and-solutions)
+  - [5.2. Proper Noun Exceptions](#proper-noun-exceptions)
+  - [5.3. Settings Headings](#settings-headings)
+  - [5.4. Use .setHeading() for Headings](#use-setheading-for-headings)
+- [6. Linting Commands](#6-linting-commands)
+- [7. Common Issues and Solutions](#7-common-issues-and-solutions)
 
 ---
 
@@ -946,6 +946,35 @@ This section documents Obsidian's official UI text guidelines from the [Plugin g
 - Form labels
 - Any user-facing text in the UI
 
+### Proper Noun Exceptions
+
+The following proper nouns should **remain capitalized** even in sentence case contexts:
+
+| Category | Examples |
+|----------|----------|
+| **Plugin name** | Canvas Roots |
+| **Feature names** | Family Chart, Control Center |
+| **Third-party products** | Excalidraw, Obsidian Canvas, Obsidian Bases |
+| **Industry standards** | GEDCOM, GEDCOM X |
+| **Genealogy software** | Gramps |
+| **Numbering systems** | Ahnentafel, d'Aboville, Henry, Modified Register |
+| **Acronyms** | UUID, ID, PNG, SVG, CSV, PDF, XML, JSON, CR |
+| **Format names** | Chicago, MLA, Turabian, Evidence Explained |
+
+```typescript
+// ✅ CORRECT - Proper nouns stay capitalized
+.setTitle('Canvas Roots: Regenerate canvas')  // Plugin name capitalized
+.setName('Export to Excalidraw')              // Third-party product
+.setName('GEDCOM import options')             // Industry standard acronym
+.setName('Assign Ahnentafel numbers')         // Genealogical system name
+.setName('Open in Family Chart')              // Feature name
+
+// ❌ WRONG - Don't lowercase proper nouns
+.setTitle('canvas roots: Regenerate canvas')  // Plugin name should be capitalized
+.setName('Export to excalidraw')              // Product name should be capitalized
+.setName('Gedcom import options')             // Acronym should be all caps
+```
+
 ### Settings Headings
 
 **Rules for settings headings:**
@@ -1051,65 +1080,7 @@ const configTitle = configHeader.createEl('h3', {
 
 ---
 
-## 6. Settings and UI Text (Deprecated)
-
-> [!warning] This section is deprecated
-> See [[#5. Obsidian UI Guidelines]] for the correct UI text formatting rules.
-
-### Settings Object Keys
-
-**Rule: Always use camelCase for settings property names.**
-
-```typescript
-// ✅ CORRECT
-interface Settings {
-  defaultNodeWidth: number;      // camelCase
-  horizontalSpacing: number;     // camelCase
-  autoGenerateCrId: boolean;     // camelCase
-  peopleFolder: string;          // camelCase
-  gedcomImportMode: string;      // camelCase
-}
-
-// ❌ WRONG - Never use these formats
-interface BadSettings {
-  "Default Node Width": number;   // Sentence Case - NO!
-  horizontal_spacing: number;     // snake_case - Avoid
-  "auto-generate-cr-id": boolean; // kebab-case - NO!
-}
-```
-
-### Display Text (UI Labels)
-
-**Rule: Use Title Case for setting names, sentence case for descriptions.**
-
-```typescript
-// ✅ CORRECT
-new Setting(containerEl)
-  .setName('Default Node Width')           // Title Case
-  .setDesc('Width of person nodes in pixels')  // Sentence case
-
-new Setting(containerEl)
-  .setName('Auto-generate CR ID')          // Title Case
-  .setDesc('Automatically generate cr_id for person notes')  // Sentence case
-
-// Section headings
-containerEl.createEl('h2', { text: 'Canvas Roots Settings' });  // Title Case
-containerEl.createEl('h3', { text: 'Layout Settings' });        // Title Case
-```
-
-### Dropdown Options
-
-```typescript
-// ✅ CORRECT - Use camelCase keys, Title Case labels
-.addDropdown(dropdown => dropdown
-  .addOption('canvasOnly', 'Canvas Visualization Only')   // Key: camelCase, Label: Title Case
-  .addOption('vaultSync', 'Full Vault Synchronization')   // Key: camelCase, Label: Title Case
-  .setValue(this.plugin.settings.gedcomImportMode))
-```
-
----
-
-## 7. Linting Commands
+## 6. Linting Commands
 
 ### TypeScript Linting
 ```bash
@@ -1143,7 +1114,7 @@ npm run build:css -- --no-fail-on-lint
 
 ---
 
-## 8. Common Issues and Solutions
+## 7. Common Issues and Solutions
 
 ### TypeScript Issues
 

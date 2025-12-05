@@ -501,13 +501,13 @@ export class MapView extends ItemView {
 		const menu = new Menu();
 
 		menu.addItem((item) => {
-			item.setTitle('Export as GeoJSON Overlay')
+			item.setTitle('Export as GeoJSON overlay')
 				.setIcon('file-json')
 				.onClick(() => void this.exportGeoJSON());
 		});
 
 		menu.addItem((item) => {
-			item.setTitle('Export as SVG Overlay')
+			item.setTitle('Export as SVG overlay')
 				.setIcon('image')
 				.onClick(() => void this.exportSVG());
 		});
@@ -942,7 +942,7 @@ export class MapView extends ItemView {
 			});
 
 			// Load custom maps and populate dropdown
-			await this.loadCustomMaps();
+			this.loadCustomMaps();
 
 			// Load initial data
 			await this.refreshData();
@@ -1080,7 +1080,7 @@ export class MapView extends ItemView {
 			if (this.customMaps.length > 0) {
 				const separator = this.mapSelectEl.createEl('option', {
 					value: '',
-					text: '── Custom Maps ──',
+					text: '── Custom maps ──',
 					attr: { disabled: 'true' }
 				});
 				separator.disabled = true;

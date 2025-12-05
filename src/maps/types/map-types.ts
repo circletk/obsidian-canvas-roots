@@ -364,8 +364,8 @@ export interface MapState {
 	filters: MapFilters;
 	/** Layer visibility */
 	layers: LayerVisibility;
-	/** Currently active map (OSM or custom map ID) */
-	activeMap: 'openstreetmap' | string;
+	/** Currently active map ('openstreetmap' for OSM or a custom map ID) */
+	activeMap: string;
 	/** Heat map configuration */
 	heatMapConfig: HeatMapConfig;
 }

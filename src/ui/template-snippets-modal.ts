@@ -89,7 +89,7 @@ export class TemplateSnippetsModal extends Modal {
 		const schemaNote = schemaSection.createEl('p', { cls: 'crc-text--muted' });
 		schemaNote.appendText('These templates include common fields. For the complete list of supported frontmatter properties, see the ');
 		const schemaLink = schemaNote.createEl('a', {
-			text: 'Frontmatter Schema Reference',
+			text: 'Frontmatter schema reference',
 			cls: 'crc-link',
 			href: 'https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/reference/frontmatter-schema.md'
 		});

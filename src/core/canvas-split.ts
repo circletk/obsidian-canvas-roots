@@ -360,16 +360,6 @@ export interface CollectionExtractionResult {
 	allBridgePeople: Map<string, string[]>; // crId -> collection names
 }
 
-/**
- * Internal canvas data structure for manipulation (used by split operations)
- * Note: This is separate from CanvasData imported from canvas-generator
- */
-interface _InternalCanvasData {
-	nodes: InternalCanvasNode[];
-	edges: InternalCanvasEdge[];
-	groups?: InternalCanvasGroup[];
-}
-
 interface InternalCanvasNode {
 	id: string;
 	type: 'file' | 'text' | 'link' | 'group';

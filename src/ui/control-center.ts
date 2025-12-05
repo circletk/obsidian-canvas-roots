@@ -5128,37 +5128,37 @@ export class ControlCenterModal extends Modal {
 				// Handle bounds (geographic) or dimensions (pixel)
 				if (data.coordinate_system === 'pixel') {
 					if (data.width !== undefined) {
-						frontmatterLines.push(`width: ${data.width}`);
+						frontmatterLines.push(`width: ${String(data.width)}`);
 					}
 					if (data.height !== undefined) {
-						frontmatterLines.push(`height: ${data.height}`);
+						frontmatterLines.push(`height: ${String(data.height)}`);
 					}
 				} else {
 					// Geographic bounds
 					if (data.bounds && typeof data.bounds === 'object') {
 						const bounds = data.bounds as Record<string, number>;
-						if (bounds.north !== undefined) frontmatterLines.push(`north: ${bounds.north}`);
-						if (bounds.south !== undefined) frontmatterLines.push(`south: ${bounds.south}`);
-						if (bounds.east !== undefined) frontmatterLines.push(`east: ${bounds.east}`);
-						if (bounds.west !== undefined) frontmatterLines.push(`west: ${bounds.west}`);
+						if (bounds.north !== undefined) frontmatterLines.push(`north: ${String(bounds.north)}`);
+						if (bounds.south !== undefined) frontmatterLines.push(`south: ${String(bounds.south)}`);
+						if (bounds.east !== undefined) frontmatterLines.push(`east: ${String(bounds.east)}`);
+						if (bounds.west !== undefined) frontmatterLines.push(`west: ${String(bounds.west)}`);
 					}
 				}
 
 				// Optional fields
 				if (data.default_zoom !== undefined) {
-					frontmatterLines.push(`default_zoom: ${data.default_zoom}`);
+					frontmatterLines.push(`default_zoom: ${String(data.default_zoom)}`);
 				}
 				if (data.min_zoom !== undefined) {
-					frontmatterLines.push(`min_zoom: ${data.min_zoom}`);
+					frontmatterLines.push(`min_zoom: ${String(data.min_zoom)}`);
 				}
 				if (data.max_zoom !== undefined) {
-					frontmatterLines.push(`max_zoom: ${data.max_zoom}`);
+					frontmatterLines.push(`max_zoom: ${String(data.max_zoom)}`);
 				}
 				if (data.center && typeof data.center === 'object') {
 					const center = data.center as Record<string, number>;
 					frontmatterLines.push(`center:`);
-					if (center.lat !== undefined) frontmatterLines.push(`  lat: ${center.lat}`);
-					if (center.lng !== undefined) frontmatterLines.push(`  lng: ${center.lng}`);
+					if (center.lat !== undefined) frontmatterLines.push(`  lat: ${String(center.lat)}`);
+					if (center.lng !== undefined) frontmatterLines.push(`  lng: ${String(center.lng)}`);
 				}
 
 				frontmatterLines.push('---');
@@ -6430,8 +6430,8 @@ export class ControlCenterModal extends Modal {
 		loading.createSpan({ text: 'Loading relationships...' });
 
 		try {
-			const relationships = await service.getAllRelationships();
-			const stats = await service.getStats();
+			const relationships = service.getAllRelationships();
+			const stats = service.getStats();
 
 			loading.remove();
 
@@ -6555,7 +6555,7 @@ export class ControlCenterModal extends Modal {
 		const content = card.querySelector('.crc-card__content') as HTMLElement;
 
 		try {
-			const stats = await service.getStats();
+			const stats = service.getStats();
 
 			if (stats.totalDefined === 0) {
 				content.createEl('p', {
@@ -7175,7 +7175,6 @@ export class ControlCenterModal extends Modal {
 
 		// Branch filter options
 		let branchRootCrId: string | undefined;
-		let _branchRootName: string | undefined;
 		let branchDirection: 'ancestors' | 'descendants' | undefined;
 		let branchIncludeSpouses = false;
 
@@ -7187,7 +7186,6 @@ export class ControlCenterModal extends Modal {
 					.onClick(() => {
 						const picker = new PersonPickerModal(this.app, (info) => {
 							branchRootCrId = info.crId;
-							_branchRootName = info.name;
 							btn.setButtonText(info.name);
 						});
 						picker.open();
@@ -7643,7 +7641,6 @@ export class ControlCenterModal extends Modal {
 
 		// Branch filter options
 		let gxBranchRootCrId: string | undefined;
-		let _gxBranchRootName: string | undefined;
 		let gxBranchDirection: 'ancestors' | 'descendants' | undefined;
 		let gxBranchIncludeSpouses = false;
 
@@ -7655,7 +7652,6 @@ export class ControlCenterModal extends Modal {
 					.onClick(() => {
 						const picker = new PersonPickerModal(this.app, (info) => {
 							gxBranchRootCrId = info.crId;
-							_gxBranchRootName = info.name;
 							btn.setButtonText(info.name);
 						});
 						picker.open();
@@ -8173,7 +8169,6 @@ export class ControlCenterModal extends Modal {
 
 		// Branch filter options
 		let grampsBranchRootCrId: string | undefined;
-		let _grampsBranchRootName: string | undefined;
 		let grampsBranchDirection: 'ancestors' | 'descendants' | undefined;
 		let grampsBranchIncludeSpouses = false;
 
@@ -8185,7 +8180,6 @@ export class ControlCenterModal extends Modal {
 					.onClick(() => {
 						const picker = new PersonPickerModal(this.app, (info) => {
 							grampsBranchRootCrId = info.crId;
-							_grampsBranchRootName = info.name;
 							btn.setButtonText(info.name);
 						});
 						picker.open();
@@ -8571,7 +8565,6 @@ export class ControlCenterModal extends Modal {
 
 		// Branch filter options for CSV
 		let csvBranchRootCrId: string | undefined;
-		let _csvBranchRootName: string | undefined;
 		let csvBranchDirection: 'ancestors' | 'descendants' | undefined;
 		let csvBranchIncludeSpouses = false;
 
@@ -8583,7 +8576,6 @@ export class ControlCenterModal extends Modal {
 					.onClick(() => {
 						const picker = new PersonPickerModal(this.app, (info) => {
 							csvBranchRootCrId = info.crId;
-							_csvBranchRootName = info.name;
 							btn.setButtonText(info.name);
 						});
 						picker.open();
@@ -9512,7 +9504,6 @@ export class ControlCenterModal extends Modal {
 		const browserContent = browserSection.createDiv({ cls: 'crc-person-browser__content' });
 
 		// Load all people from vault
-		const { FamilyGraphService: _FamilyGraphService } = await import('../core/family-graph');
 		const allPeople: PersonInfo[] = [];
 		const files = this.app.vault.getMarkdownFiles();
 

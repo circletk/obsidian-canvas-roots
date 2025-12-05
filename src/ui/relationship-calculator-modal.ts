@@ -167,7 +167,7 @@ export class RelationshipCalculatorModal extends Modal {
 		}
 	}
 
-	private async calculateRelationship(): Promise<void> {
+	private calculateRelationship(): void {
 		if (!this.personA || !this.personB) {
 			new Notice('Please select both people first');
 			return;
@@ -178,7 +178,7 @@ export class RelationshipCalculatorModal extends Modal {
 		this.calculateButton.setText('Calculating...');
 
 		try {
-			this.result = await this.calculator.calculateRelationship(
+			this.result = this.calculator.calculateRelationship(
 				this.personA.crId,
 				this.personB.crId
 			);

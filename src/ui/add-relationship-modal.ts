@@ -190,7 +190,7 @@ export class AddRelationshipModal extends Modal {
 			new Notice(`Added ${typeName} relationship to ${targetName}`);
 
 			// Refresh the relationship service cache
-			await this.relationshipService.refreshCache();
+			this.relationshipService.refreshCache();
 
 			this.close();
 		} catch (error) {

@@ -228,16 +228,9 @@ export class VaultStatsService {
 
 		const allFiles = this.app.vault.getFiles();
 		const canvasFiles = allFiles.filter(f => f.extension === 'canvas');
+		totalCanvases = canvasFiles.length;
 
-		for (const _file of canvasFiles) {
-			totalCanvases++;
-
-			// Note: Canvas files don't have standard metadata cache, so we need to check differently
-			// For now, we'll count all canvases and estimate nodes/edges would require async read
-			// We can mark Canvas Roots canvases by checking for our metadata in the JSON
-		}
-
-		// For accurate node/edge counts, we'd need async file reads
+		// Note: For accurate node/edge counts, we'd need async file reads
 		// For now, just return canvas count
 		return {
 			totalCanvases,

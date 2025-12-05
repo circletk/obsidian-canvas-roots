@@ -133,9 +133,9 @@ export class RelationshipService {
 	/**
 	 * Get all relationships in the vault
 	 */
-	async getAllRelationships(forceRefresh = false): Promise<ParsedRelationship[]> {
+	getAllRelationships(forceRefresh = false): ParsedRelationship[] {
 		if (forceRefresh || this.relationshipCache.size === 0) {
-			await this.refreshCache();
+			this.refreshCache();
 		}
 
 		const allRelationships: ParsedRelationship[] = [];
@@ -149,9 +149,9 @@ export class RelationshipService {
 	/**
 	 * Get relationships for a specific person (by cr_id)
 	 */
-	async getRelationshipsForPerson(crId: string): Promise<ParsedRelationship[]> {
+	getRelationshipsForPerson(crId: string): ParsedRelationship[] {
 		if (this.relationshipCache.size === 0) {
-			await this.refreshCache();
+			this.refreshCache();
 		}
 
 		return this.relationshipCache.get(crId) || [];
@@ -163,8 +163,8 @@ export class RelationshipService {
 	 * For example, if person A has "mentor: B", this returns the inferred
 	 * "disciple: A" relationship for person B.
 	 */
-	async getInverseRelationships(crId: string): Promise<ParsedRelationship[]> {
-		const allRelationships = await this.getAllRelationships();
+	getInverseRelationships(crId: string): ParsedRelationship[] {
+		const allRelationships = this.getAllRelationships();
 		const inverseRels: ParsedRelationship[] = [];
 
 		for (const rel of allRelationships) {
@@ -214,8 +214,8 @@ export class RelationshipService {
 	/**
 	 * Get statistics about relationships in the vault
 	 */
-	async getStats(): Promise<RelationshipStats> {
-		const relationships = await this.getAllRelationships();
+	getStats(): RelationshipStats {
+		const relationships = this.getAllRelationships();
 		const definedRels = relationships.filter(r => !r.isInferred);
 
 		// Calculate inferred relationships
@@ -227,7 +227,7 @@ export class RelationshipService {
 
 		let totalInferred = 0;
 		for (const crId of allCrIds) {
-			const inverse = await this.getInverseRelationships(crId);
+			const inverse = this.getInverseRelationships(crId);
 			totalInferred += inverse.length;
 		}
 

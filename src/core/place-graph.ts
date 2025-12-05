@@ -467,7 +467,7 @@ export class PlaceGraphService {
 			nameCount.get(lowerName)!.push(place);
 		}
 
-		for (const [_name, places] of nameCount.entries()) {
+		for (const places of nameCount.values()) {
 			if (places.length > 1) {
 				issues.push({
 					type: 'duplicate_name',
