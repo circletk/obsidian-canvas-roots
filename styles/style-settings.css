@@ -107,5 +107,18 @@ settings:
     type: variable-color
     format: hex
     default: "#ef4444"
+  -
+    id: canvas-nodes-heading
+    title: Canvas node dimensions
+    description: Node sizing for generated family tree canvases
+    type: heading
+    level: 1
+    collapsed: true
+  -
+    id: canvas-nodes-info
+    title: Configure in plugin settings
+    description: "Node width, height, and spacing are configured in the Canvas Roots plugin settings (Settings → Canvas Roots → Canvas Output) or in the Control Center's Canvas Settings tab. These values are written directly into canvas files when generating trees."
+    type: info-text
+    markdown: true
 
 */

@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-05 19:15:55 UTC
+ * - Generated: 2025-12-05 19:20:30 UTC
  * - Components: 27 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -79,7 +79,7 @@
    COMPONENT: STYLE-SETTINGS.CSS
    ========================================================================== */
 
-/* Component Size: 112 lines, 2.6 KB */
+/* Component Size: 125 lines, 3.15 KB */
 
 /**
  * Style Settings Integration
@@ -190,6 +190,19 @@ settings:
     type: variable-color
     format: hex
     default: "#ef4444"
+  -
+    id: canvas-nodes-heading
+    title: Canvas node dimensions
+    description: Node sizing for generated family tree canvases
+    type: heading
+    level: 1
+    collapsed: true
+  -
+    id: canvas-nodes-info
+    title: Configure in plugin settings
+    description: "Node width, height, and spacing are configured in the Canvas Roots plugin settings (Settings → Canvas Roots → Canvas Output) or in the Control Center's Canvas Settings tab. These values are written directly into canvas files when generating trees."
+    type: info-text
+    markdown: true
 
 */
 
@@ -11842,15 +11855,15 @@ input[type="text"]::-webkit-input-placeholder {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-05 19:15:56 UTC
+ * Build completed: 2025-12-05 19:20:30 UTC
  * Components processed: 27
- * Total lines: 11576
- * Total size: 223.51 KB
- * Build duration: 0.03 seconds
+ * Total lines: 11589
+ * Total size: 224.05 KB
+ * Build duration: 0.02 seconds
  *
  * Component breakdown:
  * - variables.css: 48 lines, 1.33 KB
- * - style-settings.css: 112 lines, 2.6 KB
+ * - style-settings.css: 125 lines, 3.15 KB
  * - base.css: 25 lines, 0.37 KB
  * - layout.css: 22 lines, 0.24 KB
  * - canvas.css: 4 lines, 0.07 KB
