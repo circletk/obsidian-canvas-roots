@@ -42,7 +42,7 @@ The following priority order guides future development:
 | 6 | [Fictional Date Systems](#fictional-date-systems) | ✅ Complete (v0.7.0) |
 | 7 | [Organization Notes](#organization-notes--hierarchy-views) | ✅ Complete (v0.7.0) |
 | 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | ✅ Complete (v0.8.0) |
-| 9 | [Canvas Media Nodes](#canvas-media-nodes) | Planned |
+| 9 | [Evidence Visualization](#evidence-visualization) | Planned |
 | 10 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 | 11 | [Print & PDF Export](#print--pdf-export) | Planned |
 | 12 | [Style Settings Integration](#style-settings-integration) | Planned |
@@ -285,42 +285,90 @@ confidence: high
 
 **Integration Points:**
 - Bases views for source inventory
-- Canvas Media Nodes sync
+- Evidence Visualization integration
 
 ---
 
-#### Canvas Media Nodes
+#### Evidence Visualization
 
-**Summary:** Media files as first-class canvas entities with semantic relationships.
+**Summary:** Visual research methodology tools aligned with the Genealogical Proof Standard (GPS) and professional genealogical practices. Transforms Canvas Roots from a tree builder into a serious research platform.
 
-**Media Node Types:**
-| Type | Description | Placement |
-|------|-------------|-----------|
-| `avatar` | Primary photo/portrait | Adjacent to person node |
-| `source` | Documentary evidence | Clustered in source zones |
-| `document` | Full document scans | Grouped by type |
-| `artifact` | Physical objects | Edge of canvas |
+**Genealogical Standards Support:**
 
-**Canvas JSON:**
-```json
-{
-  "type": "file",
-  "file": "media/census-1900-smith.pdf",
-  "cr_media_type": "source",
-  "cr_linked_person": "person-uuid-123"
-}
+| Standard | Feature |
+|----------|---------|
+| GPS completeness | Fact coverage map showing sourced vs. unsourced claims |
+| Source classification | Primary/secondary/derivative visual indicators |
+| Evidence correlation | Proof clusters grouping sources supporting conclusions |
+| Conflict documentation | Visual markers for contradictory evidence |
+| Written conclusions | Proof summary nodes documenting reasoning |
+
+**Fact-Level Source Coverage:**
+
+Enhanced source indicators showing which specific facts have evidence:
+
+```
+┌─────────────────────────────┐
+│ John Smith (1850-1920)      │
+├─────────────────────────────┤
+│ ✅ Birth: 2 sources         │
+│ ⚠️ Marriage: 1 (secondary)  │
+│ ❌ Death: no sources        │
+│ ✅ Parents: 3 sources       │
+└─────────────────────────────┘
 ```
 
-**Features:**
-- Intelligent placement during layout
-- Toggle visibility by media type
-- Media → Person edges with labels
-- Filter: "Show sources for people born before 1900"
-- Media coverage report
+**Source Quality Classification:**
+
+| Classification | Visual | Meaning |
+|----------------|--------|---------|
+| Primary | Green border | Created at/near event by participant/witness |
+| Secondary | Yellow border | Created later from memory or other sources |
+| Derivative | Orange border | Copies, transcriptions, abstracts |
+| Conflicting | Red indicator | Sources disagree on this fact |
+
+**Evidence Types (per Elizabeth Shown Mills):**
+- **Direct**: Answers research question explicitly
+- **Indirect**: Requires reasoning with other sources
+- **Negative**: Absence of expected information (documented)
+
+**Proof Summary Nodes:**
+
+Special canvas nodes documenting the reasoning chain for conclusions:
+
+```yaml
+type: proof_summary
+conclusion: "John Smith's parents were William and Mary Smith"
+sources:
+  - "[[1850 Census]]"
+  - "[[Marriage Record 1848]]"
+  - "[[Family Bible]]"
+reasoning: |
+  The 1850 census lists John (age 5) in William Smith's household...
+  The marriage record confirms William married Mary Jones in 1848...
+confidence: high
+```
+
+**Canvas Visualization:**
+- Evidence clusters grouped by research question
+- Color-coded source quality on media nodes
+- Conflict markers with linked analysis notes
+- Research progress overlay (% of facts sourced)
+
+**Implementation Phases:**
+
+| Phase | Scope |
+|-------|-------|
+| 1 | Fact-level source coverage in enhanced indicators |
+| 2 | Source quality classification (primary/secondary/derivative) |
+| 3 | Proof summary nodes and conflict documentation |
+| 4 | Full canvas evidence visualization with clusters |
 
 **Integration Points:**
-- Source Media Gallery sync
-- Bidirectional: canvas ↔ frontmatter
+- Extends existing source indicators (v0.8.0)
+- Source Media Gallery for evidence browsing
+- Data Quality tab for research gap reports
+- Export proof summaries for publication
 
 ---
 
