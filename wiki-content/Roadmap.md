@@ -16,6 +16,7 @@ This document outlines planned features for Canvas Roots. For release history an
   - [Fictional Date Systems](#fictional-date-systems) ✅
   - [Evidence & Source Management](#evidence--source-management) ✅
   - [World-Building Suite](#world-building-suite) ✅
+  - [Chronological Story Mapping](#chronological-story-mapping)
   - [Research & Analysis Tools](#research--analysis-tools)
   - [Print & PDF Export](#print--pdf-export)
 - [Future Considerations](#future-considerations)
@@ -44,8 +45,9 @@ The following priority order guides future development:
 | 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | ✅ Complete (v0.8.0) |
 | 9 | [Evidence Visualization](#evidence-visualization) | ✅ Complete (v0.9.0) |
 | 10 | [Style Settings Integration](#style-settings-integration) | ✅ Complete (v0.9.1) |
-| 11 | [Print & PDF Export](#print--pdf-export) | Planned |
-| 12 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
+| 11 | [Chronological Story Mapping](#chronological-story-mapping) | Planned |
+| 12 | [Print & PDF Export](#print--pdf-export) | Planned |
+| 13 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 
 ---
 
@@ -427,35 +429,62 @@ mentions:
 
 #### Chronological Story Mapping
 
-**Summary:** Transform oral facts into timeline events for Leaflet.js animation.
+> See [chronological-story-mapping.md](../docs/plans/chronological-story-mapping.md) for detailed implementation plan.
+
+**Summary:** Event-based timeline visualization supporting both genealogists (source-derived events) and worldbuilders (canonical events). Integrates with existing fictional date systems for cross-era sorting.
+
+**Key Features:**
+- Event notes (`type: event`) as first-class entities
+- Dual-path creation: extract events from sources OR create directly
+- Person Timeline, Family Timeline, Place Timeline views
+- Fictional date system integration (`date_system` field, era-based dates)
+- Timeline gap analysis in Data Quality tab
 
 **Event Schema:**
 ```yaml
 type: event
-cr_id: "evt-qom515nql022"
-date: 1949-04-05
-date_precision: month
-description: "Moved to California"
-person: "[[Andrew Wilson]]"
-place: "[[California]]"
-source_media: "[[Interview 1.mp4]]"
-source_timestamp: "5m0s"
-event_type: residence_change
-confidence: medium
+cr_id: "20251205123456"
+title: "Birth of John Smith"
+event_type: birth
+date: 1850-03-15
+date_precision: exact
+person: "[[John Smith]]"
+place: "[[Dublin, Ireland]]"
+sources:
+  - "[[1850 Birth Certificate]]"
+confidence: high
 ```
 
-**Event Types:** birth, death, marriage, divorce, residence_change, occupation, military, immigration, education, anecdote, lore_event
+**For Worldbuilders:**
+```yaml
+type: event
+title: "Bilbo's Birthday Party"
+event_type: anecdote
+date: "TA 3001"
+date_system: middle_earth
+date_precision: year
+person: "[[Bilbo Baggins]]"
+universe: "Middle-earth"
+is_canonical: true
+```
 
-**Timeline Views:**
-- Person Timeline: all events for one person
-- Family Timeline: interleaved family events
-- Place Timeline: all events at a location
-- Global Timeline: filterable by criteria
+**Event Types:** birth, death, marriage, divorce, residence, occupation, military, immigration, education, anecdote, lore_event
+
+**Implementation Phases:**
+1. Event notes foundation (types, service, modal, validation)
+2. Person Timeline view
+3. Source event extraction ("Extract events" action)
+4. Timeline Tab in Control Center
+5. Family Timeline view
+6. Place Timeline view
+7. Leaflet Time Animation (advanced)
 
 **Integration Points:**
-- Leaflet.js Time Slider animation
-- Person note `events` frontmatter array
-- "Timeline gaps" report
+- Fictional Date Systems (era-based dates, canonical year sorting)
+- [Calendarium](https://github.com/javalent/calendarium) plugin (optional; read calendars, sync events)
+- Source notes ("Extract events" action)
+- Proof summaries (events as evidence)
+- Maps tab (Place Timeline, animated markers)
 
 ---
 
