@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.0] - 2025-12-04
+
+Evidence & Source Management release: Source indicators on generated trees.
+
+### Added
+
+- **Source Indicators on Generated Trees**: Visual badges showing research documentation quality
+  - Display badges like "📎 3" on tree nodes indicating how many source notes link to each person
+  - **Color coding**: Green badges for 3+ sources (well-documented), yellow for 1-2 sources
+  - Only appears on nodes that have at least one linked source
+  - Source notes identified by `type: source` frontmatter property
+  - Toggle in Settings → Canvas Roots → Canvas styling → "Show source indicators"
+  - Uses Obsidian's `resolvedLinks` to detect wikilinks from source notes to person notes
+  - Helps identify which ancestors need more research at a glance
+
+- **Evidence & Sources Wiki Page**: Comprehensive documentation for source management
+  - Source note schema with 13 source types (census, vital_record, photograph, etc.)
+  - Source property reference (source_date, source_repository, confidence, etc.)
+  - Linking sources to people via wikilinks
+  - Sources Bases template with 17 pre-configured views
+  - Best practices for organizing source notes and media
+
+### Changed
+
+- Updated Frontmatter-Reference.md with correct source property names (source_date, source_repository, etc.)
+- Updated Tree-Generation wiki page with source indicators documentation
+- Updated Roadmap to reflect partial implementation of Evidence & Source Management
+
+---
+
 ## [0.7.0] - 2025-12-03
 
 World-Building Suite release: Custom Relationships, Fictional Date Systems, and Organization Notes.
