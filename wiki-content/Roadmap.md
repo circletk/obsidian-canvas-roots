@@ -42,7 +42,7 @@ The following priority order guides future development:
 | 6 | [Fictional Date Systems](#fictional-date-systems) | ✅ Complete (v0.7.0) |
 | 7 | [Organization Notes](#organization-notes--hierarchy-views) | ✅ Complete (v0.7.0) |
 | 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | ✅ Complete (v0.8.0) |
-| 9 | [Evidence Visualization](#evidence-visualization) | Planned |
+| 9 | [Evidence Visualization](#evidence-visualization) | ✅ Complete (v0.9.0) |
 | 10 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 | 11 | [Print & PDF Export](#print--pdf-export) | Planned |
 | 12 | [Style Settings Integration](#style-settings-integration) | Planned |
@@ -289,9 +289,9 @@ confidence: high
 
 ---
 
-#### Evidence Visualization
+#### Evidence Visualization ✅
 
-> See [evidence-visualization-plan.md](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/evidence-visualization-plan.md) for detailed implementation plan.
+> **Complete in v0.9.0.** See [evidence-visualization-plan.md](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/evidence-visualization-plan.md) for implementation details.
 
 **Summary:** Visual research methodology tools aligned with the Genealogical Proof Standard (GPS) and professional genealogical practices. Transforms Canvas Roots from a tree builder into a serious research platform.
 
