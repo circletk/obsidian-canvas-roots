@@ -11485,6 +11485,7 @@ export class ControlCenterModal extends Modal {
 					.addOption('missing_data', 'Missing data')
 					.addOption('data_format', 'Format issues')
 					.addOption('orphan_reference', 'Orphan references')
+					.addOption('nested_property', 'Nested properties')
 					.setValue(selectedCategory)
 					.onChange(value => {
 						selectedCategory = value as IssueCategory | 'all';
@@ -11654,6 +11655,7 @@ export class ControlCenterModal extends Modal {
 			missing_data: 'Missing data',
 			data_format: 'Format',
 			orphan_reference: 'Orphan ref',
+			nested_property: 'Nested',
 		};
 		return names[category] || category;
 	}

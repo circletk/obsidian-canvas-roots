@@ -29,7 +29,8 @@ export type IssueCategory =
 	| 'relationship_inconsistency'
 	| 'missing_data'
 	| 'data_format'
-	| 'orphan_reference';
+	| 'orphan_reference'
+	| 'nested_property';
 
 /**
  * A single data quality issue
@@ -129,6 +130,7 @@ export interface DataQualityOptions {
 		missingData?: boolean;
 		dataFormat?: boolean;
 		orphanReferences?: boolean;
+		nestedProperties?: boolean;
 	};
 
 	/** Minimum severity to include */
@@ -171,6 +173,7 @@ export class DataQualityService {
 			missingData: true,
 			dataFormat: true,
 			orphanReferences: true,
+			nestedProperties: true,
 		};
 
 		for (const person of people) {
@@ -188,6 +191,9 @@ export class DataQualityService {
 			}
 			if (checks.orphanReferences) {
 				issues.push(...this.checkOrphanReferences(person, peopleMap));
+			}
+			if (checks.nestedProperties) {
+				issues.push(...this.checkNestedProperties(person));
 			}
 		}
 
@@ -680,6 +686,86 @@ export class DataQualityService {
 	}
 
 	/**
+	 * Check for nested/non-flat frontmatter properties
+	 * Obsidian recommends flat frontmatter structure for best compatibility
+	 */
+	private checkNestedProperties(person: PersonNode): DataQualityIssue[] {
+		const issues: DataQualityIssue[] = [];
+
+		// Get the cached frontmatter for this file
+		const cache = this.app.metadataCache.getFileCache(person.file);
+		if (!cache?.frontmatter) {
+			return issues;
+		}
+
+		const fm = cache.frontmatter as Record<string, unknown>;
+
+		// Check each frontmatter property for nested objects
+		for (const [key, value] of Object.entries(fm)) {
+			// Skip Obsidian's internal 'position' property
+			if (key === 'position') continue;
+
+			if (this.isNestedObject(value)) {
+				const nestedKeys = this.getNestedKeys(value);
+				issues.push({
+					code: 'NESTED_PROPERTY',
+					message: `Property "${key}" contains nested structure with keys: ${nestedKeys.join(', ')}`,
+					severity: 'warning',
+					category: 'nested_property',
+					person,
+					details: {
+						property: key,
+						nestedKeys: nestedKeys.join(', '),
+					},
+				});
+			}
+		}
+
+		return issues;
+	}
+
+	/**
+	 * Check if a value is a nested object (not a primitive or array of primitives)
+	 */
+	private isNestedObject(value: unknown): boolean {
+		if (value === null || value === undefined) return false;
+		if (typeof value !== 'object') return false;
+
+		// Date objects are not considered nested
+		if (value instanceof Date) return false;
+
+		// Arrays of primitives are fine
+		if (Array.isArray(value)) {
+			return value.some(item => this.isNestedObject(item));
+		}
+
+		// Plain objects are nested
+		return true;
+	}
+
+	/**
+	 * Get the top-level keys of a nested object (for display purposes)
+	 */
+	private getNestedKeys(value: unknown): string[] {
+		if (Array.isArray(value)) {
+			// For arrays, find nested objects and get their keys
+			const keys = new Set<string>();
+			for (const item of value) {
+				if (typeof item === 'object' && item !== null && !(item instanceof Date)) {
+					Object.keys(item as object).forEach(k => keys.add(k));
+				}
+			}
+			return Array.from(keys);
+		}
+
+		if (typeof value === 'object' && value !== null) {
+			return Object.keys(value as object);
+		}
+
+		return [];
+	}
+
+	/**
 	 * Parse a year from a date string
 	 */
 	private parseYear(dateStr?: string): number | null {
@@ -748,6 +834,7 @@ export class DataQualityService {
 			missing_data: 0,
 			data_format: 0,
 			orphan_reference: 0,
+			nested_property: 0,
 		};
 		for (const issue of issues) {
 			byCategory[issue.category]++;
