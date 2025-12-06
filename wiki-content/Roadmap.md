@@ -48,10 +48,10 @@ The following priority order guides future development:
 | 9 | [Evidence Visualization](#evidence-visualization) | ✅ Complete (v0.9.0) |
 | 10 | [Style Settings Integration](#style-settings-integration) | ✅ Complete (v0.9.1) |
 | 11 | [Events Tab (Control Center)](#events-tab-control-center) | ✅ Complete (v0.9.2) |
-| 12 | [Chronological Story Mapping](#chronological-story-mapping) | Planned |
-| 13 | [Print & PDF Export](#print--pdf-export) | Planned |
-| 14 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
-| 15 | [Property Aliases](#property-aliases) | Planned |
+| 12 | [Property Aliases](#property-aliases) | Planned |
+| 13 | [Chronological Story Mapping](#chronological-story-mapping) | Planned |
+| 14 | [Print & PDF Export](#print--pdf-export) | Planned |
+| 15 | [Transcript Nodes & Oral History](#transcript-nodes--quotable-facts) | Planned |
 
 ---
 
