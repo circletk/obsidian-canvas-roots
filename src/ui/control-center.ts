@@ -1399,25 +1399,68 @@ export class ControlCenterModal extends Modal {
 		});
 		const learnContent = learnCard.querySelector('.crc-card__content') as HTMLElement;
 
-		// Wiki links section
-		const wikiSection = learnContent.createDiv({ cls: 'crc-mb-4' });
-		wikiSection.createEl('h4', { text: 'Documentation', cls: 'crc-mb-2' });
-		const wikiLinks = [
-			{ text: 'Getting started', wiki: 'Getting-Started' },
-			{ text: 'Data entry guide', wiki: 'Data-Entry' },
-			{ text: 'Tree generation', wiki: 'Tree-Generation' },
-			{ text: 'Geographic features', wiki: 'Geographic-Features' },
-			{ text: 'Context menus', wiki: 'Context-Menus' }
+		// Documentation grid with categories
+		const docsGrid = learnContent.createDiv({ cls: 'crc-docs-grid crc-mb-4' });
+
+		const docCategories = [
+			{
+				title: 'Getting started',
+				icon: 'rocket' as LucideIconName,
+				links: [
+					{ text: 'Getting started', wiki: 'Getting-Started' },
+					{ text: 'Data entry', wiki: 'Data-Entry' },
+					{ text: 'Context menus', wiki: 'Context-Menus' }
+				]
+			},
+			{
+				title: 'Visualization',
+				icon: 'git-branch' as LucideIconName,
+				links: [
+					{ text: 'Tree generation', wiki: 'Tree-Generation' },
+					{ text: 'Geographic features', wiki: 'Geographic-Features' },
+					{ text: 'Styling & theming', wiki: 'Styling-And-Theming' }
+				]
+			},
+			{
+				title: 'Data management',
+				icon: 'database' as LucideIconName,
+				links: [
+					{ text: 'Import/Export', wiki: 'Import-Export' },
+					{ text: 'Schema validation', wiki: 'Schema-Validation' },
+					{ text: 'Evidence & sources', wiki: 'Evidence-And-Sources' }
+				]
+			},
+			{
+				title: 'Reference',
+				icon: 'book-open' as LucideIconName,
+				links: [
+					{ text: 'Frontmatter reference', wiki: 'Frontmatter-Reference' },
+					{ text: 'Settings & configuration', wiki: 'Settings-And-Configuration' },
+					{ text: 'Fictional date systems', wiki: 'Fictional-Date-Systems' }
+				]
+			}
 		];
-		const wikiList = wikiSection.createEl('ul', { cls: 'crc-wiki-links' });
-		wikiLinks.forEach(link => {
-			const li = wikiList.createEl('li');
-			const a = li.createEl('a', { text: link.text, href: `${WIKI_BASE}/${link.wiki}`, cls: 'crc-link' });
-			a.setAttr('target', '_blank');
+
+		docCategories.forEach(category => {
+			const categoryDiv = docsGrid.createDiv({ cls: 'crc-docs-category' });
+
+			// Category title with icon
+			const titleDiv = categoryDiv.createDiv({ cls: 'crc-docs-category__title' });
+			const iconEl = titleDiv.createSpan({ cls: 'crc-docs-category__icon' });
+			setLucideIcon(iconEl, category.icon, 14);
+			titleDiv.createSpan({ text: category.title });
+
+			// Links
+			const linksList = categoryDiv.createEl('ul', { cls: 'crc-docs-category__links' });
+			category.links.forEach(link => {
+				const li = linksList.createEl('li');
+				const a = li.createEl('a', { text: link.text, href: `${WIKI_BASE}/${link.wiki}` });
+				a.setAttr('target', '_blank');
+			});
 		});
 
 		// Templater button
-		const templaterSection = learnContent.createDiv({ cls: 'crc-mb-4' });
+		const templaterSection = learnContent.createDiv();
 		templaterSection.createEl('h4', { text: 'Templates', cls: 'crc-mb-2' });
 		templaterSection.createEl('p', {
 			text: 'Ready-to-use Templater snippets for person and place notes.',
@@ -1430,17 +1473,6 @@ export class ControlCenterModal extends Modal {
 		templaterBtn.addEventListener('click', () => {
 			new TemplateSnippetsModal(this.app).open();
 		});
-
-		// Pro tips
-		const tipsSection = learnContent.createDiv();
-		tipsSection.createEl('h4', { text: 'Pro tips', cls: 'crc-mb-2' });
-		const tips = [
-			'Use Obsidian Bases for efficient bulk data entry',
-			'Use "Regenerate canvas" after changing layout settings',
-			'Per-canvas styles override global settings'
-		];
-		const tipsList = tipsSection.createEl('ul', { cls: 'crc-text-muted' });
-		tips.forEach(tip => tipsList.createEl('li', { text: tip }));
 
 		container.appendChild(learnCard);
 	}

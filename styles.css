@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-06 03:40:18 UTC
+ * - Generated: 2025-12-06 04:09:54 UTC
  * - Components: 28 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -338,7 +338,7 @@ settings:
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 3908 lines, 71.42 KB */
+/* Component Size: 3967 lines, 72.44 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -1853,6 +1853,65 @@ settings:
 .crc-wiki-links a .external-link-icon {
   color: var(--text-muted);
   margin-left: auto;
+}
+
+/* Documentation grid layout */
+.crc-docs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.crc-docs-category {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.crc-docs-category__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-ui-small);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+
+.crc-docs-category__title svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+
+.crc-docs-category__links {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.crc-docs-category__links li {
+  margin: 0;
+}
+
+.crc-docs-category__links a {
+  display: block;
+  padding: 6px 10px;
+  border-radius: 4px;
+  text-decoration: none;
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  transition: background 0.15s ease;
+}
+
+.crc-docs-category__links a:hover {
+  background: var(--background-modifier-hover);
+  text-decoration: none;
 }
 
 /* Analytics Dashboard Styles */
@@ -11958,10 +12017,10 @@ input[type="text"]::-webkit-input-placeholder {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-06 03:40:19 UTC
+ * Build completed: 2025-12-06 04:09:54 UTC
  * Components processed: 28
- * Total lines: 11683
- * Total size: 225.89 KB
+ * Total lines: 11742
+ * Total size: 226.92 KB
  * Build duration: 0.03 seconds
  *
  * Component breakdown:
@@ -11973,7 +12032,7 @@ input[type="text"]::-webkit-input-placeholder {
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 4 lines, 0.07 KB
- * - modals.css: 3908 lines, 71.42 KB
+ * - modals.css: 3967 lines, 72.44 KB
  * - duplicate-detection.css: 163 lines, 2.82 KB
  * - tree-statistics.css: 41 lines, 0.6 KB
  * - validation.css: 84 lines, 1.47 KB
