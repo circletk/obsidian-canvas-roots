@@ -8,10 +8,10 @@ This document outlines planned features for Canvas Roots. For release history an
 
 - [Development Priorities](#development-priorities)
 - [Planned Features](#planned-features)
-  - [Geographic Features (Phase 4)](#geographic-features-phase-4) ✅
-  - [Maps Tab (Control Center)](#maps-tab-control-center) ✅
+  - [Geographic Features (Phase 4)](#geographic-features-phase-4-) ✅
+  - [Maps Tab (Control Center)](#maps-tab-control-center-) ✅
   - [Import/Export Enhancements](#importexport-enhancements) ✅
-  - [Schema Validation](#schema-validation--consistency-checks) ✅
+  - [Schema Validation](#schema-validation--consistency-checks-) ✅
   - [Custom Relationship Types](#custom-relationship-types) ✅
   - [Fictional Date Systems](#fictional-date-systems-) ✅
   - [Evidence & Source Management](#evidence--source-management) ✅
@@ -26,7 +26,7 @@ This document outlines planned features for Canvas Roots. For release history an
   - [Person Note Templates](#person-note-templates)
   - [Accessibility](#accessibility)
   - [Obsidian Publish Support](#obsidian-publish-support)
-  - [Style Settings Integration](#style-settings-integration) ✅
+  - [Style Settings Integration](#style-settings-integration-) ✅
 - [Known Limitations](#known-limitations)
 - [Contributing](#contributing)
 
@@ -39,17 +39,17 @@ The following priority order guides future development:
 | Priority | Feature | Status |
 |:--------:|---------|--------|
 | 1 | [Import/Export Enhancements](#importexport-enhancements) | ✅ Complete (v0.6.0) |
-| 2 | [Geographic Features (Phase 4)](#geographic-features-phase-4) | ✅ Complete (v0.6.0) |
-| 3 | [Maps Tab (Control Center)](#maps-tab-control-center) | ✅ Complete (v0.6.2) |
-| 4 | [Schema Validation](#schema-validation--consistency-checks) | ✅ Complete (v0.6.3) |
+| 2 | [Geographic Features (Phase 4)](#geographic-features-phase-4-) | ✅ Complete (v0.6.0) |
+| 3 | [Maps Tab (Control Center)](#maps-tab-control-center-) | ✅ Complete (v0.6.2) |
+| 4 | [Schema Validation](#schema-validation--consistency-checks-) | ✅ Complete (v0.6.3) |
 | 5 | [Custom Relationship Types](#custom-relationship-types) | ✅ Complete (v0.7.0) |
 | 6 | [Fictional Date Systems](#fictional-date-systems-) | ✅ Complete (v0.7.0) |
 | 7 | [Organization Notes](#organization-notes--hierarchy-views) | ✅ Complete (v0.7.0) |
-| 8 | [Source Media Gallery](#source-media-gallery--document-viewer) | ✅ Complete (v0.8.0) |
-| 9 | [Evidence Visualization](#evidence-visualization) | ✅ Complete (v0.9.0) |
-| 10 | [Style Settings Integration](#style-settings-integration) | ✅ Complete (v0.9.1) |
+| 8 | [Source Media Gallery](#source-media-gallery--document-viewer-) | ✅ Complete (v0.8.0) |
+| 9 | [Evidence Visualization](#evidence-visualization-) | ✅ Complete (v0.9.0) |
+| 10 | [Style Settings Integration](#style-settings-integration-) | ✅ Complete (v0.9.1) |
 | 11 | [Events Tab (Control Center)](#events-tab-control-center) | ✅ Complete (v0.9.2) |
-| 12 | [Property Aliases](#property-aliases) | ✅ Complete (v0.9.3) |
+| 12 | [Property Aliases](#property-aliases-) | ✅ Complete (v0.9.3) |
 | 13 | [Value Aliases](#value-aliases) | ✅ Complete (v0.9.4) |
 | 14 | [Chronological Story Mapping](#chronological-story-mapping) | Planned |
 | 15 | [Print & PDF Export](#print--pdf-export) | Planned |
