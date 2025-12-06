@@ -585,12 +585,28 @@ person: "[[Person A]]"
 
 **Event Import:**
 - Create event notes (`type: event`) for all supported GEDCOM tags:
-  - Core: `BIRT`, `DEAT`, `MARR`, `DIV`
-  - Extended: `BURI`, `RESI`, `OCCU`, `EDUC`, `MILI`, `IMMI`, `EMIG`, `NATU`
-  - Religious: `BAPM`, `CHR`, `CONF`, `ORDN`
+  - **Core (4):** `BIRT`, `DEAT`, `MARR`, `DIV`
+  - **Life Events (6):** `BURI`, `CREM`, `ADOP`, `GRAD`, `RETI`, `CENS`
+  - **Career/Residence (3):** `RESI`, `OCCU`, `EDUC`
+  - **Legal/Estate (4):** `PROB`, `WILL`, `NATU`, `MILI`
+  - **Migration (2):** `IMMI`, `EMIG`
+  - **Religious (8):** `BAPM`, `CHR`, `CHRA`, `CONF`, `FCOM`, `ORDN`, `BARM`, `BASM`, `BLES`
+  - **Family (7):** `ENGA`, `MARB`, `MARC`, `MARL`, `MARS`, `ANUL`, `DIVF`
 - Link events to person notes via `person` field
 - Link events to sources via `sources` array
 - Preserve date precision from GEDCOM (`ABT`, `BEF`, `AFT`, `BET`)
+
+**Person Attributes (stored as properties, not events):**
+- `DSCR` → `physicalDescription`
+- `IDNO` → `identityNumber`
+- `NATI` → `nationality`
+- `RELI` → `religion`
+- `TITL` → `title`
+- `PROP` → `property`
+- `CAST` → `caste`
+- `NCHI` → `childrenCount`
+- `NMR` → `marriageCount`
+- `SSN` → `ssn`
 
 **Place Import:**
 - Extract unique places from all events

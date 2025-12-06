@@ -51,24 +51,67 @@ Enhanced GEDCOM import that creates source notes, event notes, and place notes i
 
 **GEDCOM Event Tag Mapping:**
 
-| GEDCOM Tag | Canvas Roots `event_type` | Category |
-|------------|---------------------------|----------|
-| `BIRT` | `birth` | Core |
-| `DEAT` | `death` | Core |
-| `MARR` | `marriage` | Core |
-| `DIV` | `divorce` | Core |
-| `BURI` | `burial` | Extended |
-| `RESI` | `residence` | Extended |
-| `OCCU` | `occupation` | Extended |
-| `EDUC` | `education` | Extended |
-| `MILI` | `military` | Extended |
-| `IMMI` | `immigration` | Extended |
-| `EMIG` | `immigration` | Extended (same type, different direction) |
-| `NATU` | `immigration` | Extended (naturalization is immigration-related) |
-| `BAPM` | `baptism` | Extended |
-| `CHR` | `baptism` | Extended (christening = baptism) |
-| `CONF` | `confirmation` | Extended |
-| `ORDN` | `ordination` | Extended |
+| GEDCOM Tag | Canvas Roots `event_type` | Category | Notes |
+|------------|---------------------------|----------|-------|
+| **Core Events** ||||
+| `BIRT` | `birth` | Core | |
+| `DEAT` | `death` | Core | |
+| `MARR` | `marriage` | Core | Family event |
+| `DIV` | `divorce` | Core | Family event |
+| **Life Events** ||||
+| `BURI` | `burial` | Life | |
+| `CREM` | `cremation` | Life | Alternative to burial |
+| `ADOP` | `adoption` | Life | |
+| `GRAD` | `graduation` | Life | Education milestone |
+| `RETI` | `retirement` | Life | Career milestone |
+| `CENS` | `census` | Life | Very common in genealogy |
+| **Career/Residence** ||||
+| `RESI` | `residence` | Career | |
+| `OCCU` | `occupation` | Career | |
+| `EDUC` | `education` | Career | |
+| **Legal/Estate** ||||
+| `PROB` | `probate` | Legal | Estate/legal event |
+| `WILL` | `will` | Legal | Estate/legal event |
+| `NATU` | `naturalization` | Legal | Citizenship |
+| `MILI` | `military` | Legal | Military service |
+| **Migration** ||||
+| `IMMI` | `immigration` | Migration | Arrival |
+| `EMIG` | `emigration` | Migration | Departure |
+| **Religious** ||||
+| `BAPM` | `baptism` | Religious | |
+| `CHR` | `christening` | Religious | Infant baptism |
+| `CHRA` | `adult_christening` | Religious | Adult baptism |
+| `CONF` | `confirmation` | Religious | |
+| `FCOM` | `first_communion` | Religious | Catholic milestone |
+| `ORDN` | `ordination` | Religious | |
+| `BARM` | `bar_mitzvah` | Religious | Jewish milestone |
+| `BASM` | `bas_mitzvah` | Religious | Jewish milestone |
+| `BLES` | `blessing` | Religious | |
+| **Family Events** ||||
+| `ENGA` | `engagement` | Family | Pre-marriage |
+| `MARB` | `marriage_bann` | Family | Pre-marriage announcement |
+| `MARC` | `marriage_contract` | Family | Legal document |
+| `MARL` | `marriage_license` | Family | Legal document |
+| `MARS` | `marriage_settlement` | Family | Financial arrangement |
+| `ANUL` | `annulment` | Family | Marriage dissolution |
+| `DIVF` | `divorce_filed` | Family | Legal process start |
+
+**Person Attribute Tag Mapping:**
+
+These are stored as properties on the person note, not as separate event notes.
+
+| GEDCOM Tag | Canvas Roots Property | Notes |
+|------------|----------------------|-------|
+| `DSCR` | `physicalDescription` | Physical description |
+| `IDNO` | `identityNumber` | ID number |
+| `NATI` | `nationality` | Nationality |
+| `RELI` | `religion` | Religious affiliation |
+| `TITL` | `title` | Nobility/professional title |
+| `PROP` | `property` | Property ownership |
+| `CAST` | `caste` | Social classification |
+| `NCHI` | `childrenCount` | Number of children |
+| `NMR` | `marriageCount` | Number of marriages |
+| `SSN` | `ssn` | Social security number |
 
 **Date Precision Mapping:**
 
