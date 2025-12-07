@@ -753,14 +753,36 @@ export class ControlCenterModal extends Modal {
 		loadingContent.createEl('p', { text: 'Loading statistics...', cls: 'crc-text-muted' });
 		container.appendChild(loadingCard);
 
-		// Collect statistics
-		const statsService = new VaultStatsService(this.app);
-		const folderFilter = this.plugin.getFolderFilter();
-		if (folderFilter) {
-			statsService.setFolderFilter(folderFilter);
+		// Collect statistics with error handling
+		let stats: FullVaultStats;
+		try {
+			const statsService = new VaultStatsService(this.app);
+			const folderFilter = this.plugin.getFolderFilter();
+			if (folderFilter) {
+				statsService.setFolderFilter(folderFilter);
+			}
+			statsService.setSettings(this.plugin.settings);
+			stats = statsService.collectStats();
+		} catch (error) {
+			// Clear loading state and show error
+			container.empty();
+			const errorCard = this.createCard({
+				title: 'Error loading statistics',
+				icon: 'alert-triangle'
+			});
+			const errorContent = errorCard.querySelector('.crc-card__content') as HTMLElement;
+			errorContent.createEl('p', {
+				text: `Failed to collect vault statistics: ${getErrorMessage(error)}`,
+				cls: 'crc-text-error'
+			});
+			errorContent.createEl('p', {
+				text: 'Please check the developer console for more details.',
+				cls: 'crc-text-muted'
+			});
+			container.appendChild(errorCard);
+			console.error('Error collecting vault statistics:', error);
+			return;
 		}
-		statsService.setSettings(this.plugin.settings);
-		const stats = statsService.collectStats();
 
 		// Clear loading state
 		container.empty();
@@ -7258,13 +7280,83 @@ export class ControlCenterModal extends Modal {
 	private showImportExportTab(): void {
 		const container = this.contentContainer;
 
-		// Shared folder configuration card
+		// Folder configuration info card (points to Preferences)
 		const folderCard = this.createCard({
 			title: 'Folder configuration',
-			icon: 'folder'
+			icon: 'folder',
+			subtitle: 'Configure where imports are saved'
 		});
 		const folderContent = folderCard.querySelector('.crc-card__content') as HTMLElement;
-		this.renderFolderConfigInline(folderContent);
+
+		// Info about folders
+		const folderInfo = folderContent.createDiv({ cls: 'cr-info-box' });
+		const folderIcon = folderInfo.createSpan({ cls: 'cr-info-box-icon' });
+		setIcon(folderIcon, 'folder');
+		folderInfo.createSpan({
+			text: 'Imports create notes in the folders configured in your preferences. Make sure to set your People folder and other locations before importing.'
+		});
+
+		// Link to Preferences tab
+		const linkContainer = folderContent.createDiv({ cls: 'crc-folder-link' });
+		const linkButton = linkContainer.createEl('button', {
+			cls: 'mod-cta',
+			text: 'Open folder settings'
+		});
+		const linkIcon = linkButton.createSpan({ cls: 'crc-button-icon' });
+		setIcon(linkIcon, 'settings');
+		linkButton.prepend(linkIcon);
+		linkButton.addEventListener('click', () => {
+			this.switchTab('preferences');
+			// Scroll to folder locations card after tab renders
+			setTimeout(() => {
+				const folderCard = this.contentContainer.querySelector('#cr-folder-locations-card');
+				if (folderCard) {
+					folderCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+				}
+			}, 50);
+		});
+
+		// Current folder summary
+		const summaryContainer = folderContent.createDiv({ cls: 'crc-folder-summary crc-mt-3' });
+		summaryContainer.createEl('p', {
+			text: 'Current settings:',
+			cls: 'crc-text-muted crc-text-small crc-mb-1'
+		});
+		const summaryList = summaryContainer.createEl('ul', { cls: 'crc-folder-summary-list' });
+
+		// Helper to format folder path
+		const formatFolder = (path: string) => path || '(vault root)';
+
+		// Core import folders
+		summaryList.createEl('li', {
+			text: `People: ${formatFolder(this.plugin.settings.peopleFolder)}`,
+			cls: 'crc-text-small'
+		});
+		summaryList.createEl('li', {
+			text: `Places: ${formatFolder(this.plugin.settings.placesFolder)}`,
+			cls: 'crc-text-small'
+		});
+		summaryList.createEl('li', {
+			text: `Events: ${formatFolder(this.plugin.settings.eventsFolder)}`,
+			cls: 'crc-text-small'
+		});
+		summaryList.createEl('li', {
+			text: `Sources: ${formatFolder(this.plugin.settings.sourcesFolder)}`,
+			cls: 'crc-text-small'
+		});
+		summaryList.createEl('li', {
+			text: `Organizations: ${formatFolder(this.plugin.settings.organizationsFolder)}`,
+			cls: 'crc-text-small'
+		});
+
+		// Staging folder (only shown if configured)
+		if (this.plugin.settings.stagingFolder) {
+			summaryList.createEl('li', {
+				text: `Staging: ${this.plugin.settings.stagingFolder}`,
+				cls: 'crc-text-small crc-text-accent'
+			});
+		}
+
 		container.appendChild(folderCard);
 
 		// === IMPORT CARD ===
@@ -7509,37 +7601,6 @@ export class ControlCenterModal extends Modal {
 				this.renderCsvExport(container);
 				break;
 		}
-	}
-
-	/**
-	 * Render inline folder configuration (non-collapsible version)
-	 */
-	private renderFolderConfigInline(container: HTMLElement): void {
-		// People folder setting
-		new Setting(container)
-			.setName('People folder')
-			.setDesc('Where person notes are stored')
-			.addText(text => text
-				.setPlaceholder('People')
-				.setValue(this.plugin.settings.peopleFolder)
-				.onChange(async value => {
-					this.plugin.settings.peopleFolder = value;
-					await this.plugin.saveSettings();
-				})
-			);
-
-		// Staging folder setting
-		new Setting(container)
-			.setName('Staging folder')
-			.setDesc('Optional folder for reviewing imports before promoting')
-			.addText(text => text
-				.setPlaceholder('People-Staging')
-				.setValue(this.plugin.settings.stagingFolder || '')
-				.onChange(async value => {
-					this.plugin.settings.stagingFolder = value;
-					await this.plugin.saveSettings();
-				})
-			);
 	}
 
 	/**

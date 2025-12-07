@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.7] - 2025-12-07
+
+Settings consolidation and bug fixes.
+
+### Changed
+
+- **Settings Consolidation**: Reorganized folder settings for clarity
+  - Added Events, Organizations, Timelines, and Schemas folders to Plugin Settings
+  - Created new "Advanced" section for staging isolation and folder filtering options
+  - Added explanatory info boxes in both Plugin Settings and Preferences tab
+  - Import/Export tab now shows folder summary with link to Preferences for configuration
+
+### Fixed
+
+- **Status Tab Crash**: Fixed error when opening Control Center Status tab
+  - Crash occurred when notes had non-string tags in frontmatter
+  - Added type checking to gracefully skip malformed tag data
+  - Added error handling to display helpful error messages instead of silent failures
+
+---
+
 ## [0.10.6] - 2025-12-07
 
 Bug fix release: Fixed wikilink corruption in frontmatter operations. Added "Add cr_id" context menu action.

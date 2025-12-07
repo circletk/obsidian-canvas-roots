@@ -517,6 +517,12 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 			.setName('Data')
 			.setHeading();
 
+		// Folder explanation
+		const folderInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
+		folderInfo.createEl('strong', { text: '📁 About folders:' });
+		folderInfo.appendText(' These settings tell Canvas Roots where to find and create notes. Set them to match your vault\'s existing folder structure, or leave defaults to have Canvas Roots create folders automatically. ');
+		folderInfo.createEl('em', { text: 'Imports and new notes will use these paths.' });
+
 		new Setting(containerEl)
 			.setName('People folder')
 			.setDesc('Folder path for person notes (leave empty for vault root)')
@@ -573,6 +579,50 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
+			.setName('Events folder')
+			.setDesc('Folder for event notes (births, deaths, marriages, etc.)')
+			.addText(text => text
+				.setPlaceholder('Canvas Roots/Events')
+				.setValue(this.plugin.settings.eventsFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.eventsFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Organizations folder')
+			.setDesc('Folder for organization notes (guilds, companies, institutions, etc.)')
+			.addText(text => text
+				.setPlaceholder('Canvas Roots/Organizations')
+				.setValue(this.plugin.settings.organizationsFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.organizationsFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Timelines folder')
+			.setDesc('Folder for timeline notes (grouping events for visualization)')
+			.addText(text => text
+				.setPlaceholder('Canvas Roots/Timelines')
+				.setValue(this.plugin.settings.timelinesFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.timelinesFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
+			.setName('Schemas folder')
+			.setDesc('Folder for validation schema files')
+			.addText(text => text
+				.setPlaceholder('Canvas Roots/Schemas')
+				.setValue(this.plugin.settings.schemasFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.schemasFolder = value;
+					await this.plugin.saveSettings();
+				}));
+
+		new Setting(containerEl)
 			.setName('Bases folder')
 			.setDesc('Folder for Obsidian Bases files (leave empty to create bases in context menu folder)')
 			.addText(text => text
@@ -582,79 +632,6 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					this.plugin.settings.basesFolder = value;
 					await this.plugin.saveSettings();
 				}));
-
-		// Staging folder section
-		new Setting(containerEl)
-			.setName('Staging folder')
-			.setDesc('Folder for GEDCOM/CSV imports before merging into main tree. When set, this folder is automatically excluded from normal operations.')
-			.addText(text => text
-				.setPlaceholder('People-Staging')
-				.setValue(this.plugin.settings.stagingFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.stagingFolder = value;
-					await this.plugin.saveSettings();
-					// Refresh to show/hide the isolation toggle
-					this.display();
-				}));
-
-		// Only show isolation toggle if staging folder is configured
-		if (this.plugin.settings.stagingFolder) {
-			new Setting(containerEl)
-				.setName('Enable staging isolation')
-				.setDesc('When enabled, staging folder is automatically excluded from tree generation, duplicate detection, and other normal operations.')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.enableStagingIsolation)
-					.onChange(async (value) => {
-						this.plugin.settings.enableStagingIsolation = value;
-						await this.plugin.saveSettings();
-					}));
-		}
-
-		// Folder filtering section
-		new Setting(containerEl)
-			.setName('Folder filtering')
-			.setDesc('Control which folders are scanned for person notes')
-			.addDropdown(dropdown => dropdown
-				.addOption('disabled', 'Disabled (scan all folders)')
-				.addOption('exclude', 'Exclude folders (scan all except listed)')
-				.addOption('include', 'Include folders only (scan only listed)')
-				.setValue(this.plugin.settings.folderFilterMode)
-				.onChange(async (value: FolderFilterMode) => {
-					this.plugin.settings.folderFilterMode = value;
-					await this.plugin.saveSettings();
-					// Refresh display to show/hide folder list
-					this.display();
-				}));
-
-		// Show folder list based on mode
-		if (this.plugin.settings.folderFilterMode !== 'disabled') {
-			const isExcludeMode = this.plugin.settings.folderFilterMode === 'exclude';
-			const folders = isExcludeMode
-				? this.plugin.settings.excludedFolders
-				: this.plugin.settings.includedFolders;
-
-			new Setting(containerEl)
-				.setName(isExcludeMode ? 'Excluded folders' : 'Included folders')
-				.setDesc('One folder path per line. Subfolders are included automatically.')
-				.addTextArea(textArea => textArea
-					.setPlaceholder(isExcludeMode
-						? `templates\narchive\n${this.app.vault.configDir}`
-						: 'People\nFamily')
-					.setValue(folders.join('\n'))
-					.onChange(async (value) => {
-						const folderList = value
-							.split('\n')
-							.map(f => f.trim())
-							.filter(f => f.length > 0);
-
-						if (isExcludeMode) {
-							this.plugin.settings.excludedFolders = folderList;
-						} else {
-							this.plugin.settings.includedFolders = folderList;
-						}
-						await this.plugin.saveSettings();
-					}));
-		}
 
 		new Setting(containerEl)
 			.setName('Auto-generate cr_id')
@@ -985,5 +962,87 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					this.plugin.settings.exportFilenamePattern = value || '{name}-family-chart-{date}';
 					await this.plugin.saveSettings();
 				}));
+
+		// Advanced
+		new Setting(containerEl)
+			.setName('Advanced')
+			.setHeading();
+
+		const advancedInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
+		advancedInfo.createEl('strong', { text: '⚙️ Advanced settings:' });
+		advancedInfo.appendText(' These options control folder scanning behavior and import staging. Most users can leave these at their defaults.');
+
+		// Staging folder
+		new Setting(containerEl)
+			.setName('Staging folder')
+			.setDesc('Folder for GEDCOM/CSV imports before merging into main tree. When set, this folder is automatically excluded from normal operations.')
+			.addText(text => text
+				.setPlaceholder('People-Staging')
+				.setValue(this.plugin.settings.stagingFolder)
+				.onChange(async (value) => {
+					this.plugin.settings.stagingFolder = value;
+					await this.plugin.saveSettings();
+					// Refresh to show/hide the isolation toggle
+					this.display();
+				}));
+
+		// Only show isolation toggle if staging folder is configured
+		if (this.plugin.settings.stagingFolder) {
+			new Setting(containerEl)
+				.setName('Enable staging isolation')
+				.setDesc('When enabled, staging folder is automatically excluded from tree generation, duplicate detection, and other normal operations.')
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.enableStagingIsolation)
+					.onChange(async (value) => {
+						this.plugin.settings.enableStagingIsolation = value;
+						await this.plugin.saveSettings();
+					}));
+		}
+
+		// Folder filtering
+		new Setting(containerEl)
+			.setName('Folder filtering')
+			.setDesc('Control which folders are scanned for person notes')
+			.addDropdown(dropdown => dropdown
+				.addOption('disabled', 'Disabled (scan all folders)')
+				.addOption('exclude', 'Exclude folders (scan all except listed)')
+				.addOption('include', 'Include folders only (scan only listed)')
+				.setValue(this.plugin.settings.folderFilterMode)
+				.onChange(async (value: FolderFilterMode) => {
+					this.plugin.settings.folderFilterMode = value;
+					await this.plugin.saveSettings();
+					// Refresh display to show/hide folder list
+					this.display();
+				}));
+
+		// Show folder list based on mode
+		if (this.plugin.settings.folderFilterMode !== 'disabled') {
+			const isExcludeMode = this.plugin.settings.folderFilterMode === 'exclude';
+			const folders = isExcludeMode
+				? this.plugin.settings.excludedFolders
+				: this.plugin.settings.includedFolders;
+
+			new Setting(containerEl)
+				.setName(isExcludeMode ? 'Excluded folders' : 'Included folders')
+				.setDesc('One folder path per line. Subfolders are included automatically.')
+				.addTextArea(textArea => textArea
+					.setPlaceholder(isExcludeMode
+						? `templates\narchive\n${this.app.vault.configDir}`
+						: 'People\nFamily')
+					.setValue(folders.join('\n'))
+					.onChange(async (value) => {
+						const folderList = value
+							.split('\n')
+							.map(f => f.trim())
+							.filter(f => f.length > 0);
+
+						if (isExcludeMode) {
+							this.plugin.settings.excludedFolders = folderList;
+						} else {
+							this.plugin.settings.includedFolders = folderList;
+						}
+						await this.plugin.saveSettings();
+					}));
+		}
 	}
 }

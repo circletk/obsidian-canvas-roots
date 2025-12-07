@@ -340,7 +340,16 @@ function renderFolderLocationsCard(
 		icon: 'folder',
 		subtitle: 'Configure where Canvas Roots stores and finds notes'
 	});
+	card.id = 'cr-folder-locations-card';
 	const content = card.querySelector('.crc-card__content') as HTMLElement;
+
+	// Folder explanation
+	const folderInfo = content.createDiv({ cls: 'cr-info-box' });
+	const folderIcon = folderInfo.createSpan({ cls: 'cr-info-box-icon' });
+	setIcon(folderIcon, 'folder');
+	folderInfo.createSpan({
+		text: 'Set these to match your vault\'s folder structure. Imports and new notes will be created in these locations.'
+	});
 
 	// People folder
 	new Setting(content)
@@ -473,6 +482,14 @@ function renderFolderLocationsCard(
 				plugin.settings.stagingFolder = value;
 				await plugin.saveSettings();
 			}));
+
+	// Note about advanced settings
+	const advancedNote = content.createDiv({ cls: 'cr-info-box cr-info-box--muted' });
+	const advancedIcon = advancedNote.createSpan({ cls: 'cr-info-box-icon' });
+	setIcon(advancedIcon, 'settings');
+	advancedNote.createSpan({
+		text: 'For staging isolation and folder filtering options, see Settings → Canvas Roots → Advanced.'
+	});
 
 	container.appendChild(card);
 }

@@ -85,6 +85,10 @@ function detectTypeFromTags(tags: string[] | undefined): NoteType | null {
 	}
 
 	for (const tag of tags) {
+		// Skip non-string tags (can happen with malformed frontmatter)
+		if (typeof tag !== 'string') {
+			continue;
+		}
 		// Remove leading # if present
 		const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
 
