@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-08 19:21:00 UTC
+ * - Generated: 2025-12-08 20:11:40 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -6965,7 +6965,7 @@ settings:
    COMPONENT: DATA-QUALITY.CSS
    ========================================================================== */
 
-/* Component Size: 482 lines, 8.86 KB */
+/* Component Size: 719 lines, 13.53 KB */
 
 /**
  * Data Quality Tab Styles
@@ -7447,6 +7447,243 @@ settings:
 .crc-filter-select {
   flex: 1;
   max-width: 200px;
+}
+
+/* ==========================================================================
+   Places Tab - Data Quality Card (Unified Issues + Actions)
+   ========================================================================== */
+
+/* Success state when no issues */
+.crc-dq-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--size-4-6);
+  text-align: center;
+}
+
+.crc-dq-success p {
+  margin: 0;
+}
+
+/* Summary bar */
+.crc-dq-summary__item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-4-2);
+}
+
+.crc-dq-summary__count {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.crc-dq-summary__count--warning {
+  color: var(--color-orange);
+}
+
+.crc-dq-summary__count--success {
+  color: var(--color-green);
+}
+
+.crc-dq-summary__label {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+/* Issue sections container */
+.crc-dq-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  margin-top: var(--size-4-3);
+}
+
+/* Individual issue section (collapsible) */
+.crc-dq-section {
+  background: var(--background-primary);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+}
+
+.crc-dq-section__header {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+  padding: var(--size-4-3) var(--size-4-4);
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--anim-duration-fast);
+}
+
+.crc-dq-section__header:hover {
+  background: var(--background-modifier-hover);
+}
+
+.crc-dq-section__icon {
+  color: var(--color-orange);
+  flex-shrink: 0;
+}
+
+.crc-dq-section__title {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.crc-dq-section__badge {
+  background: rgba(var(--color-orange-rgb), 0.2);
+  color: var(--color-orange);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--font-ui-smaller);
+  font-weight: 500;
+}
+
+.crc-dq-section__chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: transform var(--anim-duration-fast);
+}
+
+.crc-dq-section--expanded .crc-dq-section__chevron {
+  transform: rotate(90deg);
+}
+
+/* Items container - hidden when collapsed */
+.crc-dq-section__items {
+  display: none;
+  padding: 0 var(--size-4-4) var(--size-4-3);
+}
+
+.crc-dq-section--expanded .crc-dq-section__items {
+  display: block;
+}
+
+/* Individual issue item */
+.crc-dq-item {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-3);
+  padding: var(--size-4-2) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.crc-dq-item:last-of-type {
+  border-bottom: none;
+}
+
+.crc-dq-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.crc-dq-item__name {
+  font-weight: 500;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.crc-dq-item__detail {
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Batch action row */
+.crc-dq-batch {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--size-4-2);
+  margin-top: var(--size-4-1);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.crc-dq-batch__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  background: transparent;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  cursor: pointer;
+  padding: var(--size-4-1) var(--size-4-3);
+  transition:
+    background-color var(--anim-duration-fast),
+    border-color var(--anim-duration-fast);
+}
+
+.crc-dq-batch__btn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover);
+}
+
+.crc-dq-batch__btn svg {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+
+/* Divider for "Other tools" section */
+.crc-dq-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-4);
+  margin: var(--size-4-5) 0 var(--size-4-4);
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.crc-dq-divider::before,
+.crc-dq-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--background-modifier-border);
+}
+
+/* Other tools list */
+.crc-dq-tools {
+  display: flex;
+  flex-direction: column;
+}
+
+.crc-dq-tool {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--size-4-3) 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.crc-dq-tool:last-child {
+  border-bottom: none;
+}
+
+.crc-dq-tool__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.crc-dq-tool__info h4 {
+  margin: 0 0 2px;
+  font-size: var(--font-ui-medium);
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.crc-dq-tool__info p {
+  margin: 0;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
 }
 
 
@@ -14991,10 +15228,10 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-08 19:21:00 UTC
+ * Build completed: 2025-12-08 20:11:40 UTC
  * Components processed: 30
- * Total lines: 14698
- * Total size: 288.46 KB
+ * Total lines: 14935
+ * Total size: 293.13 KB
  * Build duration: 0.03 seconds
  *
  * Component breakdown:
@@ -15014,7 +15251,7 @@ body.wide-timeline .view-content {
  * - folder-scan.css: 155 lines, 2.56 KB
  * - relationship-calculator.css: 302 lines, 5.21 KB
  * - family-chart-view.css: 629 lines, 14.76 KB
- * - data-quality.css: 482 lines, 8.86 KB
+ * - data-quality.css: 719 lines, 13.53 KB
  * - relationships.css: 517 lines, 9.76 KB
  * - canvas-navigation.css: 683 lines, 14.64 KB
  * - map-view.css: 1904 lines, 38.98 KB

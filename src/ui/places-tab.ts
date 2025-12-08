@@ -5,12 +5,12 @@
  * place statistics, lists, references, and data quality issues.
  */
 
-import { setIcon, Setting, TFile } from 'obsidian';
+import { TFile } from 'obsidian';
 import type CanvasRootsPlugin from '../../main';
 import type { LucideIconName } from './lucide-icons';
 import { createLucideIcon, setLucideIcon } from './lucide-icons';
 import { PlaceGraphService } from '../core/place-graph';
-import type { PlaceCategory, PlaceIssue } from '../models/place';
+import type { PlaceCategory } from '../models/place';
 import { CreatePlaceModal } from './create-place-modal';
 import { CreateMissingPlacesModal } from './create-missing-places-modal';
 import { BuildPlaceHierarchyModal } from './build-place-hierarchy-modal';
@@ -29,8 +29,23 @@ export function renderPlacesTab(
 	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement,
 	showTab: (tabId: string) => void
 ): void {
-	// Actions Card
-	renderActionsCard(container, plugin, createCard, showTab);
+	// Data Quality Card (unified issues + actions)
+	const dataQualityCard = createCard({
+		title: 'Data quality',
+		icon: 'alert-triangle',
+		subtitle: 'Place-related issues and fixes'
+	});
+
+	const dataQualityContent = dataQualityCard.querySelector('.crc-card__content') as HTMLElement;
+	dataQualityContent.createEl('p', {
+		text: 'Loading issues...',
+		cls: 'crc-text--muted'
+	});
+
+	container.appendChild(dataQualityCard);
+
+	// Load data quality content asynchronously
+	loadDataQualityCard(dataQualityContent, plugin, showTab);
 
 	// Overview Card
 	const overviewCard = createCard({
@@ -86,24 +101,6 @@ export function renderPlacesTab(
 	// Load referenced places asynchronously
 	loadReferencedPlaces(referencedContent, plugin, showTab);
 
-	// Issues Card
-	const issuesCard = createCard({
-		title: 'Data quality issues',
-		icon: 'alert-triangle',
-		subtitle: 'Place-related issues requiring attention'
-	});
-
-	const issuesContent = issuesCard.querySelector('.crc-card__content') as HTMLElement;
-	issuesContent.createEl('p', {
-		text: 'Loading issues...',
-		cls: 'crc-text--muted'
-	});
-
-	container.appendChild(issuesCard);
-
-	// Load issues asynchronously
-	loadPlaceIssues(issuesContent, plugin);
-
 	// Place Type Manager card
 	renderPlaceTypeManagerCard(container, plugin, createCard, () => {
 		showTab('places');
@@ -111,135 +108,452 @@ export function renderPlacesTab(
 }
 
 /**
- * Render the Actions card
+ * Load the unified Data Quality card content
  */
-function renderActionsCard(
+function loadDataQualityCard(
 	container: HTMLElement,
 	plugin: CanvasRootsPlugin,
-	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement,
 	showTab: (tabId: string) => void
 ): void {
-	const actionsCard = createCard({
-		title: 'Actions',
-		icon: 'plus',
-		subtitle: 'Create and manage place notes'
-	});
+	container.empty();
 
-	const actionsContent = actionsCard.querySelector('.crc-card__content') as HTMLElement;
+	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setValueAliases(plugin.settings.valueAliases);
+	placeService.reloadCache();
 
-	// Intro text
-	actionsContent.createEl('p', {
-		text: 'Follow these steps in order for best results:',
-		cls: 'crc-mb-3'
-	});
+	const stats = placeService.calculateStatistics();
+	const issues = stats.issues;
+	const references = placeService.getReferencedPlaces();
 
-	// Workflow steps data
-	const workflowSteps = [
-		{
-			number: '1',
-			title: 'Standardize place names',
-			desc: 'Find and unify variations',
-			buttonText: 'Find variations',
-			action: () => showStandardizePlacesModal(plugin, showTab)
-		},
-		{
-			number: '2',
-			title: 'Merge duplicate places',
-			desc: 'Combine duplicate place notes',
-			buttonText: 'Find duplicates',
-			action: () => showMergeDuplicatePlacesModal(plugin, showTab)
-		},
-		{
-			number: '3',
-			title: 'Create missing place notes',
-			desc: 'Generate notes for referenced locations',
-			buttonText: 'Find missing',
-			action: () => showCreateMissingPlacesModal(plugin, showTab)
-		},
-		{
-			number: '4',
-			title: 'Build place hierarchy',
-			desc: 'Connect places to parent regions',
-			buttonText: 'Build hierarchy',
-			action: () => showBuildHierarchyModal(plugin, showTab)
-		},
-		{
-			number: '5',
-			title: 'Bulk geocode places',
-			desc: 'Look up coordinates for maps',
-			buttonText: 'Geocode',
-			action: () => {
-				const placeGraph = new PlaceGraphService(plugin.app);
-				placeGraph.setValueAliases(plugin.settings.valueAliases);
-				placeGraph.reloadCache();
-				new BulkGeocodeModal(plugin.app, placeGraph, {
-					onComplete: () => showTab('places')
-				}).open();
-			}
+	// Get missing place references (unlinked)
+	const missingPlaces: Array<{ name: string; count: number }> = [];
+	for (const [name, info] of references.entries()) {
+		if (!info.linked) {
+			missingPlaces.push({ name, count: info.count });
 		}
-	];
+	}
+	missingPlaces.sort((a, b) => b.count - a.count);
 
-	// Render workflow steps with guide-step styling
-	workflowSteps.forEach((step, index) => {
-		const stepEl = actionsContent.createDiv({ cls: 'crc-workflow-step' });
+	// Group issues by type
+	const issuesByType = new Map<string, typeof issues>();
+	for (const issue of issues) {
+		if (!issuesByType.has(issue.type)) {
+			issuesByType.set(issue.type, []);
+		}
+		issuesByType.get(issue.type)!.push(issue);
+	}
 
-		// Numbered badge
-		const badge = stepEl.createDiv({ cls: 'crc-workflow-step__badge' });
-		badge.textContent = step.number;
+	// Calculate total issues (missing places + other issues, but avoid double counting)
+	// Missing places are tracked separately from PlaceIssue 'missing_place_note'
+	const missingPlaceNoteIssues = issuesByType.get('missing_place_note') || [];
+	const otherIssueCount = issues.length - missingPlaceNoteIssues.length;
+	const totalIssues = missingPlaces.length + otherIssueCount;
 
-		// Content area
-		const content = stepEl.createDiv({ cls: 'crc-workflow-step__content' });
-		content.createEl('h4', { text: step.title, cls: 'crc-mb-1' });
-		content.createEl('p', { text: step.desc, cls: 'crc-text--muted' });
+	// Count categories (only count non-empty ones)
+	let categoryCount = 0;
+	if (missingPlaces.length > 0) categoryCount++;
+	if (issuesByType.has('real_missing_coords')) categoryCount++;
+	if (issuesByType.has('orphan_place')) categoryCount++;
+	if (issuesByType.has('duplicate_name')) categoryCount++;
+	if (issuesByType.has('circular_hierarchy')) categoryCount++;
+	if (issuesByType.has('fictional_with_coords')) categoryCount++;
+	if (issuesByType.has('invalid_category')) categoryCount++;
 
-		// Action button
-		const button = stepEl.createEl('button', {
-			text: step.buttonText,
-			cls: 'crc-btn'
+	// If no issues at all, show success message
+	if (totalIssues === 0) {
+		const successState = container.createDiv({ cls: 'crc-dq-success' });
+		const icon = createLucideIcon('check-circle', 24);
+		icon.addClass('crc-text--success');
+		successState.appendChild(icon);
+		successState.createEl('p', {
+			text: 'No data quality issues found!',
+			cls: 'crc-text--success crc-mt-2'
 		});
-		button.addEventListener('click', step.action);
 
-		// Add border except for last item
-		if (index < workflowSteps.length - 1) {
-			stepEl.addClass('crc-workflow-step--bordered');
-		}
+		// Still show other tools
+		renderOtherTools(container, plugin, showTab);
+		return;
+	}
+
+	// Summary bar
+	const summaryBar = container.createDiv({ cls: 'crc-dq-summary' });
+
+	const issuesSummary = summaryBar.createDiv({ cls: 'crc-dq-summary__item' });
+	issuesSummary.createEl('span', {
+		text: totalIssues.toLocaleString(),
+		cls: 'crc-dq-summary__count crc-dq-summary__count--warning'
 	});
+	issuesSummary.createEl('span', {
+		text: 'issues found',
+		cls: 'crc-dq-summary__label'
+	});
+
+	const categoriesSummary = summaryBar.createDiv({ cls: 'crc-dq-summary__item' });
+	categoriesSummary.createEl('span', {
+		text: categoryCount.toString(),
+		cls: 'crc-dq-summary__count'
+	});
+	categoriesSummary.createEl('span', {
+		text: categoryCount === 1 ? 'category' : 'categories',
+		cls: 'crc-dq-summary__label'
+	});
+
+	// Track which sections to expand by default (first two with issues)
+	let expandedCount = 0;
+
+	// Issue sections container
+	const sectionsContainer = container.createDiv({ cls: 'crc-dq-sections' });
+
+	// 1. Missing place notes section
+	if (missingPlaces.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'file-plus',
+			title: 'Missing place notes',
+			count: missingPlaces.length,
+			expanded: expandedCount < 2,
+			items: missingPlaces.slice(0, 4).map(place => ({
+				name: place.name,
+				detail: `Referenced by ${place.count} ${place.count === 1 ? 'person' : 'people'}`,
+				action: {
+					label: 'Create',
+					primary: true,
+					onClick: () => showQuickCreatePlaceModal(plugin, place.name, showTab)
+				}
+			})),
+			batchAction: {
+				label: 'Create all missing places',
+				onClick: () => showCreateMissingPlacesModal(plugin, showTab)
+			}
+		});
+		expandedCount++;
+	}
+
+	// 2. Real places missing coordinates
+	const missingCoords = issuesByType.get('real_missing_coords') || [];
+	if (missingCoords.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'globe',
+			title: 'Real places missing coordinates',
+			count: missingCoords.length,
+			expanded: expandedCount < 2,
+			items: missingCoords.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: 'Real place with no coordinates',
+				action: {
+					label: 'Edit',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: {
+				label: 'Bulk geocode all',
+				onClick: () => {
+					const placeGraph = new PlaceGraphService(plugin.app);
+					placeGraph.setValueAliases(plugin.settings.valueAliases);
+					placeGraph.reloadCache();
+					new BulkGeocodeModal(plugin.app, placeGraph, {
+						onComplete: () => showTab('places')
+					}).open();
+				}
+			}
+		});
+		expandedCount++;
+	}
+
+	// 3. Orphan places
+	const orphanPlaces = issuesByType.get('orphan_place') || [];
+	if (orphanPlaces.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'alert-circle',
+			title: 'Orphan places',
+			count: orphanPlaces.length,
+			expanded: expandedCount < 2,
+			items: orphanPlaces.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: 'No parent place defined',
+				action: {
+					label: 'Set parent',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: {
+				label: 'Build place hierarchy',
+				onClick: () => showBuildHierarchyModal(plugin, showTab)
+			}
+		});
+		expandedCount++;
+	}
+
+	// 4. Duplicate names
+	const duplicates = issuesByType.get('duplicate_name') || [];
+	if (duplicates.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'copy',
+			title: 'Duplicate names',
+			count: duplicates.length,
+			expanded: expandedCount < 2,
+			items: duplicates.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: issue.message.includes('(') ? issue.message.substring(issue.message.lastIndexOf('(')) : '2+ places with this name',
+				action: {
+					label: 'Review',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: {
+				label: 'Find all duplicates',
+				onClick: () => showMergeDuplicatePlacesModal(plugin, showTab)
+			}
+		});
+		expandedCount++;
+	}
+
+	// 5. Circular hierarchies (if any)
+	const circular = issuesByType.get('circular_hierarchy') || [];
+	if (circular.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'refresh-cw',
+			title: 'Circular hierarchies',
+			count: circular.length,
+			expanded: expandedCount < 2,
+			items: circular.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: 'Circular parent reference detected',
+				action: {
+					label: 'Fix',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: undefined
+		});
+		expandedCount++;
+	}
+
+	// 6. Fictional places with coordinates (if any)
+	const fictionalWithCoords = issuesByType.get('fictional_with_coords') || [];
+	if (fictionalWithCoords.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'unlink',
+			title: 'Fictional places with coordinates',
+			count: fictionalWithCoords.length,
+			expanded: expandedCount < 2,
+			items: fictionalWithCoords.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: 'Fictional place should not have real coordinates',
+				action: {
+					label: 'Fix',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: undefined
+		});
+		expandedCount++;
+	}
+
+	// 7. Invalid categories (if any)
+	const invalidCategory = issuesByType.get('invalid_category') || [];
+	if (invalidCategory.length > 0) {
+		renderIssueSection(sectionsContainer, {
+			icon: 'help-circle',
+			title: 'Invalid categories',
+			count: invalidCategory.length,
+			expanded: expandedCount < 2,
+			items: invalidCategory.slice(0, 4).map(issue => ({
+				name: issue.placeName || 'Unknown place',
+				detail: 'Unrecognized place category',
+				action: {
+					label: 'Fix',
+					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+				}
+			})),
+			batchAction: undefined
+		});
+		expandedCount++;
+	}
 
 	// Other tools section
-	const otherToolsHeader = actionsContent.createDiv({ cls: 'crc-workflow-section crc-mt-4' });
-	otherToolsHeader.createEl('h4', {
-		text: 'Other tools',
-		cls: 'crc-workflow-title'
+	renderOtherTools(container, plugin, showTab);
+}
+
+/**
+ * Render a collapsible issue section
+ */
+interface IssueSectionOptions {
+	icon: LucideIconName;
+	title: string;
+	count: number;
+	expanded: boolean;
+	items: Array<{
+		name: string;
+		detail: string;
+		action: {
+			label: string;
+			primary?: boolean;
+			onClick: () => void;
+		};
+	}>;
+	batchAction?: {
+		label: string;
+		onClick: () => void;
+	};
+}
+
+function renderIssueSection(container: HTMLElement, options: IssueSectionOptions): void {
+	const section = container.createDiv({
+		cls: `crc-dq-section ${options.expanded ? 'crc-dq-section--expanded' : ''}`
 	});
 
-	new Setting(actionsContent)
-		.setName('Create new place note')
-		.setDesc('Manually create a place note with geographic information')
-		.addButton(button => button
-			.setButtonText('Create place')
-			.onClick(() => {
-				new CreatePlaceModal(plugin.app, {
-					directory: plugin.settings.placesFolder || '',
-					familyGraph: plugin.createFamilyGraphService(),
-					placeGraph: new PlaceGraphService(plugin.app),
-					settings: plugin.settings,
-					onCreated: () => {
-						// Refresh the Places tab
-						showTab('places');
-					}
-				}).open();
-			}));
+	// Header (clickable to expand/collapse)
+	const header = section.createDiv({ cls: 'crc-dq-section__header' });
 
-	new Setting(actionsContent)
-		.setName('Templater templates')
-		.setDesc('Copy ready-to-use templates for Templater integration')
-		.addButton(button => button
-			.setButtonText('View templates')
-			.onClick(() => {
-				new TemplateSnippetsModal(plugin.app).open();
-			}));
+	const icon = createLucideIcon(options.icon, 16);
+	icon.addClass('crc-dq-section__icon');
+	header.appendChild(icon);
 
-	container.appendChild(actionsCard);
+	header.createEl('span', {
+		text: options.title,
+		cls: 'crc-dq-section__title'
+	});
+
+	header.createEl('span', {
+		text: options.count.toString(),
+		cls: 'crc-dq-section__badge'
+	});
+
+	const chevron = createLucideIcon('chevron-right', 16);
+	chevron.addClass('crc-dq-section__chevron');
+	header.appendChild(chevron);
+
+	// Toggle expand/collapse on header click
+	header.addEventListener('click', () => {
+		section.classList.toggle('crc-dq-section--expanded');
+	});
+
+	// Items container
+	const itemsContainer = section.createDiv({ cls: 'crc-dq-section__items' });
+
+	// Render items
+	for (const item of options.items) {
+		const itemEl = itemsContainer.createDiv({ cls: 'crc-dq-item' });
+
+		const content = itemEl.createDiv({ cls: 'crc-dq-item__content' });
+		content.createEl('div', {
+			text: item.name,
+			cls: 'crc-dq-item__name'
+		});
+		content.createEl('div', {
+			text: item.detail,
+			cls: 'crc-dq-item__detail'
+		});
+
+		const btn = itemEl.createEl('button', {
+			text: item.action.label,
+			cls: `crc-btn crc-btn--small ${item.action.primary ? 'crc-btn--primary' : 'crc-btn--ghost'}`
+		});
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			item.action.onClick();
+		});
+	}
+
+	// Batch action
+	if (options.batchAction) {
+		const batchRow = itemsContainer.createDiv({ cls: 'crc-dq-batch' });
+		const batchBtn = batchRow.createEl('button', {
+			cls: 'crc-dq-batch__btn'
+		});
+		batchBtn.createEl('span', { text: options.batchAction.label });
+		const arrow = createLucideIcon('arrow-right', 14);
+		batchBtn.appendChild(arrow);
+		batchBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			options.batchAction!.onClick();
+		});
+	}
+}
+
+/**
+ * Render the "Other tools" section
+ */
+function renderOtherTools(
+	container: HTMLElement,
+	plugin: CanvasRootsPlugin,
+	showTab: (tabId: string) => void
+): void {
+	// Divider
+	const divider = container.createDiv({ cls: 'crc-dq-divider' });
+	divider.createEl('span', { text: 'Other tools' });
+
+	// Tools list
+	const toolsList = container.createDiv({ cls: 'crc-dq-tools' });
+
+	// Standardize place names
+	const standardizeTool = toolsList.createDiv({ cls: 'crc-dq-tool' });
+	const standardizeInfo = standardizeTool.createDiv({ cls: 'crc-dq-tool__info' });
+	standardizeInfo.createEl('h4', { text: 'Standardize place names' });
+	standardizeInfo.createEl('p', { text: 'Find and unify name variations across person notes' });
+	const standardizeBtn = standardizeTool.createEl('button', {
+		text: 'Find variations',
+		cls: 'crc-btn crc-btn--ghost'
+	});
+	standardizeBtn.addEventListener('click', () => showStandardizePlacesModal(plugin, showTab));
+
+	// Create new place note
+	const createTool = toolsList.createDiv({ cls: 'crc-dq-tool' });
+	const createInfo = createTool.createDiv({ cls: 'crc-dq-tool__info' });
+	createInfo.createEl('h4', { text: 'Create new place note' });
+	createInfo.createEl('p', { text: 'Manually create a place note with geographic information' });
+	const createBtn = createTool.createEl('button', {
+		text: 'Create place',
+		cls: 'crc-btn crc-btn--ghost'
+	});
+	createBtn.addEventListener('click', () => {
+		new CreatePlaceModal(plugin.app, {
+			directory: plugin.settings.placesFolder || '',
+			familyGraph: plugin.createFamilyGraphService(),
+			placeGraph: new PlaceGraphService(plugin.app),
+			settings: plugin.settings,
+			onCreated: () => showTab('places')
+		}).open();
+	});
+
+	// Templater templates
+	const templateTool = toolsList.createDiv({ cls: 'crc-dq-tool' });
+	const templateInfo = templateTool.createDiv({ cls: 'crc-dq-tool__info' });
+	templateInfo.createEl('h4', { text: 'Templater templates' });
+	templateInfo.createEl('p', { text: 'Copy ready-to-use templates for Templater integration' });
+	const templateBtn = templateTool.createEl('button', {
+		text: 'View templates',
+		cls: 'crc-btn crc-btn--ghost'
+	});
+	templateBtn.addEventListener('click', () => {
+		new TemplateSnippetsModal(plugin.app).open();
+	});
+}
+
+/**
+ * Open a place note for editing
+ */
+function openPlaceForEditing(
+	plugin: CanvasRootsPlugin,
+	filePath: string | undefined,
+	placeService: PlaceGraphService,
+	showTab: (tabId: string) => void
+): void {
+	if (!filePath) return;
+
+	const file = plugin.app.vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) return;
+
+	const place = placeService.getAllPlaces().find(p => p.filePath === filePath);
+	if (!place) return;
+
+	new CreatePlaceModal(plugin.app, {
+		editPlace: place,
+		editFile: file,
+		placeGraph: placeService,
+		settings: plugin.settings,
+		onUpdated: () => showTab('places')
+	}).open();
 }
 
 /**
@@ -856,62 +1170,6 @@ function loadReferencedPlaces(
 }
 
 /**
- * Load place issues into container
- */
-function loadPlaceIssues(container: HTMLElement, plugin: CanvasRootsPlugin): void {
-	container.empty();
-
-	const placeService = new PlaceGraphService(plugin.app);
-	placeService.setValueAliases(plugin.settings.valueAliases);
-	placeService.reloadCache();
-
-	const stats = placeService.calculateStatistics();
-	const issues = stats.issues;
-
-	if (issues.length === 0) {
-		container.createEl('p', {
-			text: 'No issues found.',
-			cls: 'crc-text--success'
-		});
-		return;
-	}
-
-	// Group by issue type
-	const byType = new Map<string, PlaceIssue[]>();
-	for (const issue of issues) {
-		if (!byType.has(issue.type)) {
-			byType.set(issue.type, []);
-		}
-		byType.get(issue.type)!.push(issue);
-	}
-
-	// Display issue groups
-	for (const [type, typeIssues] of byType.entries()) {
-		const issueSection = container.createDiv({ cls: 'crc-issue-group crc-mb-3' });
-
-		const header = issueSection.createDiv({ cls: 'crc-collection-header' });
-		header.createEl('strong', { text: `${formatIssueType(type)} ` });
-		header.createEl('span', {
-			cls: 'crc-badge crc-badge--warning',
-			text: typeIssues.length.toString()
-		});
-
-		const issueList = issueSection.createEl('ul', { cls: 'crc-list crc-list--compact' });
-		for (const issue of typeIssues.slice(0, 5)) {
-			const item = issueList.createEl('li', { cls: 'crc-text--small' });
-			item.textContent = issue.message;
-		}
-
-		if (typeIssues.length > 5) {
-			issueSection.createEl('p', {
-				text: `+${typeIssues.length - 5} more...`,
-				cls: 'crc-text--muted crc-text--small'
-			});
-		}
-	}
-}
-
-/**
  * Create a stat item for the statistics grid
  */
 function createStatItem(container: HTMLElement, label: string, value: string, icon?: LucideIconName): void {
@@ -941,22 +1199,6 @@ function formatPlaceCategoryName(category: PlaceCategory): string {
 		fictional: 'Fictional'
 	};
 	return names[category] || category;
-}
-
-/**
- * Format issue type for display
- */
-function formatIssueType(type: string): string {
-	const names: Record<string, string> = {
-		orphan_place: 'Orphan places',
-		missing_place_note: 'Missing place notes',
-		circular_hierarchy: 'Circular hierarchies',
-		duplicate_name: 'Duplicate names',
-		fictional_with_coords: 'Fictional places with coordinates',
-		real_missing_coords: 'Real places missing coordinates',
-		invalid_category: 'Invalid categories'
-	};
-	return names[type] || type;
 }
 
 /**

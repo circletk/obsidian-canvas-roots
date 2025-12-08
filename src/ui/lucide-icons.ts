@@ -104,7 +104,10 @@ export type LucideIconName =
 	| 'calendar-plus' // Extract events
 	| 'calendar-check' // Create events
 	| 'star' // Star marker
-	| 'flag'; // Flag marker
+	| 'flag' // Flag marker
+	| 'check-circle' // Success indicator
+	| 'circle-off' // Disabled/off state
+	| 'help-circle'; // Help/unknown
 
 /**
  * Tab configuration for Control Center navigation

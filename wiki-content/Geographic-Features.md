@@ -425,11 +425,66 @@ The Places tab in Control Center shows aggregate statistics:
 - Top death places
 - Migration patterns (birth → death flows)
 
-**Actions:**
-- Create missing place notes
-- Build hierarchy (assign parents to orphan places)
-- Merge duplicate places (find and consolidate redundant place notes)
-- View place index (alphabetical with person counts)
+## Data Quality Card
+
+The Data Quality card in the Places tab provides a unified view of place data issues with inline actions to fix them. It combines issue detection with resolution tools in a single, scannable interface.
+
+### Summary Bar
+
+At the top of the card, a summary bar shows at-a-glance counts for each issue type:
+- **Orphan**: Places without a parent place defined
+- **Missing**: Place names referenced in person notes that don't have corresponding place notes
+- **Duplicate**: Place names that appear multiple times (potential duplicates)
+- **Other**: Additional issues (circular hierarchy, fictional places with coordinates, etc.)
+
+### Issue Sections
+
+Each issue type appears in its own collapsible section. Sections show a count badge and can be expanded or collapsed by clicking the header.
+
+**Default behavior:**
+- The first two sections are expanded by default (progressive disclosure)
+- Sections with zero issues are hidden
+
+**Issue types detected:**
+| Issue Type | Description | Action |
+|------------|-------------|--------|
+| Orphan places | Places without `parent_place` defined | Edit button to set parent |
+| Missing place notes | Places referenced in person notes but no place note exists | Create button to create note |
+| Duplicate names | Multiple place notes with the same name | Review button, batch link to merge modal |
+| Circular hierarchy | Place A → B → A (invalid parent chain) | Edit button to fix |
+| Fictional with coords | Fictional/mythological places with real-world coordinates | Review button |
+| Real missing coords | Real places without coordinates defined | Edit button to add coords |
+
+### Inline Actions
+
+Each issue item shows:
+- **Place name**: The name of the affected place
+- **Detail text**: Context about the issue (e.g., "no parent", "referenced by 5 people")
+- **Action button**: A contextual action like "Create", "Edit", "Set parent", or "Review"
+
+Clicking the action button opens the appropriate modal or navigates to the place for editing.
+
+### Batch Actions
+
+For issue types that support bulk operations, a batch action link appears below the issue list:
+- **"Find all duplicates →"**: Opens the Merge Duplicate Places modal
+- **"Create all missing →"**: Opens the Create Missing Places modal (when available)
+
+### Other Tools
+
+Below the issue sections, an "Other tools" section provides access to actions that aren't issue-driven:
+- **Geocode lookup**: Look up coordinates for real places via OpenStreetMap
+- **Standardize place names**: Normalize place name formatting across notes
+- **Merge duplicate places**: Open the full duplicate detection and merge modal
+
+### Best Practices
+
+**Recommended workflow:**
+1. Review the summary bar to understand the scope of issues
+2. Address high-impact issues first (missing places with many references)
+3. Use batch actions for bulk operations
+4. Use inline actions for individual fixes
+5. Re-check after fixes to catch any new issues
 
 ## Place Visualizations
 

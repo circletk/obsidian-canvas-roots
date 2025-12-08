@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.14] - 2025-12-08
+
+Control Center UI consistency improvements and Places tab UX overhaul.
+
+### Added
+
+- **Schema Validation Progress Modal**: Visual progress indicator when validating vault against schemas
+  - Shows current file being validated
+  - Progress bar with percentage complete
+  - Auto-closes on completion
+
+### Changed
+
+- **Places Tab: Unified Data Quality Card**: Combined separate "Actions" and "Data quality issues" cards into a single unified card
+  - **Summary bar**: At-a-glance overview showing counts for orphan places, missing place notes, and other issues
+  - **Collapsible issue sections**: Each issue type in its own expandable section with issue count badge
+  - **Inline action buttons**: Individual "Create", "Edit", "Set parent", or "Review" buttons per issue item
+  - **Batch action links**: "Find all duplicates →" and similar links connect to existing modals
+  - **Other tools section**: Non-issue actions (Geocode lookup, Standardize place names, Merge duplicates) moved to dedicated section below issues
+  - **Progressive disclosure**: First two issue sections expanded by default; others collapsed
+  - **Priority ordering**: Missing place notes sorted by reference count (most-referenced first)
+
+- **Type Manager Cards**: Unified all type manager cards (Events, Sources, Organizations, Relationships, Places) to use Obsidian's Setting component
+  - Consistent layout with name, description, and action buttons
+  - Standardized spacing and visual hierarchy
+
+- **Control Order Standardization**: Filter, sort, and search controls now follow consistent order across all tabs
+  - Order: Filter → Sort → Search (where applicable)
+  - Consistent styling and spacing
+
+- **Collections Tab: Families Table**: Converted families list to paginated table format
+  - Consistent with other entity tables in Control Center
+  - Pagination for large family lists
+
+### Improved
+
+- **Data Quality Card Discoverability**: Issues are now prominently displayed at the top of the Places tab instead of buried at the bottom
+- **Actionability**: Users can now fix issues directly from the issue list without scrolling to a separate Actions card
+
+---
+
 ## [0.10.13] - 2025-12-08
 
 Timeline export improvements with Excalidraw styling options and unified export UI.
