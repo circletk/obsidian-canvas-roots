@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.12] - 2025-12-07
+
+Duplicate place detection and improved merge modal UX.
+
+### Added
+
+- **Merge Duplicate Place Notes**: New tool to find and merge duplicate place notes
+  - Detects place notes with identical names that may represent the same location
+  - Suggests the most complete note as canonical (based on parent, coordinates, type, references)
+  - Merging updates person notes, re-parents child places, and moves duplicates to trash
+  - Accessible via Places tab workflow (step 2) or command palette
+  - Particularly useful after GEDCOM import when duplicates are common
+
+- **Full Name Similarity Detection**: Duplicate detection now also groups places by normalized `full_name`
+  - Catches duplicates like "Hartford, CT" and "Hartford, CT, USA" with different parents
+  - Normalizes full names by removing common country suffixes (USA, United Kingdom, etc.)
+  - Shows "similar full name" match reason in the UI
+
+- **Merge Modal Enhancements**:
+  - **Help link**: Links to wiki documentation for the merge feature
+  - **Context menu for open button**: Right-click to choose "Open in new tab", "Open to the right", or "Open in new window"
+  - **Filename rename**: Change the canonical file's name after merge (useful for removing "-2" suffixes)
+  - **Sorting options**: Sort by most/fewest duplicates, or alphabetically by name
+  - **Filtering options**: Filter to show pending, has metadata, or has coordinates groups
+  - **Character count badge**: Shows body content length instead of generic "has content"
+  - **Full name display**: Shows the `full_name` GEDCOM property for each place
+
+- **New Command**: `Merge duplicate place notes` to find and merge duplicate place notes
+
+### Improved
+
+- **Standardize Place Names UX**: Enhanced modal with clearer explanations and impact preview
+  - Added explanation section showing which frontmatter fields will be updated
+  - Dynamic impact display shows exactly what will change when you select an option
+  - Button labels now show reference counts (e.g., "Standardize (12)")
+  - Tooltips provide additional context about files affected
+
+- **Places Tab Workflow**: Reorganized workflow steps
+  - Added "Merge duplicate places" as step 2
+  - Renumbered subsequent steps (Create missing → 3, Build hierarchy → 4, Geocode → 5)
+
+---
+
 ## [0.10.11] - 2025-12-07
 
 GEDCOM import improvements and enhanced place variation detection.

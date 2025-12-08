@@ -70,6 +70,9 @@
 
 /* Modal header with icon */
 .crc-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   margin-bottom: 16px;
 }
 
@@ -81,6 +84,25 @@
   margin-bottom: 8px;
   font-size: 20px;
   font-weight: 600;
+}
+
+/* Help link in modal header */
+.crc-modal-help-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 4px 8px;
+  border-radius: var(--radius-s);
+  cursor: pointer;
+}
+
+.crc-modal-help-link:hover {
+  color: var(--text-normal);
+  background: var(--background-modifier-hover);
+  text-decoration: none;
 }
 
 .crc-modal-buttons {
@@ -2799,6 +2821,199 @@
 .crc-variation-meta {
   margin-left: auto;
   font-size: 12px;
+}
+
+/* Impact display within each variation group */
+.crc-variation-impact {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+
+.crc-impact-message {
+  display: block;
+  line-height: 1.4;
+}
+
+.crc-variation-names {
+  font-style: italic;
+  word-break: break-word;
+}
+
+/* Standardize modal explanation section */
+.crc-standardize-description {
+  margin-bottom: 16px;
+}
+
+.crc-standardize-explanation {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  border-left: 3px solid var(--interactive-accent);
+}
+
+.crc-standardize-explanation p {
+  margin: 0 0 8px 0;
+}
+
+.crc-field-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.crc-field-list li {
+  margin: 2px 0;
+  font-family: var(--font-monospace);
+}
+
+/* ==========================================================================
+   MERGE DUPLICATE PLACES MODAL
+   ========================================================================== */
+
+.crc-merge-duplicates-modal {
+  width: 700px;
+  max-width: 95vw;
+}
+
+.crc-duplicate-place-option {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  position: relative;
+}
+
+.crc-duplicate-open-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.crc-duplicate-open-btn:hover {
+  opacity: 1;
+}
+
+.crc-duplicate-place-option:hover .crc-duplicate-open-btn {
+  opacity: 0.8;
+}
+
+.crc-duplicate-place-label {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.crc-duplicate-place-name {
+  font-size: var(--font-ui-medium);
+}
+
+.crc-duplicate-place-path {
+  font-size: var(--font-ui-smaller);
+  font-family: var(--font-monospace);
+  word-break: break-all;
+}
+
+.crc-duplicate-place-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.crc-duplicate-place-fullname {
+  flex-basis: 100%;
+  font-size: var(--font-ui-smaller);
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.crc-impact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+  padding-left: 8px;
+  border-left: 2px solid var(--background-modifier-border);
+}
+
+.crc-impact-details span {
+  display: block;
+  font-size: var(--font-ui-small);
+}
+
+/* Filename edit section for merge modal */
+.crc-duplicate-filename-section {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--background-modifier-border);
+}
+
+.crc-filename-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--font-ui-small);
+}
+
+.crc-filename-original {
+  color: var(--text-muted);
+}
+
+.crc-filename-edited {
+  color: var(--text-accent);
+  font-weight: 500;
+}
+
+.crc-filename-editor {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-ui-small);
+}
+
+.crc-filename-input {
+  flex: 1;
+  min-width: 150px;
+  max-width: 300px;
+}
+
+/* Sort and filter controls for merge modal */
+.crc-duplicate-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
+
+.crc-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.crc-control-label {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+.crc-select--small {
+  font-size: var(--font-ui-small);
+  padding: 4px 8px;
+}
+
+.crc-duplicate-status {
+  margin-left: auto;
+  font-size: var(--font-ui-small);
 }
 
 /* ==========================================================================

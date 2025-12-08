@@ -31,6 +31,8 @@ export class StandardizePlacesModal extends Modal {
 	private selectedGroups: Map<PlaceVariationGroup, string>; // group -> chosen canonical
 	private appliedGroups: Set<PlaceVariationGroup>; // groups that have been applied
 	private groupElements: Map<PlaceVariationGroup, HTMLElement>; // group -> DOM element
+	private groupImpactElements: Map<PlaceVariationGroup, HTMLElement>; // group -> impact display element
+	private groupApplyButtons: Map<PlaceVariationGroup, HTMLButtonElement>; // group -> apply button
 	private onComplete?: (updated: number) => void;
 	private totalUpdated = 0;
 
@@ -45,6 +47,8 @@ export class StandardizePlacesModal extends Modal {
 		this.selectedGroups = new Map();
 		this.appliedGroups = new Set();
 		this.groupElements = new Map();
+		this.groupImpactElements = new Map();
+		this.groupApplyButtons = new Map();
 		this.onComplete = options.onComplete;
 
 		// Pre-select the suggested canonical for each group
@@ -67,11 +71,24 @@ export class StandardizePlacesModal extends Modal {
 		titleContainer.appendChild(icon);
 		titleContainer.appendText('Standardize place names');
 
-		// Description
-		contentEl.createEl('p', {
-			text: `Found ${this.variationGroups.length} group${this.variationGroups.length !== 1 ? 's' : ''} of similar place names. Select which name to use as the standard for each group.`,
+		// Description - what the modal does
+		const descriptionEl = contentEl.createDiv({ cls: 'crc-standardize-description' });
+		descriptionEl.createEl('p', {
+			text: `Found ${this.variationGroups.length} group${this.variationGroups.length !== 1 ? 's' : ''} of similar place names that may be variations of the same location.`,
 			cls: 'crc-text--muted'
 		});
+
+		// Explanation of what happens
+		const explanationEl = descriptionEl.createDiv({ cls: 'crc-standardize-explanation' });
+		explanationEl.createEl('p', {
+			text: 'For each group, select the name you want to use as the standard. Applying will update these frontmatter fields in your person notes:',
+			cls: 'crc-text--muted'
+		});
+		const fieldsList = explanationEl.createEl('ul', { cls: 'crc-field-list' });
+		fieldsList.createEl('li', { text: 'birth_place' });
+		fieldsList.createEl('li', { text: 'death_place' });
+		fieldsList.createEl('li', { text: 'burial_place' });
+		fieldsList.createEl('li', { text: 'spouse marriage locations' });
 
 		if (this.variationGroups.length === 0) {
 			contentEl.createEl('p', {
@@ -96,16 +113,38 @@ export class StandardizePlacesModal extends Modal {
 		const buttonContainer = contentEl.createDiv({ cls: 'crc-modal-buttons' });
 
 		const cancelBtn = buttonContainer.createEl('button', {
-			text: 'Cancel',
+			text: 'Close',
 			cls: 'crc-btn'
 		});
 		cancelBtn.addEventListener('click', () => this.close());
 
+		// Calculate total impact for the main button
+		const totalImpact = this.calculateTotalImpact();
 		const applyBtn = buttonContainer.createEl('button', {
-			text: 'Apply changes',
+			text: `Standardize all (${totalImpact.totalRefs} refs)`,
 			cls: 'crc-btn crc-btn--primary'
 		});
+		applyBtn.title = `Update ${totalImpact.totalRefs} references across ${totalImpact.groupCount} groups`;
 		applyBtn.addEventListener('click', () => void this.applyStandardization());
+	}
+
+	/**
+	 * Calculate total impact across all groups
+	 */
+	private calculateTotalImpact(): { totalRefs: number; groupCount: number } {
+		let totalRefs = 0;
+		let groupCount = 0;
+
+		for (const group of this.variationGroups) {
+			if (this.appliedGroups.has(group)) continue;
+			const impact = this.calculateGroupImpact(group);
+			if (impact.totalRefs > 0) {
+				totalRefs += impact.totalRefs;
+				groupCount++;
+			}
+		}
+
+		return { totalRefs, groupCount };
 	}
 
 	onClose() {
@@ -124,6 +163,8 @@ export class StandardizePlacesModal extends Modal {
 	private renderGroups(container: HTMLElement): void {
 		container.empty();
 		this.groupElements.clear();
+		this.groupImpactElements.clear();
+		this.groupApplyButtons.clear();
 
 		for (const group of this.variationGroups) {
 			const groupEl = container.createDiv({ cls: 'crc-variation-group' });
@@ -149,11 +190,14 @@ export class StandardizePlacesModal extends Modal {
 				linkedBadge.title = 'One or more variations are linked to place notes';
 			}
 
-			// Apply button for this group
+			// Apply button for this group - with dynamic label showing impact
+			const impact = this.calculateGroupImpact(group);
 			const applyBtn = groupHeader.createEl('button', {
-				text: 'Apply',
+				text: `Standardize (${impact.totalRefs})`,
 				cls: 'crc-btn crc-btn--small'
 			});
+			applyBtn.title = `Update ${impact.totalRefs} reference${impact.totalRefs !== 1 ? 's' : ''} in ${impact.fileCount} file${impact.fileCount !== 1 ? 's' : ''}`;
+			this.groupApplyButtons.set(group, applyBtn);
 			applyBtn.addEventListener('click', () => void this.applyGroupStandardization(group, groupEl, applyBtn));
 
 			// Radio buttons for each variation
@@ -176,6 +220,7 @@ export class StandardizePlacesModal extends Modal {
 						this.selectedGroups.set(group, variation);
 						// Hide custom input when selecting a predefined option
 						customInputContainer.addClass('crc-hidden');
+						this.updateGroupImpactDisplay(group);
 					}
 				});
 
@@ -231,13 +276,90 @@ export class StandardizePlacesModal extends Modal {
 					customInput.select();
 					// Set the custom value
 					this.selectedGroups.set(group, customInput.value);
+					this.updateGroupImpactDisplay(group);
 				}
 			});
 
 			customInput.addEventListener('input', () => {
 				if (customRadio.checked) {
 					this.selectedGroups.set(group, customInput.value);
+					this.updateGroupImpactDisplay(group);
 				}
+			});
+
+			// Impact display area - shows what will happen when applied
+			const impactEl = groupEl.createDiv({ cls: 'crc-variation-impact' });
+			this.groupImpactElements.set(group, impactEl);
+			this.updateGroupImpactDisplay(group);
+		}
+	}
+
+	/**
+	 * Calculate the impact of standardizing a group
+	 */
+	private calculateGroupImpact(group: PlaceVariationGroup): { totalRefs: number; fileCount: number; filesAffected: Set<string> } {
+		const canonical = this.selectedGroups.get(group) || group.canonical;
+		const variationsToUpdate = group.variations.filter(v => v !== canonical);
+
+		let totalRefs = 0;
+		const filesAffected = new Set<string>();
+
+		for (const variation of variationsToUpdate) {
+			const refs = this.getVariationReferences(variation);
+			totalRefs += refs.length;
+			// Note: getVariationReferences returns personId, which maps to file paths
+			// For a more accurate file count, we'd need to track unique files
+			for (const ref of refs) {
+				filesAffected.add(ref.personId);
+			}
+		}
+
+		return { totalRefs, fileCount: filesAffected.size, filesAffected };
+	}
+
+	/**
+	 * Update the impact display for a group based on current selection
+	 */
+	private updateGroupImpactDisplay(group: PlaceVariationGroup): void {
+		const impactEl = this.groupImpactElements.get(group);
+		const applyBtn = this.groupApplyButtons.get(group);
+		if (!impactEl) return;
+
+		impactEl.empty();
+
+		const canonical = this.selectedGroups.get(group);
+		if (!canonical) return;
+
+		const impact = this.calculateGroupImpact(group);
+
+		// Update button label
+		if (applyBtn && !applyBtn.disabled) {
+			applyBtn.textContent = `Standardize (${impact.totalRefs})`;
+			applyBtn.title = `Update ${impact.totalRefs} reference${impact.totalRefs !== 1 ? 's' : ''} in ${impact.fileCount} file${impact.fileCount !== 1 ? 's' : ''}`;
+		}
+
+		if (impact.totalRefs === 0) {
+			impactEl.createEl('span', {
+				text: '✓ All references already use this name',
+				cls: 'crc-text--success crc-impact-message'
+			});
+		} else {
+			const variationsToUpdate = group.variations.filter(v => v !== canonical);
+			const impactText = impactEl.createEl('span', { cls: 'crc-impact-message' });
+
+			// Show which variations will be replaced
+			const variationNames = variationsToUpdate.map(v => `"${v}"`).join(', ');
+			impactText.createEl('span', {
+				text: `Will update ${impact.totalRefs} reference${impact.totalRefs !== 1 ? 's' : ''} `,
+				cls: 'crc-text--muted'
+			});
+			impactText.createEl('span', {
+				text: `(${variationNames})`,
+				cls: 'crc-text--muted crc-variation-names'
+			});
+			impactText.createEl('span', {
+				text: ` → "${canonical}"`,
+				cls: 'crc-text--accent'
 			});
 		}
 	}

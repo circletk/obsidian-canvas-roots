@@ -15,6 +15,7 @@ import { CreatePlaceModal } from './create-place-modal';
 import { CreateMissingPlacesModal } from './create-missing-places-modal';
 import { BuildPlaceHierarchyModal } from './build-place-hierarchy-modal';
 import { StandardizePlacesModal, findPlaceNameVariations } from './standardize-places-modal';
+import { MergeDuplicatePlacesModal, findDuplicatePlaceNotes } from './merge-duplicate-places-modal';
 import { TemplateSnippetsModal } from './template-snippets-modal';
 import { renderPlaceTypeManagerCard } from '../places/ui/place-type-manager-card';
 import { BulkGeocodeModal } from '../maps/ui/bulk-geocode-modal';
@@ -143,20 +144,27 @@ function renderActionsCard(
 		},
 		{
 			number: '2',
+			title: 'Merge duplicate places',
+			desc: 'Combine duplicate place notes',
+			buttonText: 'Find duplicates',
+			action: () => showMergeDuplicatePlacesModal(plugin, showTab)
+		},
+		{
+			number: '3',
 			title: 'Create missing place notes',
 			desc: 'Generate notes for referenced locations',
 			buttonText: 'Find missing',
 			action: () => showCreateMissingPlacesModal(plugin, showTab)
 		},
 		{
-			number: '3',
+			number: '4',
 			title: 'Build place hierarchy',
 			desc: 'Connect places to parent regions',
 			buttonText: 'Build hierarchy',
 			action: () => showBuildHierarchyModal(plugin, showTab)
 		},
 		{
-			number: '4',
+			number: '5',
 			title: 'Bulk geocode places',
 			desc: 'Look up coordinates for maps',
 			buttonText: 'Geocode',
@@ -1064,6 +1072,33 @@ function showStandardizePlacesModal(plugin: CanvasRootsPlugin, showTab: (tabId: 
 	const modal = new StandardizePlacesModal(plugin.app, variationGroups, {
 		onComplete: (updated: number) => {
 			if (updated > 0) {
+				// Refresh the Places tab
+				showTab('places');
+			}
+		}
+	});
+	modal.open();
+}
+
+/**
+ * Show modal to merge duplicate place notes
+ */
+function showMergeDuplicatePlacesModal(plugin: CanvasRootsPlugin, showTab: (tabId: string) => void): void {
+	const { Notice } = require('obsidian');
+	// Find duplicate place notes
+	const duplicateGroups = findDuplicatePlaceNotes(plugin.app, {
+		settings: plugin.settings,
+		folderFilter: plugin.getFolderFilter()
+	});
+
+	if (duplicateGroups.length === 0) {
+		new Notice('No duplicate place notes found. Your places are unique!');
+		return;
+	}
+
+	const modal = new MergeDuplicatePlacesModal(plugin.app, duplicateGroups, {
+		onComplete: (merged: number, deleted: number) => {
+			if (merged > 0 || deleted > 0) {
 				// Refresh the Places tab
 				showTab('places');
 			}

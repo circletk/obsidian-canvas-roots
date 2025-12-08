@@ -995,7 +995,8 @@ export class PlaceGraphService {
 		const category: PlaceCategory = this.resolvePlaceCategory(fm.place_category);
 
 		// Extract name (from frontmatter or filename)
-		const name = fm.name || file.basename;
+		// Check both 'name' and 'title' properties (GEDCOM import uses 'title')
+		const name = fm.name || fm.title || file.basename;
 
 		// Extract aliases
 		const aliases: string[] = Array.isArray(fm.aliases)

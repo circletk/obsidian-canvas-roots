@@ -428,7 +428,7 @@ The Places tab in Control Center shows aggregate statistics:
 **Actions:**
 - Create missing place notes
 - Build hierarchy (assign parents to orphan places)
-- Standardize place names (find and unify variations)
+- Merge duplicate places (find and consolidate redundant place notes)
 - View place index (alphabetical with person counts)
 
 ## Place Visualizations
@@ -449,6 +449,121 @@ Canvas Roots provides D3-based visualizations for place data:
 - Filter by time period (year range with century presets)
 - Filter by collection (family branch)
 - Aggregate by hierarchy level (e.g., group by country)
+
+## Merge Duplicate Places
+
+When importing GEDCOM files or building place notes manually, you may end up with multiple notes representing the same location. The "Merge duplicate places" feature helps identify and consolidate these duplicates.
+
+### Opening the Merge Modal
+
+1. Open Control Center → **Places** tab
+2. In the **Actions** section, click **Merge duplicate places**
+3. The modal scans your vault for potential duplicates
+
+### How Duplicates Are Detected
+
+Places are grouped as potential duplicates when they share:
+- **Same name** (case-insensitive)
+- **Same parent place name** (the immediate parent in the hierarchy)
+
+This approach handles cases where parent places themselves may be duplicates. For example, if you have two "Alabama" place notes with different `cr_id` values, places within them will still be correctly grouped by parent name.
+
+**Example duplicates detected:**
+- "Birmingham, Alabama" and "Birmingham, Alabama" (different `cr_id` values)
+- "Hartford, Hartford County" (two notes with same parent name)
+
+**Not grouped together:**
+- "Hartford, Hartford County, Connecticut" vs "Hartford, Oxfordshire, England" (different parents)
+- "Washington, Wilkes County" vs "Washington, D.C." (different parents)
+
+### Sorting and Filtering
+
+The controls bar at the top of the modal lets you manage large lists of duplicates:
+
+**Sort options:**
+- **Most duplicates** (default): Groups with the most duplicate notes first
+- **Fewest duplicates**: Groups with only 2 notes first
+- **Name (A-Z)**: Alphabetical by place name
+- **Name (Z-A)**: Reverse alphabetical
+
+**Filter options:**
+- **All groups**: Show all detected duplicate groups
+- **Pending only**: Hide groups that have already been merged
+- **Has note content**: Only show groups where at least one note has body text
+- **Has coordinates**: Only show groups where at least one note has coordinates
+
+The status display shows how many groups are currently visible (e.g., "Showing 12 of 45 groups").
+
+### Understanding the Interface
+
+Each duplicate group shows:
+
+| Element | Description |
+|---------|-------------|
+| **Suggested badge** | The recommended canonical place based on completeness score |
+| **Full name** | The `full_name` property from GEDCOM import (shown in italics) |
+| **Character count** | Body content length (e.g., "1.2k chars", "500 chars") |
+| **Custom props** | Badge shown if the note has non-standard frontmatter properties |
+| **Open button** | Click to open note; right-click for open options |
+| **Select as canonical** | Choose which note should be the primary place |
+
+### Suggested Canonical Scoring
+
+The "Suggested" badge indicates which place note has the most complete data. The scoring algorithm considers:
+
+| Criterion | Points |
+|-----------|--------|
+| Has parent place defined | +100 |
+| Has coordinates | +50 |
+| Has place type specified | +25 |
+| Has universe assigned | +10 |
+| References from person notes | +5 per reference |
+| Shorter file path (less nested) | -1 per path segment |
+
+Higher scores indicate more complete and better-connected place notes.
+
+### Merging Process
+
+1. **Review each group**: Examine the places in each duplicate group
+2. **Open notes if needed**: Click the open button to view note contents
+   - Left-click: Open in new tab
+   - Right-click: Choose "Open to the right" or "Open in new window"
+3. **Select canonical**: Click "Select as canonical" on the note you want to keep
+4. **Rename if needed**: Click the edit icon next to "Final filename" to change the filename
+   - Useful for removing "-2" suffixes from auto-generated duplicate names
+   - The file will be renamed after the merge completes
+5. **Repeat for each group**
+6. **Click Merge**: The merge operation will:
+   - Update all references in person notes to point to the canonical place
+   - Re-parent any child places to point to the canonical
+   - Rename the canonical file (if a new filename was specified)
+   - Move duplicate notes to trash
+
+### Best Practices
+
+**Before merging:**
+- Review the `full_name` property to understand each place's context
+- Check character counts to identify notes with substantial content
+- Open notes with "custom props" to review what data might be lost
+- Use "Open to the right" to compare two places side-by-side
+
+**When selecting canonical:**
+- Prefer notes with coordinates defined
+- Prefer notes with proper hierarchy (parent_place set)
+- Prefer notes with more content (higher character count)
+- Consider which note has more references from person notes
+
+**After merging:**
+- Run the merge process again to catch any newly-detectable duplicates
+- Use "Build hierarchy" to establish parent-child relationships
+- Review the Places tab statistics for orphan places
+
+### Limitations
+
+- Only detects duplicates within the same parent context
+- Does not automatically merge note content (preserves canonical only)
+- Cannot undo merges (consider backing up before bulk merges)
+- Places must have `cr_type: place` in frontmatter to be detected
 
 ## Place-Based Tree Filtering
 

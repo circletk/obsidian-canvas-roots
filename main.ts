@@ -35,6 +35,7 @@ import { SplitWizardModal } from './src/ui/split-wizard-modal';
 import { CreatePlaceModal } from './src/ui/create-place-modal';
 import { CreatePersonModal } from './src/ui/create-person-modal';
 import { PlaceGraphService } from './src/core/place-graph';
+import { MergeDuplicatePlacesModal, findDuplicatePlaceNotes } from './src/ui/merge-duplicate-places-modal';
 import { SchemaService, ValidationService } from './src/schemas';
 import { AddRelationshipModal } from './src/ui/add-relationship-modal';
 import { SourcePickerModal, SourceService, CreateSourceModal, CitationGeneratorModal, EvidenceService, ProofSummaryService } from './src/sources';
@@ -478,6 +479,23 @@ export default class CanvasRootsPlugin extends Plugin {
 			callback: () => {
 				const modal = new ControlCenterModal(this.app, this);
 				modal.openToTab('places');
+			}
+		});
+
+		// Add command: Merge Duplicate Places
+		this.addCommand({
+			id: 'merge-duplicate-places',
+			name: 'Merge duplicate place notes',
+			callback: () => {
+				const duplicateGroups = findDuplicatePlaceNotes(this.app, {
+					settings: this.settings,
+					folderFilter: this.folderFilter
+				});
+				if (duplicateGroups.length === 0) {
+					new Notice('No duplicate place notes found. Your places are unique!');
+					return;
+				}
+				new MergeDuplicatePlacesModal(this.app, duplicateGroups).open();
 			}
 		});
 
