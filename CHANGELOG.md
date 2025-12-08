@@ -9,9 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.10.14] - 2025-12-08
 
-Control Center UI consistency improvements and Places tab UX overhaul.
+Control Center UI consistency improvements, Places tab UX overhaul, and new hierarchy enrichment tool.
 
 ### Added
+
+- **Enrich Place Hierarchy Modal**: New tool to automatically build place hierarchies using geocoding
+  - Geocodes orphan places using Nominatim API with address details
+  - Parses structured address components to extract hierarchy (city → county → state → country)
+  - Auto-creates missing parent place notes with appropriate place types
+  - Links places to their parents, building complete hierarchies
+  - Handles country-level places as top-level (no parent needed)
+  - Progress indicator with per-place results showing hierarchy created
 
 - **Schema Validation Progress Modal**: Visual progress indicator when validating vault against schemas
   - Shows current file being validated
@@ -28,6 +36,14 @@ Control Center UI consistency improvements and Places tab UX overhaul.
   - **Other tools section**: Non-issue actions (Geocode lookup, Standardize place names, Merge duplicates) moved to dedicated section below issues
   - **Progressive disclosure**: First two issue sections expanded by default; others collapsed
   - **Priority ordering**: Missing place notes sorted by reference count (most-referenced first)
+
+- **Places Tab Workflow Order**: Reorganized Data Quality card to present tools in recommended workflow order
+  1. Missing place notes → Create missing places
+  2. Real places missing coordinates → Bulk geocode
+  3. Orphan places → Enrich hierarchy (new)
+  4. Duplicate names → Merge duplicates
+  5. Name variations → Standardize names (moved from Other Tools)
+  - Circular hierarchies, fictional with coords, invalid categories follow
 
 - **Type Manager Cards**: Unified all type manager cards (Events, Sources, Organizations, Relationships, Places) to use Obsidian's Setting component
   - Consistent layout with name, description, and action buttons

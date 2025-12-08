@@ -19,6 +19,7 @@ import { MergeDuplicatePlacesModal, findDuplicatePlaceNotes } from './merge-dupl
 import { TemplateSnippetsModal } from './template-snippets-modal';
 import { renderPlaceTypeManagerCard } from '../places/ui/place-type-manager-card';
 import { BulkGeocodeModal } from '../maps/ui/bulk-geocode-modal';
+import { EnrichPlaceHierarchyModal } from '../maps/ui/enrich-place-hierarchy-modal';
 
 /**
  * Render the Places tab content
@@ -259,55 +260,63 @@ function loadDataQualityCard(
 		expandedCount++;
 	}
 
-	// 3. Orphan places
-	const orphanPlaces = issuesByType.get('orphan_place') || [];
-	if (orphanPlaces.length > 0) {
-		renderIssueSection(sectionsContainer, {
+	// 3. Orphan places (simplified - just count + action button)
+	// Count real-world places without parents (matching EnrichPlaceHierarchyModal criteria)
+	const allPlaces = placeService.getAllPlaces();
+	const orphanRealPlaces = allPlaces.filter(place =>
+		!place.parentId &&
+		['real', 'historical', 'disputed'].includes(place.category)
+	);
+	if (orphanRealPlaces.length > 0) {
+		renderSimplifiedIssueRow(sectionsContainer, {
 			icon: 'alert-circle',
-			title: 'Orphan places',
-			count: orphanPlaces.length,
-			expanded: expandedCount < 2,
-			items: orphanPlaces.slice(0, 4).map(issue => ({
-				name: issue.placeName || 'Unknown place',
-				detail: 'No parent place defined',
-				action: {
-					label: 'Set parent',
-					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
+			title: `${orphanRealPlaces.length} orphan place${orphanRealPlaces.length !== 1 ? 's' : ''}`,
+			description: 'Geocode places and auto-create parent place notes (city → county → state → country)',
+			action: {
+				label: 'Enrich hierarchy',
+				onClick: () => {
+					const placeGraph = new PlaceGraphService(plugin.app);
+					placeGraph.setValueAliases(plugin.settings.valueAliases);
+					placeGraph.reloadCache();
+					new EnrichPlaceHierarchyModal(plugin.app, placeGraph, {
+						directory: plugin.settings.placesFolder || '',
+						onComplete: () => showTab('places')
+					}).open();
 				}
-			})),
-			batchAction: {
-				label: 'Build place hierarchy',
-				onClick: () => showBuildHierarchyModal(plugin, showTab)
 			}
 		});
-		expandedCount++;
 	}
 
-	// 4. Duplicate names
+	// 4. Duplicate names (simplified - just count + action button)
 	const duplicates = issuesByType.get('duplicate_name') || [];
 	if (duplicates.length > 0) {
-		renderIssueSection(sectionsContainer, {
+		renderSimplifiedIssueRow(sectionsContainer, {
 			icon: 'copy',
-			title: 'Duplicate names',
-			count: duplicates.length,
-			expanded: expandedCount < 2,
-			items: duplicates.slice(0, 4).map(issue => ({
-				name: issue.placeName || 'Unknown place',
-				detail: issue.message.includes('(') ? issue.message.substring(issue.message.lastIndexOf('(')) : '2+ places with this name',
-				action: {
-					label: 'Review',
-					onClick: () => openPlaceForEditing(plugin, issue.filePath, placeService, showTab)
-				}
-			})),
-			batchAction: {
-				label: 'Find all duplicates',
+			title: `${duplicates.length} potential duplicate${duplicates.length !== 1 ? 's' : ''}`,
+			description: 'Place names that appear multiple times',
+			action: {
+				label: 'Merge duplicates',
 				onClick: () => showMergeDuplicatePlacesModal(plugin, showTab)
 			}
 		});
-		expandedCount++;
 	}
 
-	// 5. Circular hierarchies (if any)
+	// 5. Standardize place name variations
+	const variationGroups = findPlaceNameVariations(plugin.app);
+	if (variationGroups.length > 0) {
+		const totalVariations = variationGroups.reduce((sum, g) => sum + g.variations.length, 0);
+		renderSimplifiedIssueRow(sectionsContainer, {
+			icon: 'edit',
+			title: `${totalVariations} name variation${totalVariations !== 1 ? 's' : ''} in ${variationGroups.length} group${variationGroups.length !== 1 ? 's' : ''}`,
+			description: 'Unify place name spelling across person notes',
+			action: {
+				label: 'Standardize names',
+				onClick: () => showStandardizePlacesModal(plugin, showTab)
+			}
+		});
+	}
+
+	// 6. Circular hierarchies (if any)
 	const circular = issuesByType.get('circular_hierarchy') || [];
 	if (circular.length > 0) {
 		renderIssueSection(sectionsContainer, {
@@ -472,6 +481,41 @@ function renderIssueSection(container: HTMLElement, options: IssueSectionOptions
 }
 
 /**
+ * Options for simplified issue row (no collapsible content)
+ */
+interface SimplifiedIssueRowOptions {
+	icon: LucideIconName;
+	title: string;
+	description: string;
+	action: {
+		label: string;
+		onClick: () => void;
+	};
+}
+
+/**
+ * Render a simplified issue row with count and single action button
+ * Used for issues where per-item actions don't make sense
+ */
+function renderSimplifiedIssueRow(container: HTMLElement, options: SimplifiedIssueRowOptions): void {
+	const row = container.createDiv({ cls: 'crc-dq-tool' });
+
+	const icon = createLucideIcon(options.icon, 16);
+	icon.addClass('crc-dq-section__icon');
+	row.appendChild(icon);
+
+	const info = row.createDiv({ cls: 'crc-dq-tool__info' });
+	info.createEl('h4', { text: options.title });
+	info.createEl('p', { text: options.description });
+
+	const btn = row.createEl('button', {
+		text: options.action.label,
+		cls: 'crc-btn crc-btn--ghost'
+	});
+	btn.addEventListener('click', options.action.onClick);
+}
+
+/**
  * Render the "Other tools" section
  */
 function renderOtherTools(
@@ -485,17 +529,6 @@ function renderOtherTools(
 
 	// Tools list
 	const toolsList = container.createDiv({ cls: 'crc-dq-tools' });
-
-	// Standardize place names
-	const standardizeTool = toolsList.createDiv({ cls: 'crc-dq-tool' });
-	const standardizeInfo = standardizeTool.createDiv({ cls: 'crc-dq-tool__info' });
-	standardizeInfo.createEl('h4', { text: 'Standardize place names' });
-	standardizeInfo.createEl('p', { text: 'Find and unify name variations across person notes' });
-	const standardizeBtn = standardizeTool.createEl('button', {
-		text: 'Find variations',
-		cls: 'crc-btn crc-btn--ghost'
-	});
-	standardizeBtn.addEventListener('click', () => showStandardizePlacesModal(plugin, showTab));
 
 	// Create new place note
 	const createTool = toolsList.createDiv({ cls: 'crc-dq-tool' });

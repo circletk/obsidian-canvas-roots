@@ -25,6 +25,8 @@ export interface GeocodingResult {
 	error?: string;
 	/** The original place name queried */
 	placeName: string;
+	/** Structured address components from Nominatim (when using geocodeWithDetails) */
+	addressComponents?: Record<string, string>;
 }
 
 /**
@@ -293,5 +295,89 @@ export class GeocodingService {
 	 */
 	private sleep(ms: number): Promise<void> {
 		return new Promise(resolve => setTimeout(resolve, ms));
+	}
+
+	/**
+	 * Look up coordinates and detailed address components for a place
+	 * Uses Nominatim's addressdetails parameter to get structured address info
+	 *
+	 * @param placeName - The name of the place to look up
+	 * @param parentPlace - Optional parent place for more accurate results
+	 * @returns The geocoding result with address components
+	 */
+	async geocodeWithDetails(placeName: string, parentPlace?: string): Promise<GeocodingResult> {
+		if (!placeName.trim()) {
+			return {
+				success: false,
+				error: 'Place name is empty',
+				placeName
+			};
+		}
+
+		// Build search query including parent place for better accuracy
+		let searchQuery = placeName.trim();
+		if (parentPlace) {
+			// Strip wikilinks if present
+			const parentName = parentPlace.replace(/\[\[|\]\]/g, '');
+			searchQuery = `${placeName}, ${parentName}`;
+		}
+
+		// Enforce rate limiting
+		await this.enforceRateLimit();
+
+		try {
+			// Add addressdetails=1 to get structured address components
+			const url = `${NOMINATIM_API_URL}?q=${encodeURIComponent(searchQuery)}&format=json&limit=1&addressdetails=1`;
+
+			logger.debug('geocode-details-request', `Geocoding with details: ${searchQuery}`);
+
+			const response = await requestUrl({
+				url,
+				headers: {
+					'User-Agent': USER_AGENT
+				}
+			});
+
+			const results = response.json as unknown[];
+
+			if (!results || results.length === 0) {
+				logger.debug('geocode-not-found', `No results for: ${searchQuery}`);
+				return {
+					success: false,
+					error: 'No location found',
+					placeName
+				};
+			}
+
+			const result = results[0] as {
+				lat: string;
+				lon: string;
+				display_name: string;
+				address?: Record<string, string>;
+			};
+
+			const lat = parseFloat(result.lat);
+			const long = parseFloat(result.lon);
+
+			logger.debug('geocode-details-success', `Found: ${result.display_name} (${lat}, ${long})`, result.address);
+
+			return {
+				success: true,
+				coordinates: { lat, long },
+				displayName: result.display_name,
+				placeName,
+				addressComponents: result.address
+			};
+
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+			logger.warn('geocode-error', `Failed to geocode "${searchQuery}": ${errorMessage}`);
+
+			return {
+				success: false,
+				error: errorMessage,
+				placeName
+			};
+		}
 	}
 }
