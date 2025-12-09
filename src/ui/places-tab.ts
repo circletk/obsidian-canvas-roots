@@ -262,9 +262,11 @@ function loadDataQualityCard(
 
 	// 3. Orphan places (simplified - just count + action button)
 	// Count real-world places without parents (matching EnrichPlaceHierarchyModal criteria)
+	// Exclude countries - they're top-level and don't need parent linking
 	const allPlaces = placeService.getAllPlaces();
 	const orphanRealPlaces = allPlaces.filter(place =>
 		!place.parentId &&
+		place.placeType !== 'country' &&
 		['real', 'historical', 'disputed'].includes(place.category)
 	);
 	if (orphanRealPlaces.length > 0) {

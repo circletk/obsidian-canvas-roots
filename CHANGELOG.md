@@ -57,6 +57,18 @@ Control Center UI consistency improvements, Places tab UX overhaul, and new hier
   - Consistent with other entity tables in Control Center
   - Pagination for large family lists
 
+### Fixed
+
+- **Enrich Place Hierarchy Modal**: Fixed false "Enrichment cancelled" message when clicking Done button after completion
+  - Button handler conflict caused both startEnrichment and close to fire simultaneously
+  - Added guard to prevent re-entry after completion
+- **Enrich Place Hierarchy Modal**: Countries no longer re-processed on subsequent runs
+  - Top-level countries (placeType=country) are now excluded from orphan list
+- **Enrich Place Hierarchy Modal**: Places with incomplete hierarchies no longer re-processed if already enriched
+  - Places that already have coordinates are excluded when "Include incomplete hierarchies" is enabled
+- **Data Quality Card**: Orphan place count now matches Enrich Hierarchy modal count
+  - Both now exclude countries from orphan calculation
+
 ### Improved
 
 - **Data Quality Card Discoverability**: Issues are now prominently displayed at the top of the Places tab instead of buried at the bottom

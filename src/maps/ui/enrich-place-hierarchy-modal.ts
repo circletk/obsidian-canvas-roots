@@ -7,7 +7,7 @@
  */
 
 import { App, Modal, Notice, Setting, TFile } from 'obsidian';
-import { GeocodingService, GeocodingResult } from '../services/geocoding-service';
+import { GeocodingService } from '../services/geocoding-service';
 import { PlaceGraphService } from '../../core/place-graph';
 import { createPlaceNote, updatePlaceNote, PlaceData } from '../../core/place-note-writer';
 import type { PlaceNode, PlaceType } from '../../models/place';
@@ -84,6 +84,7 @@ export class EnrichPlaceHierarchyModal extends Modal {
 	private placesToEnrich: PlaceNode[] = [];
 	private isRunning = false;
 	private isCancelled = false;
+	private hasCompleted = false;
 
 	private progressContainer: HTMLElement | null = null;
 	private progressBar: HTMLElement | null = null;
@@ -91,8 +92,11 @@ export class EnrichPlaceHierarchyModal extends Modal {
 	private resultsList: HTMLElement | null = null;
 	private startButton: HTMLButtonElement | null = null;
 	private cancelButton: HTMLButtonElement | null = null;
+	private countText: HTMLElement | null = null;
+	private timeText: HTMLElement | null = null;
 
 	private createMissingParents = true;
+	private includeIncompleteHierarchies = false;
 	private directory = '';
 
 	constructor(
@@ -135,8 +139,8 @@ export class EnrichPlaceHierarchyModal extends Modal {
 			return;
 		}
 
-		description.createEl('p', {
-			text: `Found ${this.placesToEnrich.length} place${this.placesToEnrich.length !== 1 ? 's' : ''} without parent places that could be enriched.`
+		this.countText = description.createEl('p', {
+			text: this.getCountText()
 		});
 
 		description.createEl('p', {
@@ -145,10 +149,8 @@ export class EnrichPlaceHierarchyModal extends Modal {
 		});
 
 		// Estimated time
-		const estimatedMinutes = Math.ceil(this.placesToEnrich.length / 60);
-		const timeText = estimatedMinutes === 1 ? 'about 1 minute' : `about ${estimatedMinutes} minutes`;
-		description.createEl('p', {
-			text: `Estimated time: ${timeText}`,
+		this.timeText = description.createEl('p', {
+			text: this.getTimeText(),
 			cls: 'cr-text-muted cr-text-small'
 		});
 
@@ -162,6 +164,17 @@ export class EnrichPlaceHierarchyModal extends Modal {
 				.setValue(this.createMissingParents)
 				.onChange(value => {
 					this.createMissingParents = value;
+				}));
+
+		new Setting(settingsContainer)
+			.setName('Include incomplete hierarchies')
+			.setDesc('Re-enrich places that skip levels (e.g., city linked directly to state, missing county)')
+			.addToggle(toggle => toggle
+				.setValue(this.includeIncompleteHierarchies)
+				.onChange(value => {
+					this.includeIncompleteHierarchies = value;
+					this.loadPlacesToEnrich();
+					this.updatePlaceCount();
 				}));
 
 		new Setting(settingsContainer)
@@ -213,9 +226,9 @@ export class EnrichPlaceHierarchyModal extends Modal {
 	}
 
 	onClose(): void {
-		// Only set cancelled if we're still running
+		// Only set cancelled if we're still running and haven't completed
 		// (prevents false "cancelled" message when closing after completion)
-		if (this.isRunning) {
+		if (this.isRunning && !this.hasCompleted) {
 			this.isCancelled = true;
 		}
 		const { contentEl } = this;
@@ -224,27 +237,115 @@ export class EnrichPlaceHierarchyModal extends Modal {
 
 	/**
 	 * Load places that could benefit from hierarchy enrichment
-	 * These are "real" category places without a parent_place defined
+	 * These are "real" category places without a parent_place defined,
+	 * or optionally places with incomplete hierarchies (skipped levels)
 	 */
 	private loadPlacesToEnrich(): void {
 		const allPlaces = this.placeGraph.getAllPlaces();
 
 		// Filter to places without parent that are "real" category
 		// (fictional/mythological places shouldn't use real-world geocoding)
-		this.placesToEnrich = allPlaces.filter(place =>
+		// Exclude countries - they're top-level and don't need parent linking
+		const orphanPlaces = allPlaces.filter(place =>
 			!place.parentId &&
+			place.placeType !== 'country' &&
 			['real', 'historical', 'disputed'].includes(place.category)
 		);
+
+		if (this.includeIncompleteHierarchies) {
+			// Also include places with potentially incomplete hierarchies
+			// Exclude places that already have coordinates (already enriched)
+			const incompletePlaces = allPlaces.filter(place =>
+				place.parentId &&
+				!place.coordinates &&
+				['real', 'historical', 'disputed'].includes(place.category) &&
+				this.hasIncompleteHierarchy(place)
+			);
+			this.placesToEnrich = [...orphanPlaces, ...incompletePlaces];
+		} else {
+			this.placesToEnrich = orphanPlaces;
+		}
+	}
+
+	/**
+	 * Check if a place has an incomplete hierarchy (skips levels)
+	 * For example, a city linked directly to a state (missing county)
+	 */
+	private hasIncompleteHierarchy(place: PlaceNode): boolean {
+		if (!place.parentId) return false;
+
+		const parent = this.placeGraph.getPlaceByCrId(place.parentId);
+		if (!parent) return false;
+
+		// Define expected parent types for each place type
+		// Cities/towns should have county as parent, not state
+		const cityTypes = ['city', 'town', 'village', 'municipality', 'hamlet'];
+		const countyTypes = ['county', 'district'];
+		const stateTypes = ['state', 'province', 'region'];
+
+		// City/town linked to state (skipping county)
+		if (place.placeType && cityTypes.includes(place.placeType)) {
+			if (parent.placeType && stateTypes.includes(parent.placeType)) {
+				return true;
+			}
+			// City linked to country (skipping county and state)
+			if (parent.placeType === 'country') {
+				return true;
+			}
+		}
+
+		// County linked to country (skipping state)
+		if (place.placeType && countyTypes.includes(place.placeType)) {
+			if (parent.placeType === 'country') {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the count text for the description
+	 */
+	private getCountText(): string {
+		const count = this.placesToEnrich.length;
+		if (this.includeIncompleteHierarchies) {
+			return `Found ${count} place${count !== 1 ? 's' : ''} that could be enriched (including incomplete hierarchies).`;
+		}
+		return `Found ${count} place${count !== 1 ? 's' : ''} without parent places that could be enriched.`;
+	}
+
+	/**
+	 * Get the estimated time text
+	 */
+	private getTimeText(): string {
+		const estimatedMinutes = Math.ceil(this.placesToEnrich.length / 60);
+		return estimatedMinutes === 1 ? 'Estimated time: about 1 minute' : `Estimated time: about ${estimatedMinutes} minutes`;
+	}
+
+	/**
+	 * Update the place count display when options change
+	 */
+	private updatePlaceCount(): void {
+		if (this.countText) {
+			this.countText.textContent = this.getCountText();
+		}
+		if (this.timeText) {
+			this.timeText.textContent = this.getTimeText();
+		}
 	}
 
 	/**
 	 * Start the hierarchy enrichment process
 	 */
 	private async startEnrichment(): Promise<void> {
-		if (this.isRunning) return;
+		// Guard against re-entry: don't start if already running or already completed
+		// (The "Done" button triggers both original onClick and new onclick handlers)
+		if (this.isRunning || this.hasCompleted) return;
 
 		this.isRunning = true;
 		this.isCancelled = false;
+		this.hasCompleted = false;
 
 		// Update UI
 		if (this.startButton) {
@@ -298,6 +399,7 @@ export class EnrichPlaceHierarchyModal extends Modal {
 			results
 		};
 
+		this.hasCompleted = true;
 		this.showCompletion(summary);
 		this.options.onComplete?.(summary);
 		this.isRunning = false;
@@ -573,10 +675,9 @@ export class EnrichPlaceHierarchyModal extends Modal {
 	 * Show completion summary
 	 */
 	private showCompletion(result: BulkHierarchyEnrichmentResult): void {
-		// Determine if user actually clicked cancel (vs modal closing for other reasons)
-		// If we processed all items, it's not really cancelled even if isCancelled is true
+		// Check if user actually cancelled (cancelled count > 0 means we broke out of the loop early)
+		const wasActuallyCancelled = result.cancelled > 0;
 		const processedCount = result.enriched + result.failed + result.skipped;
-		const wasActuallyCancelled = result.cancelled > 0 && processedCount < result.total;
 
 		if (this.progressText) {
 			if (wasActuallyCancelled) {
