@@ -11085,7 +11085,7 @@ export class ControlCenterModal extends Modal {
 		// Normalize sex
 		new Setting(batchContent)
 			.setName('Normalize sex values')
-			.setDesc('Standardize to M/F format')
+			.setDesc('Standardize to M/F format. Uses biological sex to match historical records and GEDCOM standards.')
 			.addButton(btn => btn
 				.setButtonText('Preview')
 				.onClick(() => void this.previewBatchOperation('sex', selectedScope, selectedFolder))
@@ -11605,6 +11605,14 @@ class BatchPreviewModal extends Modal {
 			legacy_type: 'Preview: Migrate legacy type property',
 		};
 		titleEl.setText(titles[this.operation]);
+
+		// Add operation-specific descriptions
+		if (this.operation === 'sex') {
+			contentEl.createEl('p', {
+				text: 'Genealogical records use biological sex (M/F) rather than gender identity, as historical documents and DNA analysis require this distinction.',
+				cls: 'crc-text-muted crc-text-small'
+			});
+		}
 
 		// Get changes for this operation
 		let changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }>;
