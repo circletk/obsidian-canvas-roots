@@ -30,6 +30,7 @@ export class BulkGeocodeModal extends Modal {
 	private placesToGeocode: PlaceNode[] = [];
 	private isRunning = false;
 	private isCancelled = false;
+	private hasCompleted = false;
 
 	private progressContainer: HTMLElement | null = null;
 	private progressBar: HTMLElement | null = null;
@@ -133,7 +134,11 @@ export class BulkGeocodeModal extends Modal {
 	}
 
 	onClose(): void {
-		this.isCancelled = true;
+		// Only set cancelled if we're still running and haven't completed
+		// (prevents false "cancelled" message when closing after completion)
+		if (this.isRunning && !this.hasCompleted) {
+			this.isCancelled = true;
+		}
 		const { contentEl } = this;
 		contentEl.empty();
 	}
@@ -156,10 +161,12 @@ export class BulkGeocodeModal extends Modal {
 	 * Start the geocoding process
 	 */
 	private async startGeocoding(): Promise<void> {
-		if (this.isRunning) return;
+		// Guard against re-entry: don't start if already running or already completed
+		if (this.isRunning || this.hasCompleted) return;
 
 		this.isRunning = true;
 		this.isCancelled = false;
+		this.hasCompleted = false;
 
 		// Update UI
 		if (this.startButton) {
@@ -216,6 +223,9 @@ export class BulkGeocodeModal extends Modal {
 				}
 			}
 		}
+
+		// Mark as completed before showing completion UI
+		this.hasCompleted = true;
 
 		// Show completion
 		this.showCompletion(result, updatedCount);

@@ -64,6 +64,12 @@ Features are prioritized to complete the data lifecycle: **import â†’ enhance â†
 
 **Summary:** Integration with the [Calendarium](https://plugins.javalent.com/calendarium) plugin to share calendar definitions, eliminating duplicate configuration for worldbuilders. Designed to be invisible to users who don't need itâ€”settings default to off, and no UI changes appear unless Calendarium is installed.
 
+**User Feedback (December 2024):**
+- Calendar definition is the main valueâ€”users want Calendarium for setting up calendar structure (dates, eras), not primarily for events
+- Date ranges (`fc-date` + `fc-end`) are important for lifespans, reign periods, residences
+- Pain points with Calendarium include era handling and per-calendar frontmatter fields
+- Phase 1 (read-only calendar import) validated as the right starting point
+
 **Integration Modes:**
 
 | Mode | Description | Use Case |
@@ -74,7 +80,7 @@ Features are prioritized to complete the data lifecycle: **import â†’ enhance â†
 
 **Phased Approach:**
 - **Phase 1 (recommended):** Import calendar definitions from Calendariumâ€”delivers ~80% of value
-- **Phase 2:** Display Calendarium events on Canvas Roots timelines
+- **Phase 2:** Display Calendarium events on Canvas Roots timelines; support date ranges (`fc-end`)
 - **Phase 3:** Bidirectional sync between plugins
 - **Phase 4:** Cross-calendar date translation
 
@@ -82,7 +88,8 @@ Features are prioritized to complete the data lifecycle: **import â†’ enhance â†
 
 | Canvas Roots Field | Calendarium Field |
 |--------------------|-------------------|
-| `fictional_date` | `fc-date` |
+| `fictional_date` | `fc-date` / `fc-start` |
+| `fictional_date_end` | `fc-end` |
 | `calendar_system` | `fc-calendar` |
 | `event_category` | `fc-category` |
 | `display_name` | `fc-display-name` |
@@ -93,6 +100,8 @@ Features are prioritized to complete the data lifecycle: **import â†’ enhance â†
 - `syncCalendariumEvents`: Whether to show Calendarium events on timelines
 
 **API Integration:** Uses `window.Calendarium` global when available, with graceful fallback when Calendarium is not installed.
+
+**Future Consideration:** Per-calendar frontmatter fields (e.g., `mycalendar-date` instead of `fc-calendar` + `fc-date`) to allow one note to have dates across multiple calendars.
 
 See [Calendarium Integration Planning Document](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/calendarium-integration.md) for implementation details.
 

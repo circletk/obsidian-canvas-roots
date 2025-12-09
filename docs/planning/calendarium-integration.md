@@ -6,6 +6,34 @@ This document outlines the integration between Canvas Roots and the [Calendarium
 
 ---
 
+## User Feedback (December 2024)
+
+Feedback gathered from Calendarium users on what they'd want from this integration:
+
+### Primary Use Case
+- **Calendar definition is the main value** - Users want Calendarium for setting up calendar structure (dates, eras), not primarily for events
+- Templates with `fc-date` and `fc-calendar` fields are common workflow
+- Single custom calendar alongside Obsidian's default date properties is typical
+- Multiple calendars for comparing dates across in-world cultures is a secondary use case
+
+### Date Ranges Are Important
+- `fc-date` for start, `fc-end` for end dates
+- For people files: lifespans, reign periods, etc.
+- **Conclusion:** Date range support (`fc-end`) should be prioritized in Phase 2
+
+### Pain Points with Calendarium
+1. **Custom timespans/formats** - Not great for naming things outside day-month-year structure
+2. **Seasons vs Eras confusion** - "Seasons" means weather in Calendarium, but users want eras; terminology is unintuitive
+3. **Eras should be part of date structure** - Users want `Era-Year-Month-Day` format; struggle with math to determine what year a note should be in for the right era
+4. **Per-calendar frontmatter fields** - Would prefer custom frontmatter per calendar (e.g., `mycalendar-date`, `mycalendar-end`) rather than `fc-calendar` + `fc-date` pattern, allowing one note to have dates across multiple calendars
+
+### Implications for Canvas Roots
+- **Phase 1 validated** - Reading calendar definitions eliminates the main pain point (duplicate config)
+- **Era handling opportunity** - Canvas Roots' fictional date systems could offer better era UX than Calendarium
+- **Multi-calendar per note** - Feature request worth tracking; goes beyond current scope but could differentiate Canvas Roots
+
+---
+
 ## What is Calendarium?
 
 Calendarium is "the ultimate Obsidian plugin for crafting mind-bending fantasy and sci-fi calendars." It allows users to define custom calendars with:
@@ -251,7 +279,7 @@ Phases 2-4 add incremental value but with increasing complexity. Consider shippi
 | Phase | Effort | Value | Notes |
 |-------|--------|-------|-------|
 | Phase 1 | 1-2 days | High | Calendar import eliminates duplicate config |
-| Phase 2 | 2-3 days | Medium | Event display on timelines |
+| Phase 2 | 2-3 days | Medium-High | Event display on timelines; date ranges (`fc-end`) important per user feedback |
 | Phase 3 | 3-5 days | Low-Medium | Bidirectional sync, conflict handling |
 | Phase 4 | 1 day | Low | Leverages Calendarium's translate() API |
 
@@ -273,12 +301,12 @@ Calendarium's date model is significantly richer than Canvas Roots needs:
 | One-time dates | `TA 3001-3-15` | **Yes** - core use case |
 | Named months | `144-Ches-15` | **Yes** - for fictional calendars |
 | Eras | `TA`, `FA`, `SA` | **Yes** - already supported |
-| Date ranges | `fc-start` + `fc-end` | **Maybe** - for residences, occupations |
+| Date ranges | `fc-start` + `fc-end` | **Yes** - user feedback confirms: lifespans, reigns, residences |
 | Recurring events | `*-*-15` (15th of every month) | **No** - genealogy events are one-time |
 | Wildcards | `*-March-*` (any day in March) | **No** |
 | Leap day logic | Complex interval rules | **No** - overkill for genealogy |
 
-**Recommendation:** Subset the model. Read Calendarium's calendar *definitions* (month names, eras) but only support one-time dates for events. Recurring events and complex leap day logic aren't relevant to genealogy use cases.
+**Recommendation:** Subset the model. Read Calendarium's calendar *definitions* (month names, eras) and support one-time dates plus date ranges for events. Recurring events and complex leap day logic aren't relevant to genealogy use cases.
 
 ---
 
