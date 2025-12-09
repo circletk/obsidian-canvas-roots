@@ -109,6 +109,14 @@ export class StandardizePlacesModal extends Modal {
 		const groupsContainer = contentEl.createDiv({ cls: 'crc-variation-groups' });
 		this.renderGroups(groupsContainer);
 
+		// Backup warning
+		const warning = contentEl.createDiv({ cls: 'crc-warning-callout' });
+		const warningIcon = createLucideIcon('alert-triangle', 16);
+		warning.appendChild(warningIcon);
+		warning.createSpan({
+			text: ' Backup your vault before proceeding. This operation will modify existing notes.'
+		});
+
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: 'crc-modal-buttons' });
 

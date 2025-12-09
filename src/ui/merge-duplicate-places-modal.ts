@@ -151,6 +151,14 @@ export class MergeDuplicatePlacesModal extends Modal {
 		this.applyFilterAndSort();
 		this.renderGroups(this.groupsContainer);
 
+		// Backup warning
+		const warning = contentEl.createDiv({ cls: 'crc-warning-callout' });
+		const warningIcon = createLucideIcon('alert-triangle', 16);
+		warning.appendChild(warningIcon);
+		warning.createSpan({
+			text: ' Backup your vault before proceeding. This operation will modify and delete existing notes.'
+		});
+
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: 'crc-modal-buttons' });
 

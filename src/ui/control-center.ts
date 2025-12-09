@@ -11746,6 +11746,16 @@ class BatchPreviewModal extends Modal {
 			this.applyFiltersAndSort();
 		}
 
+		// Backup warning
+		if (this.allChanges.length > 0) {
+			const warning = contentEl.createDiv({ cls: 'crc-warning-callout' });
+			const warningIcon = createLucideIcon('alert-triangle', 16);
+			warning.appendChild(warningIcon);
+			warning.createSpan({
+				text: ' Backup your vault before proceeding. This operation will modify existing notes.'
+			});
+		}
+
 		// Buttons
 		const buttonContainer = contentEl.createDiv({ cls: 'crc-confirmation-buttons' });
 

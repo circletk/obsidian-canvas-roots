@@ -152,6 +152,14 @@ export class FlattenNestedPropertiesModal extends Modal {
 		// Results container
 		this.resultsContainer = this.contentContainer.createDiv({ cls: 'cr-flatten-results' });
 
+		// Backup warning
+		const warning = this.contentContainer.createDiv({ cls: 'crc-warning-callout' });
+		const warningIcon = createLucideIcon('alert-triangle', 16);
+		warning.appendChild(warningIcon);
+		warning.createSpan({
+			text: ' Backup your vault before proceeding. This operation will modify existing notes.'
+		});
+
 		// Footer with apply button
 		const footer = contentEl.createDiv({ cls: 'crc-modal-footer' });
 		this.applyButton = footer.createEl('button', {
