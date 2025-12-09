@@ -1000,6 +1000,19 @@ export default class CanvasRootsPlugin extends Plugin {
 										});
 								});
 
+								submenu.addItem((subItem) => {
+									subItem
+										.setTitle('Edit map')
+										.setIcon('edit')
+										.onClick(async () => {
+											const { CreateMapModal } = await import('./src/ui/create-map-modal');
+											new CreateMapModal(this.app, {
+												editFile: file,
+												editFrontmatter: fm || {}
+											}).open();
+										});
+								});
+
 								submenu.addSeparator();
 
 								submenu.addItem((subItem) => {
@@ -1029,6 +1042,19 @@ export default class CanvasRootsPlugin extends Plugin {
 									.setIcon('map')
 									.onClick(async () => {
 										await this.activateMapView(mapId);
+									});
+							});
+
+							menu.addItem((item) => {
+								item
+									.setTitle('Canvas Roots: Edit map')
+									.setIcon('edit')
+									.onClick(async () => {
+										const { CreateMapModal } = await import('./src/ui/create-map-modal');
+										new CreateMapModal(this.app, {
+											editFile: file,
+											editFrontmatter: fm || {}
+										}).open();
 									});
 							});
 
@@ -4819,9 +4845,9 @@ export default class CanvasRootsPlugin extends Plugin {
 					let propertiesAdded = false;
 
 					await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-						// type: Must be "map"
-						if (frontmatter.type !== 'map') {
-							frontmatter.type = 'map';
+						// cr_type: Must be "map"
+						if (frontmatter.cr_type !== 'map') {
+							frontmatter.cr_type = 'map';
 							propertiesAdded = true;
 						}
 
@@ -4849,14 +4875,14 @@ export default class CanvasRootsPlugin extends Plugin {
 							propertiesAdded = true;
 						}
 
-						// bounds: Add default structure if missing
-						if (!frontmatter.bounds) {
-							frontmatter.bounds = {
-								north: 100,
-								south: -100,
-								east: 100,
-								west: -100
-							};
+						// bounds: Add flat properties if missing (check for both flat and nested)
+						const hasFlatBounds = frontmatter.bounds_north !== undefined;
+						const hasNestedBounds = frontmatter.bounds && typeof frontmatter.bounds === 'object';
+						if (!hasFlatBounds && !hasNestedBounds) {
+							frontmatter.bounds_north = 100;
+							frontmatter.bounds_south = -100;
+							frontmatter.bounds_east = 100;
+							frontmatter.bounds_west = -100;
 							propertiesAdded = true;
 						}
 					});
