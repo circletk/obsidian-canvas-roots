@@ -1469,13 +1469,52 @@ export class GedcomImporterV2 {
 			}
 			return 'region';
 		} else if (parts.length === 2) {
-			// Two parts - likely state/province level
+			// Two parts - could be state, county, or city depending on context
+			const parentLower = parts[1].toLowerCase().trim();
+			const usStateNames = [
+				'alabama', 'alaska', 'arizona', 'arkansas', 'california', 'colorado',
+				'connecticut', 'delaware', 'florida', 'georgia', 'hawaii', 'idaho',
+				'illinois', 'indiana', 'iowa', 'kansas', 'kentucky', 'louisiana',
+				'maine', 'maryland', 'massachusetts', 'michigan', 'minnesota',
+				'mississippi', 'missouri', 'montana', 'nebraska', 'nevada',
+				'new hampshire', 'new jersey', 'new mexico', 'new york',
+				'north carolina', 'north dakota', 'ohio', 'oklahoma', 'oregon',
+				'pennsylvania', 'rhode island', 'south carolina', 'south dakota',
+				'tennessee', 'texas', 'utah', 'vermont', 'virginia', 'washington',
+				'west virginia', 'wisconsin', 'wyoming', 'district of columbia'
+			];
+			if (usStateNames.includes(parentLower)) {
+				// Parent is a US state - could be county OR city
+				// If there are child places under this one, it's likely a county
+				// Since we don't have that info here, use context from allPlaceStrings:
+				// If there's a place like "X, Name, State" then "Name, State" is likely a county
+				if (allPlaceStrings) {
+					const thisPlaceLower = parts.join(', ').toLowerCase();
+					const childPlace = Array.from(allPlaceStrings).find(ps => {
+						const psLower = ps.toLowerCase();
+						// Check if any place string ends with ", Name, State"
+						return psLower.endsWith(`, ${thisPlaceLower}`) && psLower !== thisPlaceLower;
+					});
+					if (childPlace) {
+						return 'county';
+					}
+				}
+				// No child places found - default to locality (city/town)
+				// Counties without the "County" suffix and without children are rare
+				return 'locality';
+			}
+			// Parent is not a US state - likely state/province level
 			return 'state';
 		} else if (parts.length === 3) {
 			// Three parts - could be county OR city depending on context
 			// Check if there's an explicit "County" sibling that would indicate
 			// this place is actually a locality within that county
 			if (allPlaceStrings && this.hasExplicitCountySibling(name, parts, allPlaceStrings)) {
+				return 'locality';
+			}
+			// Check if the parent has the same name as this place (e.g., Hartford within Hartford County)
+			// This pattern indicates a city/town within a county of the same name
+			if (parts.length >= 2 && nameLower === parts[1].toLowerCase().trim()) {
 				return 'locality';
 			}
 			// Default to county for 3-part places without context
