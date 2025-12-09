@@ -47,6 +47,10 @@ Place management improvements and Calendarium integration planning.
 - **Referenced places showing IDs instead of names**: Fixed "Referenced places" card displaying `cr_id` values
   - Applied same `resolvePlaceDisplayName()` fix to `getReferencedPlaces()` method
 
+- **Bulk geocode writing nested coordinates**: Fixed geocoding service writing legacy nested `coordinates:` format
+  - Now writes flat `coordinates_lat` / `coordinates_long` properties (preferred format)
+  - Also removes any legacy nested `coordinates:` property when updating
+
 ### Documentation
 
 - **Calendarium integration planning**: Added user feedback section to planning document

@@ -233,43 +233,16 @@ export class GeocodingService {
 	 * @param coordinates - The new coordinates
 	 */
 	async updatePlaceCoordinates(file: TFile, coordinates: GeoCoordinates): Promise<void> {
-		const content = await this.app.vault.read(file);
-
-		// Check if file has frontmatter
-		if (!content.startsWith('---')) {
-			throw new Error('File does not have frontmatter');
-		}
-
-		const endIndex = content.indexOf('---', 3);
-		if (endIndex === -1) {
-			throw new Error('Invalid frontmatter format');
-		}
-
-		const frontmatter = content.slice(0, endIndex + 3);
-		const body = content.slice(endIndex + 3);
-
-		// Check if coordinates already exist
-		const hasCoordinates = /^coordinates:/m.test(frontmatter);
-
-		let newFrontmatter: string;
-
-		if (hasCoordinates) {
-			// Update existing coordinates
-			// Handle both nested and flat formats
-			newFrontmatter = frontmatter.replace(
-				/coordinates:[\s\S]*?(?=\n[a-z_]+:|---)/m,
-				`coordinates:\n  lat: ${coordinates.lat}\n  long: ${coordinates.long}\n`
-			);
-		} else {
-			// Add new coordinates before the closing ---
-			const insertPos = frontmatter.lastIndexOf('---');
-			newFrontmatter = frontmatter.slice(0, insertPos) +
-				`coordinates:\n  lat: ${coordinates.lat}\n  long: ${coordinates.long}\n` +
-				frontmatter.slice(insertPos);
-		}
-
-		const newContent = newFrontmatter + body;
-		await this.app.vault.modify(file, newContent);
+		// Use Obsidian's processFrontMatter API for clean flat property handling
+		await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+			// Remove any legacy nested coordinates property
+			if (frontmatter.coordinates !== undefined) {
+				delete frontmatter.coordinates;
+			}
+			// Write flat properties (preferred format)
+			frontmatter.coordinates_lat = coordinates.lat;
+			frontmatter.coordinates_long = coordinates.long;
+		});
 
 		logger.debug('coordinates-updated', `Updated coordinates for ${file.path}`);
 	}
