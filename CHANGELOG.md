@@ -58,6 +58,9 @@ Place management improvements and Calendarium integration planning.
   - Now writes flat `coordinates_lat` / `coordinates_long` properties (preferred format)
   - Also removes any legacy nested `coordinates:` property when updating
 
+- **Data Analysis showing person issues for place notes**: Fixed Data Quality analysis incorrectly flagging place notes with person-specific issues like "No parents defined" or "No birth date"
+  - Added `isPlaceNote` filter to exclude place notes from person cache
+
 ### Documentation
 
 - **Calendarium integration planning**: Added user feedback section to planning document

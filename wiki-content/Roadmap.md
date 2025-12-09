@@ -240,9 +240,20 @@ These features are under consideration but not yet prioritized.
 
 Automatically redact sensitive personal information (SSN, identity numbers) from exports, regardless of living/deceased status. Currently, sensitive fields imported via GEDCOM v2 are stored but should never appear in exports.
 
-### Flatten Nested Properties
+### Data Analysis Scope Expansion
 
-Add a "Flatten" action to nested property warnings in Data Quality tab. Converts `coordinates: { lat, long }` to `coordinates_lat`, `coordinates_long`.
+Expand Data Quality → Data Analysis scope options beyond folder-based filtering to include note type filtering:
+
+**Current scope options:**
+- All records (main tree)
+- Staging folder only
+
+**Proposed additions:**
+- Filter by note type (Person, Place, Event, Source, etc.)
+- Combined folder + note type filtering
+- Note-type-specific validations (e.g., place notes check for missing coordinates, person notes check for missing birth date)
+
+This requires generalizing the `DataQualityIssue` interface to support multiple note types instead of just `PersonNode`.
 
 ### Note Creation from Images
 
