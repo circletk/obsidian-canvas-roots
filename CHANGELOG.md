@@ -40,6 +40,10 @@ Place management improvements and Calendarium integration planning.
   - Now extracts full base name minus state suffixes (e.g., "san mateo" vs "san francisco")
   - Correctly groups "Abbeville" with "Abbeville SC" without matching unrelated places
 
+- **Place statistics showing IDs instead of names**: Fixed "Most common birth/death places" and "Migration patterns" displaying `cr_id` values instead of place names
+  - Added `resolvePlaceDisplayName()` helper to convert place IDs to names
+  - Statistics now show human-readable place names (e.g., "Texas, USA" instead of "aet-050-abr-564")
+
 ### Documentation
 
 - **Calendarium integration planning**: Added user feedback section to planning document

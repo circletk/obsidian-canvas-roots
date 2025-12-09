@@ -548,6 +548,7 @@ export class PlaceGraphService {
 		const deathPlaceCounts = new Map<string, number>();
 
 		for (const ref of this.placeReferenceCache) {
+			// Use place ID as key for counting (to properly group references)
 			const key = ref.placeId || ref.rawValue;
 			if (ref.referenceType === 'birth') {
 				birthPlaceCounts.set(key, (birthPlaceCounts.get(key) || 0) + 1);
@@ -557,12 +558,20 @@ export class PlaceGraphService {
 		}
 
 		const topBirthPlaces = Array.from(birthPlaceCounts.entries())
-			.map(([place, count]) => ({ place, count }))
+			.map(([placeKey, count]) => ({
+				// Resolve place ID to name for display
+				place: this.resolvePlaceDisplayName(placeKey),
+				count
+			}))
 			.sort((a, b) => b.count - a.count)
 			.slice(0, 10);
 
 		const topDeathPlaces = Array.from(deathPlaceCounts.entries())
-			.map(([place, count]) => ({ place, count }))
+			.map(([placeKey, count]) => ({
+				// Resolve place ID to name for display
+				place: this.resolvePlaceDisplayName(placeKey),
+				count
+			}))
 			.sort((a, b) => b.count - a.count)
 			.slice(0, 10);
 
@@ -598,6 +607,22 @@ export class PlaceGraphService {
 	}
 
 	/**
+	 * Resolve a place key (ID or raw value) to a display name
+	 * If the key is a cr_id, looks up the place name; otherwise returns the raw value
+	 */
+	private resolvePlaceDisplayName(placeKey: string): string {
+		// Check if this looks like a cr_id (format: xxx-nnn-xxx-nnn)
+		if (/^[a-z]{3}-\d{3}-[a-z]{3}-\d{3}$/.test(placeKey)) {
+			const place = this.getPlaceByCrId(placeKey);
+			if (place) {
+				return place.name;
+			}
+		}
+		// Return as-is (it's already a name or unresolvable ID)
+		return placeKey;
+	}
+
+	/**
 	 * Calculate migration patterns (birth place -> death place)
 	 */
 	private calculateMigrationPatterns(): Array<{ from: string; to: string; count: number }> {
@@ -627,11 +652,15 @@ export class PlaceGraphService {
 			}
 		}
 
-		// Convert to array and sort
+		// Convert to array, resolve names, and sort
 		return Array.from(migrationCounts.entries())
 			.map(([key, count]) => {
-				const [from, to] = key.split('|');
-				return { from, to, count };
+				const [fromKey, toKey] = key.split('|');
+				return {
+					from: this.resolvePlaceDisplayName(fromKey),
+					to: this.resolvePlaceDisplayName(toKey),
+					count
+				};
 			})
 			.sort((a, b) => b.count - a.count)
 			.slice(0, 20);
