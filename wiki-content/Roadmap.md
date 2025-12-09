@@ -216,6 +216,16 @@ See [Export v2 Planning Document](https://github.com/banisterious/obsidian-canva
 | **Cohort Analysis** | People sharing characteristics (occupation, location, time period) |
 | **Prosopography** | Collective biography of a defined group |
 
+**Creative Writing Reports:**
+
+| Report | Description |
+|--------|-------------|
+| **Character Arc** | Single character's journey: events, relationships formed/lost |
+| **Scene Outline** | Events organized by chapter/book with POV, setting, participants |
+| **POV Coverage** | Which events are witnessed by which POV characters |
+| **Subplot Timeline** | Events filtered by group tag with arc status and intersections |
+| **Appearances by Book** | Character presence across volumes in a series |
+
 ---
 
 #### Output Formats
@@ -271,6 +281,8 @@ These reports are under consideration for later phases:
 | **Research Log** | Sources consulted, findings, next steps |
 | **Conflicting Evidence** | Facts with contradictory sources |
 | **Gaps Report** | Missing vital records by generation |
+
+See [Reports Planning Document](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/reports.md) for implementation details and output examples.
 
 ---
 
