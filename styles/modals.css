@@ -4957,3 +4957,137 @@
   border-top: none;
   padding-top: 0;
 }
+
+/* =============================================================================
+   Flatten Nested Properties Modal
+   ============================================================================= */
+
+.cr-flatten-nested-modal {
+  width: 550px;
+  max-width: 90vw;
+}
+
+.cr-flatten-nested-modal .modal-content {
+  padding: 20px;
+}
+
+.cr-flatten-content {
+  margin: 16px 0;
+}
+
+.cr-flatten-properties-section {
+  margin-bottom: 16px;
+}
+
+.cr-flatten-properties-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cr-flatten-scan-container {
+  margin: 16px 0;
+}
+
+.cr-flatten-progress {
+  margin: 16px 0;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.cr-flatten-progress-bar {
+  height: 8px;
+  background: var(--background-modifier-border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.cr-flatten-progress-fill {
+  height: 100%;
+  background: var(--interactive-accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.cr-flatten-results {
+  margin: 16px 0;
+}
+
+.cr-flatten-summary-header {
+  margin-bottom: 12px;
+}
+
+.cr-flatten-results-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.cr-flatten-result-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+}
+
+.cr-flatten-result-row svg {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.cr-flatten-count {
+  font-weight: 600;
+  color: var(--text-accent);
+}
+
+.cr-flatten-preview-btn {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.cr-flatten-total {
+  padding: 12px;
+  background: var(--background-primary-alt);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.cr-flatten-preview {
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--background-secondary);
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.cr-flatten-preview h4 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cr-flatten-file-list {
+  margin: 0;
+  padding-left: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.cr-flatten-file-list li {
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.cr-flatten-file-link {
+  color: var(--text-accent);
+  cursor: pointer;
+}
+
+.cr-flatten-file-link:hover {
+  text-decoration: underline;
+}

@@ -25,6 +25,13 @@ Place management improvements and Calendarium integration planning.
   - Finds existing parent places by progressively shorter suffixes
   - Sets both `parent_place` wikilink and `parent_place_id` for reliable resolution
 
+- **Flatten nested properties modal**: New batch operation to migrate legacy nested YAML to flat properties
+  - Available in Data Quality tab → Batch operations
+  - Scans all Canvas Roots notes for nested `coordinates:` and `custom_coordinates:` properties
+  - Converts to flat format (e.g., `coordinates_lat`, `coordinates_long`)
+  - Shows preview of affected files before applying
+  - Progress indicator during migration
+
 ### Fixed
 
 - **Bulk geocode modal**: Fixed false "cancelled" message when clicking Done after completion

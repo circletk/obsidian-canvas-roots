@@ -11126,6 +11126,19 @@ export class ControlCenterModal extends Modal {
 				);
 		}
 
+		// Flatten nested properties
+		new Setting(batchContent)
+			.setName('Flatten nested properties')
+			.setDesc('Convert nested YAML (e.g., coordinates: { lat, long }) to flat properties')
+			.addButton(btn => btn
+				.setButtonText('Open')
+				.setCta()
+				.onClick(() => {
+					const { FlattenNestedPropertiesModal } = require('./flatten-nested-properties-modal');
+					new FlattenNestedPropertiesModal(this.app).open();
+				})
+			);
+
 		container.appendChild(batchCard);
 
 		// Data Tools card
