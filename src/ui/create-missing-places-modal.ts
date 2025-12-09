@@ -8,9 +8,11 @@ import { createPlaceNote } from '../core/place-note-writer';
 import { createLucideIcon } from './lucide-icons';
 import { PlaceGraphService } from '../core/place-graph';
 import { PlaceReference } from '../models/place';
+import { normalizePlaceName } from '../utils/place-name-normalizer';
 
 interface MissingPlace {
 	name: string;
+	normalizedName: string;
 	count: number;
 }
 
@@ -31,14 +33,20 @@ export class CreateMissingPlacesModal extends Modal {
 	private onComplete?: (created: number) => void;
 	private placeGraph?: PlaceGraphService;
 	private autoLinkEnabled: boolean = true;
+	private normalizeEnabled: boolean = true;
 
 	constructor(
 		app: App,
-		places: MissingPlace[],
+		places: Array<{ name: string; count: number }>,
 		options: CreateMissingPlacesOptions = {}
 	) {
 		super(app);
-		this.places = places;
+		// Pre-compute normalized names for all places
+		this.places = places.map(p => ({
+			name: p.name,
+			normalizedName: normalizePlaceName(p.name),
+			count: p.count
+		}));
 		this.selectedPlaces = new Set();
 		this.directory = options.directory || '';
 		this.onComplete = options.onComplete;
@@ -77,6 +85,20 @@ export class CreateMissingPlacesModal extends Modal {
 				.onChange(value => {
 					this.directory = value;
 				}));
+
+		// Normalize place names option
+		const normalizeCount = this.places.filter(p => p.name !== p.normalizedName).length;
+		if (normalizeCount > 0) {
+			new Setting(form)
+				.setName('Normalize place names')
+				.setDesc(`Expand abbreviations and standardize ${normalizeCount} place name${normalizeCount !== 1 ? 's' : ''} (e.g., "Hunt Co, TX" → "Hunt County, Texas, USA")`)
+				.addToggle(toggle => toggle
+					.setValue(this.normalizeEnabled)
+					.onChange(value => {
+						this.normalizeEnabled = value;
+						this.renderPlaceList(placeListContainer);
+					}));
+		}
 
 		// Auto-link option (only if placeGraph is available)
 		if (this.placeGraph) {
@@ -173,7 +195,23 @@ export class CreateMissingPlacesModal extends Modal {
 			});
 
 			const label = item.createEl('label', { cls: 'crc-checkbox-label' });
-			label.createEl('span', { text: place.name });
+
+			// Show the name that will be used (normalized or original)
+			const displayName = this.normalizeEnabled ? place.normalizedName : place.name;
+			const willBeNormalized = this.normalizeEnabled && place.name !== place.normalizedName;
+
+			if (willBeNormalized) {
+				// Show original with strikethrough and normalized name
+				const originalSpan = label.createEl('span', {
+					text: place.name,
+					cls: 'crc-text--strikethrough crc-text--muted'
+				});
+				label.createEl('span', { text: ' → ' });
+				label.createEl('span', { text: place.normalizedName });
+			} else {
+				label.createEl('span', { text: displayName });
+			}
+
 			label.createEl('span', {
 				text: ` (${place.count} reference${place.count !== 1 ? 's' : ''})`,
 				cls: 'crc-text--muted'
@@ -231,34 +269,55 @@ export class CreateMissingPlacesModal extends Modal {
 
 			let created = 0;
 			const errors: string[] = [];
-			const createdPlaces: string[] = [];
+			// Track both original and created names for auto-linking
+			const createdPlaceMappings: Array<{ original: string; created: string }> = [];
 
-			for (const placeName of this.selectedPlaces) {
+			for (const originalName of this.selectedPlaces) {
+				// Find the place entry to get the normalized name
+				const placeEntry = this.places.find(p => p.name === originalName);
+				if (!placeEntry) continue;
+
+				// Use normalized name if enabled, otherwise original
+				const nameToCreate = this.normalizeEnabled ? placeEntry.normalizedName : originalName;
+
 				try {
+					// Create with the (possibly normalized) name
+					// Store original as alias if different, so linking still works
+					const aliases = (this.normalizeEnabled && originalName !== nameToCreate)
+						? [originalName]
+						: undefined;
+
 					await createPlaceNote(this.app, {
-						name: placeName
+						name: nameToCreate,
+						aliases
 					}, {
 						directory: this.directory,
 						openAfterCreate: false
 					});
 					created++;
-					createdPlaces.push(placeName);
+					createdPlaceMappings.push({ original: originalName, created: nameToCreate });
 				} catch (error) {
-					errors.push(`${placeName}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+					errors.push(`${nameToCreate}: ${error instanceof Error ? error.message : 'Unknown error'}`);
 				}
 			}
 
 			// Auto-link person notes if enabled
 			let linkedCount = 0;
-			if (this.autoLinkEnabled && this.placeGraph && createdPlaces.length > 0) {
-				linkedCount = await this.autoLinkPersonNotes(createdPlaces);
+			if (this.autoLinkEnabled && this.placeGraph && createdPlaceMappings.length > 0) {
+				// Pass the original names for matching references
+				const originalNames = createdPlaceMappings.map(m => m.original);
+				linkedCount = await this.autoLinkPersonNotes(originalNames);
 			}
 
 			if (errors.length > 0) {
 				console.error('Errors creating place notes:', errors);
 				new Notice(`Created ${created} place notes. ${errors.length} failed.`);
-			} else if (linkedCount > 0) {
-				new Notice(`Created ${created} place notes and updated ${linkedCount} person notes`);
+			} else {
+				let message = `Created ${created} place note${created !== 1 ? 's' : ''}`;
+				if (linkedCount > 0) {
+					message += ` and updated ${linkedCount} person note${linkedCount !== 1 ? 's' : ''}`;
+				}
+				new Notice(message);
 			}
 
 			if (this.onComplete) {

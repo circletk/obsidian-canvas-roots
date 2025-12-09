@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-09 14:00:37 UTC
+ * - Generated: 2025-12-09 14:16:47 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -320,7 +320,7 @@ settings:
    COMPONENT: BASE.CSS
    ========================================================================== */
 
-/* Component Size: 25 lines, 0.37 KB */
+/* Component Size: 29 lines, 0.43 KB */
 
 /* Base Canvas Roots styles */
 
@@ -334,6 +334,10 @@ settings:
 /* Utility classes */
 .crc-text--center {
   text-align: center;
+}
+
+.crc-text--strikethrough {
+  text-decoration: line-through;
 }
 
 .crc-link {
@@ -15228,16 +15232,16 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-09 14:00:37 UTC
+ * Build completed: 2025-12-09 14:16:47 UTC
  * Components processed: 30
- * Total lines: 14935
- * Total size: 293.13 KB
- * Build duration: 0.02 seconds
+ * Total lines: 14939
+ * Total size: 293.19 KB
+ * Build duration: 0.03 seconds
  *
  * Component breakdown:
  * - variables.css: 48 lines, 1.33 KB
  * - style-settings.css: 232 lines, 5.48 KB
- * - base.css: 25 lines, 0.37 KB
+ * - base.css: 29 lines, 0.43 KB
  * - layout.css: 22 lines, 0.24 KB
  * - canvas.css: 4 lines, 0.07 KB
  * - nodes.css: 12 lines, 0.3 KB
