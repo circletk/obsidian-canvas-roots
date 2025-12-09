@@ -10,7 +10,6 @@ This document outlines planned features for Canvas Roots. For completed features
 - [Planned Features](#planned-features)
   - [Sex/Gender Identity Expansion](#sexgender-identity-expansion) ⚡ High
   - [Export v2: Full Entity Export](#export-v2-full-entity-export) ⚡ High
-  - [Data Enhancement Pass](#data-enhancement-pass) ⚡ High
   - [Calendarium Integration](#calendarium-integration) 📋 Medium
   - [Print & PDF Export](#print--pdf-export) 📋 Medium
   - [Research & Analysis Tools](#research--analysis-tools) 📋 Medium
@@ -27,6 +26,7 @@ For detailed implementation documentation of completed features, see [Release Hi
 
 | Version | Feature | Summary |
 |:-------:|---------|---------|
+| v0.10.17 | [Data Enhancement Pass](Release-History#data-enhancement-pass-v01017) | Generate place notes from existing data with progress and editing |
 | v0.10.3 | [Type Customization](Release-History#type-customization-v0103) | Full type managers for all note categories |
 | v0.10.2 | [Flexible Note Type Detection](Release-History#flexible-note-type-detection-v0102) | Support cr_type, tags, avoids conflicts |
 | v0.10.1 | [GEDCOM Import v2](Release-History#gedcom-import-v2-v0101) | Enhanced import with sources, events, and places |
@@ -167,27 +167,6 @@ See [Calendarium Integration Planning Document](https://github.com/banisterious/
 | CSV | ✅ event rows | ✅ source rows | ✅ place rows | ✅ media rows |
 
 See [Export v2 Planning Document](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/export-v2.md) for implementation details.
-
----
-
-### Data Enhancement Pass
-
-**Priority:** ⚡ High — Enables existing users to benefit from new entity types
-
-**Summary:** Upgrade existing vaults by creating missing linked entities from person note data. For users who imported GEDCOM before sources, events, and places were supported.
-
-**Use Cases:**
-1. Imported GEDCOM before v0.10.0 (no event notes)
-2. Imported GEDCOM before v0.9.0 (no source notes)
-3. Have person notes with place strings instead of wikilinks
-4. Want to retroactively create event notes from existing date fields
-
-**Planned Features:**
-- Generate Events from Dates: Scan person notes, create event notes, link to persons
-- Generate Place Notes: Extract unique place strings, create hierarchy, update wikilinks
-- Re-parse GEDCOM for Sources: Match individuals to existing notes, extract `SOUR` records
-- Preview mode before committing changes
-- New card in Import/Export tab: "Enhance existing data"
 
 ---
 

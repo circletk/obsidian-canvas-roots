@@ -9,6 +9,7 @@ For version-specific changes, see the [CHANGELOG](../CHANGELOG.md) and [GitHub R
 ## Table of Contents
 
 - [v0.10.x](#v010x)
+  - [Data Enhancement Pass](#data-enhancement-pass-v01017)
   - [Type Customization](#type-customization-v0103)
   - [Flexible Note Type Detection](#flexible-note-type-detection-v0102)
   - [GEDCOM Import v2](#gedcom-import-v2-v0101)
@@ -34,6 +35,36 @@ For version-specific changes, see the [CHANGELOG](../CHANGELOG.md) and [GitHub R
 ---
 
 ## v0.10.x
+
+### Data Enhancement Pass (v0.10.17)
+
+Commands and UI tools to upgrade existing vaults by creating missing linked entities from existing person note data. Designed for users who imported GEDCOM before Canvas Roots supported event, place, or source note types.
+
+See [data-enhancement-pass.md](https://github.com/banisterious/obsidian-canvas-roots/blob/main/docs/planning/data-enhancement-pass.md) for implementation plan.
+
+**Use Cases:**
+- Imported GEDCOM before v0.10.0: No event notes were created; birth/death dates are flat properties
+- Imported GEDCOM before v0.9.0: No source notes; source citations were ignored
+- Have place strings instead of wikilinks: `birthPlace: "Dublin, Ireland"` instead of `birthPlace: "[[Dublin, Ireland]]"`
+- Want event notes for existing data: Retroactively create event notes to use timeline features
+
+**Generate Place Notes (v0.10.17):**
+- Scans person notes for `birth_place`, `death_place` properties
+- Scans event notes for `place` properties
+- Detects string values (not wikilinks) that need conversion
+- Creates place notes with proper hierarchy (parents created first)
+- Updates references to use wikilinks
+- Preview mode shows what will be created/modified
+- Matches existing place notes to avoid duplicates
+- Progress indicator during bulk generation with cancel support
+- Paginated results table with search/sort after completion
+- Edit button on each result to open Edit Place modal
+
+**Planned Features:**
+- Generate Events from Dates: Create event notes from person `birthDate`/`deathDate` properties
+- Re-parse GEDCOM for Sources: Re-import GEDCOM to extract sources, matching to existing person notes
+
+---
 
 ### Type Customization (v0.10.3)
 
