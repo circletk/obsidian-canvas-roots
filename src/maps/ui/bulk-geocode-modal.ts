@@ -53,7 +53,7 @@ export class BulkGeocodeModal extends Modal {
 	onOpen(): void {
 		const { contentEl } = this;
 		contentEl.empty();
-		contentEl.addClass('cr-bulk-geocode-modal');
+		this.modalEl.addClass('cr-bulk-geocode-modal');
 
 		// Modal title
 		contentEl.createEl('h2', { text: 'Bulk geocode places' });

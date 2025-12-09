@@ -11167,7 +11167,9 @@ export class ControlCenterModal extends Modal {
 				.setCta()
 				.onClick(() => {
 					const { PlaceGeneratorModal } = require('../enhancement/ui/place-generator-modal');
-					new PlaceGeneratorModal(this.app, this.plugin.settings).open();
+					const { PlaceGraphService } = require('../core/place-graph');
+					const placeGraph = new PlaceGraphService(this.app);
+					new PlaceGeneratorModal(this.app, this.plugin.settings, {}, placeGraph).open();
 				})
 			);
 

@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-09 20:47:13 UTC
+ * - Generated: 2025-12-09 21:27:40 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -449,7 +449,7 @@ settings:
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 5094 lines, 92.89 KB */
+/* Component Size: 5107 lines, 93.14 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -5309,10 +5309,15 @@ settings:
 .cr-bulk-geocode-modal {
   width: 550px;
   max-width: 90vw;
+  max-height: 80vh;
 }
 
 .cr-bulk-geocode-modal .modal-content {
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(80vh - 40px);
+  overflow: hidden;
 }
 
 .cr-bulk-geocode-description {
@@ -5325,6 +5330,11 @@ settings:
 
 .cr-bulk-geocode-progress {
   margin: 16px 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .cr-bulk-geocode-progress.cr-hidden {
@@ -5356,6 +5366,8 @@ settings:
 }
 
 .cr-geocode-results-list {
+  flex: 1;
+  min-height: 100px;
   max-height: 250px;
   overflow-y: auto;
   padding: 8px;
@@ -5404,6 +5416,7 @@ settings:
 
 .cr-bulk-geocode-buttons {
   margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .cr-bulk-geocode-buttons .setting-item {
@@ -7103,7 +7116,7 @@ settings:
    COMPONENT: DATA-QUALITY.CSS
    ========================================================================== */
 
-/* Component Size: 1086 lines, 21.27 KB */
+/* Component Size: 1182 lines, 23.26 KB */
 
 /**
  * Data Quality Tab Styles
@@ -8169,6 +8182,101 @@ settings:
   background-color: var(--color-red);
 }
 
+/* Progress UI */
+.cr-place-generator-progress-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-3);
+  padding: var(--size-4-4);
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+}
+
+.cr-place-generator-phase {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cr-place-generator-phase__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--background-modifier-hover);
+}
+
+.cr-place-generator-phase__icon svg {
+  color: var(--text-accent);
+}
+
+.cr-place-generator-phase__label {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.cr-place-generator-progress-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--background-modifier-border);
+  overflow: hidden;
+}
+
+.cr-place-generator-progress-bar__fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--interactive-accent);
+  transition: width 0.2s ease-out;
+}
+
+.cr-place-generator-progress-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Results table */
+.cr-place-generator-result-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.cr-place-generator-result-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.cr-place-generator-edit-btn {
+  padding: var(--size-4-1) var(--size-4-2);
+  font-size: var(--font-ui-smaller);
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.cr-place-generator-edit-btn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+/* Cancel button */
+.cr-place-generator-cancel-btn {
+  background: var(--background-modifier-error);
+  color: var(--text-on-accent);
+  border: none;
+}
+
+.cr-place-generator-cancel-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ==========================================================================
    Warning Callout
    ========================================================================== */
@@ -8176,6 +8284,7 @@ settings:
 .crc-warning-callout {
   display: flex;
   align-items: flex-start;
+  flex-shrink: 0;
   gap: var(--size-4-2);
   padding: var(--size-4-3);
   margin: var(--size-4-3) 0;
@@ -15733,11 +15842,11 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-09 20:47:13 UTC
+ * Build completed: 2025-12-09 21:27:40 UTC
  * Components processed: 30
- * Total lines: 15440
- * Total size: 303.18 KB
- * Build duration: 0.02 seconds
+ * Total lines: 15549
+ * Total size: 305.42 KB
+ * Build duration: 0.03 seconds
  *
  * Component breakdown:
  * - variables.css: 48 lines, 1.33 KB
@@ -15748,7 +15857,7 @@ body.wide-timeline .view-content {
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 4 lines, 0.07 KB
- * - modals.css: 5094 lines, 92.89 KB
+ * - modals.css: 5107 lines, 93.14 KB
  * - duplicate-detection.css: 163 lines, 2.82 KB
  * - tree-statistics.css: 41 lines, 0.6 KB
  * - validation.css: 84 lines, 1.47 KB
@@ -15756,7 +15865,7 @@ body.wide-timeline .view-content {
  * - folder-scan.css: 155 lines, 2.56 KB
  * - relationship-calculator.css: 302 lines, 5.21 KB
  * - family-chart-view.css: 629 lines, 14.76 KB
- * - data-quality.css: 1086 lines, 21.27 KB
+ * - data-quality.css: 1182 lines, 23.26 KB
  * - relationships.css: 517 lines, 9.76 KB
  * - canvas-navigation.css: 683 lines, 14.64 KB
  * - map-view.css: 1904 lines, 38.98 KB

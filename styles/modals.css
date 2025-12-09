@@ -4856,10 +4856,15 @@
 .cr-bulk-geocode-modal {
   width: 550px;
   max-width: 90vw;
+  max-height: 80vh;
 }
 
 .cr-bulk-geocode-modal .modal-content {
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(80vh - 40px);
+  overflow: hidden;
 }
 
 .cr-bulk-geocode-description {
@@ -4872,6 +4877,11 @@
 
 .cr-bulk-geocode-progress {
   margin: 16px 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .cr-bulk-geocode-progress.cr-hidden {
@@ -4903,6 +4913,8 @@
 }
 
 .cr-geocode-results-list {
+  flex: 1;
+  min-height: 100px;
   max-height: 250px;
   overflow-y: auto;
   padding: 8px;
@@ -4951,6 +4963,7 @@
 
 .cr-bulk-geocode-buttons {
   margin-top: 16px;
+  flex-shrink: 0;
 }
 
 .cr-bulk-geocode-buttons .setting-item {

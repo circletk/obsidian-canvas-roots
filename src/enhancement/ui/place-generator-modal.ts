@@ -5,16 +5,19 @@
  * Part of the Data Enhancement Pass feature.
  */
 
-import { App, Modal, Notice, Setting } from 'obsidian';
-import { createLucideIcon } from '../../ui/lucide-icons';
+import { App, Modal, Notice, Setting, TFile } from 'obsidian';
+import { createLucideIcon, setLucideIcon } from '../../ui/lucide-icons';
 import {
 	PlaceGeneratorService,
 	PlaceGeneratorOptions,
 	PlaceGeneratorResult,
+	PlaceNoteInfo,
 	FoundPlace,
 	DEFAULT_PLACE_GENERATOR_OPTIONS
 } from '../services/place-generator';
 import type { CanvasRootsSettings } from '../../settings';
+import { PlaceGraphService } from '../../core/place-graph';
+import { CreatePlaceModal } from '../../ui/create-place-modal';
 
 /**
  * Options for the place generator modal
@@ -31,6 +34,7 @@ export class PlaceGeneratorModal extends Modal {
 	private settings: CanvasRootsSettings;
 	private modalOptions: PlaceGeneratorModalOptions;
 	private service: PlaceGeneratorService;
+	private placeGraph: PlaceGraphService | null = null;
 
 	// Options state
 	private options: PlaceGeneratorOptions;
@@ -39,8 +43,9 @@ export class PlaceGeneratorModal extends Modal {
 	private previewResult: PlaceGeneratorResult | null = null;
 	private isScanning = false;
 	private isGenerating = false;
+	private isCancelled = false;
 
-	// Table state for places list
+	// Table state for preview places list
 	private allPlaces: FoundPlace[] = [];
 	private filteredPlaces: FoundPlace[] = [];
 	private searchQuery = '';
@@ -49,25 +54,44 @@ export class PlaceGeneratorModal extends Modal {
 	private currentPage = 0;
 	private pageSize = 20;
 
+	// Table state for results list
+	private resultNotes: PlaceNoteInfo[] = [];
+	private filteredResultNotes: PlaceNoteInfo[] = [];
+	private resultsSearchQuery = '';
+	private resultsSortField: 'name' | 'status' = 'name';
+	private resultsSortAscending = true;
+	private resultsCurrentPage = 0;
+	private resultsTableBody: HTMLTableSectionElement | null = null;
+	private resultsCountEl: HTMLElement | null = null;
+	private resultsPaginationContainer: HTMLElement | null = null;
+
 	// UI elements
 	private contentContainer: HTMLElement | null = null;
 	private previewButton: HTMLButtonElement | null = null;
 	private generateButton: HTMLButtonElement | null = null;
+	private cancelButton: HTMLButtonElement | null = null;
 	private progressContainer: HTMLElement | null = null;
 	private resultsContainer: HTMLElement | null = null;
 	private placesTableBody: HTMLTableSectionElement | null = null;
 	private placesCountEl: HTMLElement | null = null;
 	private paginationContainer: HTMLElement | null = null;
 
+	// Progress UI elements
+	private progressPhaseEl: HTMLElement | null = null;
+	private progressBarEl: HTMLElement | null = null;
+	private progressTextEl: HTMLElement | null = null;
+
 	constructor(
 		app: App,
 		settings: CanvasRootsSettings,
-		modalOptions: PlaceGeneratorModalOptions = {}
+		modalOptions: PlaceGeneratorModalOptions = {},
+		placeGraph?: PlaceGraphService
 	) {
 		super(app);
 		this.settings = settings;
 		this.modalOptions = modalOptions;
 		this.service = new PlaceGeneratorService(app, settings);
+		this.placeGraph = placeGraph ?? null;
 
 		// Initialize options with defaults
 		this.options = {
@@ -124,6 +148,13 @@ export class PlaceGeneratorModal extends Modal {
 		});
 		this.generateButton.disabled = true;
 		this.generateButton.addEventListener('click', () => void this.runGenerate());
+
+		this.cancelButton = footer.createEl('button', {
+			text: 'Cancel',
+			cls: 'cr-place-generator-cancel-btn'
+		});
+		this.cancelButton.style.display = 'none';
+		this.cancelButton.addEventListener('click', () => this.cancelGeneration());
 
 		footer.createEl('button', { text: 'Close' })
 			.addEventListener('click', () => this.close());
@@ -598,19 +629,33 @@ export class PlaceGeneratorModal extends Modal {
 		}
 
 		this.isGenerating = true;
+		this.isCancelled = false;
 		this.updateButtonStates();
 
-		// Show progress
-		if (this.progressContainer) {
-			this.progressContainer.style.display = 'block';
-			this.progressContainer.empty();
-		}
+		// Show progress UI
+		this.renderProgressUI();
 
 		try {
-			const result = await this.service.generate({
-				...this.options,
-				dryRun: false
-			});
+			const result = await this.service.generate(
+				{
+					...this.options,
+					dryRun: false
+				},
+				{
+					onProgress: (current, total, placeName) => {
+						this.updateProgressUI(current, total, placeName);
+					},
+					isCancelled: () => this.isCancelled
+				}
+			);
+
+			// Brief delay before showing results
+			await new Promise(resolve => setTimeout(resolve, 300));
+
+			// Hide progress, show results
+			if (this.progressContainer) {
+				this.progressContainer.style.display = 'none';
+			}
 
 			this.renderGenerationResults(result);
 
@@ -620,7 +665,9 @@ export class PlaceGeneratorModal extends Modal {
 			}
 
 			// Success notice
-			if (result.errors.length === 0) {
+			if (result.cancelled) {
+				new Notice(`Generation cancelled. Created ${result.notesCreated} place note(s).`);
+			} else if (result.errors.length === 0) {
 				new Notice(`Created ${result.notesCreated} place note(s), updated ${result.referencesUpdated} reference(s).`);
 			} else {
 				new Notice(`Completed with ${result.errors.length} error(s). Check console for details.`);
@@ -629,11 +676,67 @@ export class PlaceGeneratorModal extends Modal {
 		} catch (error) {
 			console.error('Error generating place notes:', error);
 			new Notice('Error generating place notes. Check console for details.');
-		} finally {
-			this.isGenerating = false;
-			this.updateButtonStates();
 			if (this.progressContainer) {
 				this.progressContainer.style.display = 'none';
+			}
+		} finally {
+			this.isGenerating = false;
+			this.isCancelled = false;
+			this.updateButtonStates();
+		}
+	}
+
+	/**
+	 * Render the progress UI
+	 */
+	private renderProgressUI(): void {
+		if (!this.progressContainer) return;
+
+		this.progressContainer.style.display = 'block';
+		this.progressContainer.empty();
+		this.progressContainer.addClass('cr-place-generator-progress-content');
+
+		// Phase indicator
+		const phaseContainer = this.progressContainer.createDiv({ cls: 'cr-place-generator-phase' });
+		const phaseIcon = phaseContainer.createDiv({ cls: 'cr-place-generator-phase__icon' });
+		setLucideIcon(phaseIcon, 'map-pin', 20);
+		this.progressPhaseEl = phaseContainer.createDiv({ cls: 'cr-place-generator-phase__label' });
+		this.progressPhaseEl.textContent = 'Creating place notes...';
+
+		// Progress bar
+		const barContainer = this.progressContainer.createDiv({ cls: 'cr-place-generator-progress-bar' });
+		this.progressBarEl = barContainer.createDiv({ cls: 'cr-place-generator-progress-bar__fill' });
+		this.progressBarEl.style.width = '0%';
+
+		// Progress text
+		this.progressTextEl = this.progressContainer.createDiv({ cls: 'cr-place-generator-progress-text' });
+		this.progressTextEl.textContent = 'Starting...';
+	}
+
+	/**
+	 * Update the progress UI
+	 */
+	private updateProgressUI(current: number, total: number, placeName: string): void {
+		const percent = Math.round((current / total) * 100);
+
+		if (this.progressBarEl) {
+			this.progressBarEl.style.width = `${percent}%`;
+		}
+
+		if (this.progressTextEl) {
+			this.progressTextEl.textContent = `Creating ${current} of ${total}: ${placeName}`;
+		}
+	}
+
+	/**
+	 * Cancel the generation process
+	 */
+	private cancelGeneration(): void {
+		if (this.isGenerating && !this.isCancelled) {
+			this.isCancelled = true;
+			if (this.cancelButton) {
+				this.cancelButton.disabled = true;
+				this.cancelButton.textContent = 'Cancelling...';
 			}
 		}
 	}
@@ -648,9 +751,9 @@ export class PlaceGeneratorModal extends Modal {
 
 		// Success header
 		const header = this.resultsContainer.createDiv({ cls: 'cr-place-generator-complete-header' });
-		const successIcon = createLucideIcon('check-circle', 24);
+		const successIcon = createLucideIcon(result.cancelled ? 'alert-circle' : 'check-circle', 24);
 		header.appendChild(successIcon);
-		header.createEl('h4', { text: 'Generation complete' });
+		header.createEl('h4', { text: result.cancelled ? 'Generation cancelled' : 'Generation complete' });
 
 		// Stats grid
 		const statsGrid = this.resultsContainer.createDiv({ cls: 'cr-place-generator-stats' });
@@ -681,39 +784,272 @@ export class PlaceGeneratorModal extends Modal {
 			}
 		}
 
-		// Created notes section
+		// Created notes section with paginated table
 		if (result.placeNotes.length > 0) {
 			const notesSection = this.resultsContainer.createDiv({ cls: 'cr-place-generator-created-notes' });
-			notesSection.createEl('h4', { text: 'Created notes' });
+			notesSection.createEl('h4', { text: 'Place notes' });
 
-			const newNotes = result.placeNotes.filter(n => n.isNew);
-			if (newNotes.length > 0) {
-				const list = notesSection.createEl('ul', { cls: 'cr-place-generator-note-list' });
+			// Initialize results table state
+			this.resultNotes = result.placeNotes;
+			this.resultsCurrentPage = 0;
+			this.resultsSearchQuery = '';
+			this.resultsSortField = 'name';
+			this.resultsSortAscending = true;
 
-				for (const note of newNotes.slice(0, 20)) {
-					const li = list.createEl('li');
-					const link = li.createEl('a', {
-						text: note.name,
-						cls: 'cr-place-generator-note-link'
-					});
-					link.addEventListener('click', (e) => {
-						e.preventDefault();
-						void this.app.workspace.openLinkText(note.path, '');
-					});
-				}
+			// Count display
+			this.resultsCountEl = notesSection.createEl('p', { cls: 'crc-batch-count' });
 
-				if (newNotes.length > 20) {
-					list.createEl('li', {
-						text: `... and ${newNotes.length - 20} more`,
-						cls: 'crc-text--muted'
-					});
-				}
-			}
+			// Controls row (search + sort)
+			this.renderResultsControls(notesSection);
+
+			// Scrollable table container
+			const tableContainer = notesSection.createDiv({ cls: 'crc-batch-table-container' });
+			const table = tableContainer.createEl('table', { cls: 'crc-batch-preview-table' });
+			const thead = table.createEl('thead');
+			const headerRow = thead.createEl('tr');
+			headerRow.createEl('th', { text: 'Place' });
+			headerRow.createEl('th', { text: 'Status' });
+			headerRow.createEl('th', { text: '', cls: 'cr-place-generator-action-header' });
+
+			this.resultsTableBody = table.createEl('tbody');
+
+			// Pagination container
+			this.resultsPaginationContainer = notesSection.createDiv({ cls: 'cr-place-generator-pagination' });
+
+			// Initial render
+			this.applyResultsFiltersAndSort();
 		}
 
 		// Clear preview result so generate button is disabled
 		this.previewResult = null;
 		this.updateButtonStates();
+	}
+
+	/**
+	 * Render controls for the results table
+	 */
+	private renderResultsControls(container: HTMLElement): void {
+		const controlsRow = container.createDiv({ cls: 'crc-batch-controls' });
+
+		// Search input
+		const searchContainer = controlsRow.createDiv({ cls: 'crc-batch-search' });
+		const searchInput = searchContainer.createEl('input', {
+			type: 'text',
+			placeholder: 'Search created notes...',
+			cls: 'crc-batch-search-input'
+		});
+		searchInput.addEventListener('input', () => {
+			this.resultsSearchQuery = searchInput.value.toLowerCase();
+			this.resultsCurrentPage = 0;
+			this.applyResultsFiltersAndSort();
+		});
+
+		// Sort dropdown
+		const sortContainer = controlsRow.createDiv({ cls: 'crc-batch-filter' });
+		const sortSelect = sortContainer.createEl('select', { cls: 'crc-batch-filter-select' });
+		sortSelect.createEl('option', { text: 'Sort by name', value: 'name' });
+		sortSelect.createEl('option', { text: 'Sort by status', value: 'status' });
+		sortSelect.addEventListener('change', () => {
+			this.resultsSortField = sortSelect.value as 'name' | 'status';
+			this.applyResultsFiltersAndSort();
+		});
+
+		// Sort direction toggle
+		const sortDirContainer = controlsRow.createDiv({ cls: 'crc-batch-sort' });
+		const sortDirBtn = sortDirContainer.createEl('button', {
+			text: 'A→Z',
+			cls: 'crc-batch-sort-btn'
+		});
+		sortDirBtn.addEventListener('click', () => {
+			this.resultsSortAscending = !this.resultsSortAscending;
+			sortDirBtn.textContent = this.resultsSortAscending ? 'A→Z' : 'Z→A';
+			this.applyResultsFiltersAndSort();
+		});
+	}
+
+	/**
+	 * Apply filters and sorting to results table
+	 */
+	private applyResultsFiltersAndSort(): void {
+		// Filter
+		this.filteredResultNotes = this.resultNotes.filter(note => {
+			if (this.resultsSearchQuery && !note.name.toLowerCase().includes(this.resultsSearchQuery)) {
+				return false;
+			}
+			return true;
+		});
+
+		// Sort
+		this.filteredResultNotes.sort((a, b) => {
+			let cmp: number;
+			if (this.resultsSortField === 'status') {
+				// New notes first when ascending
+				cmp = (a.isNew ? 0 : 1) - (b.isNew ? 0 : 1);
+			} else {
+				cmp = a.name.localeCompare(b.name);
+			}
+			return this.resultsSortAscending ? cmp : -cmp;
+		});
+
+		// Update count
+		if (this.resultsCountEl) {
+			if (this.filteredResultNotes.length === this.resultNotes.length) {
+				this.resultsCountEl.textContent = `${this.resultNotes.length} place note${this.resultNotes.length === 1 ? '' : 's'}:`;
+			} else {
+				this.resultsCountEl.textContent = `Showing ${this.filteredResultNotes.length} of ${this.resultNotes.length} notes:`;
+			}
+		}
+
+		// Re-render table and pagination
+		this.renderResultsTable();
+		this.renderResultsPagination();
+	}
+
+	/**
+	 * Render the results table for the current page
+	 */
+	private renderResultsTable(): void {
+		if (!this.resultsTableBody) return;
+
+		this.resultsTableBody.empty();
+
+		const startIdx = this.resultsCurrentPage * this.pageSize;
+		const endIdx = Math.min(startIdx + this.pageSize, this.filteredResultNotes.length);
+		const pageItems = this.filteredResultNotes.slice(startIdx, endIdx);
+
+		for (const note of pageItems) {
+			const row = this.resultsTableBody.createEl('tr');
+			row.addClass('cr-place-generator-result-row');
+
+			// Place name (clickable to open)
+			const nameCell = row.createEl('td');
+			const nameLink = nameCell.createEl('a', {
+				text: note.name,
+				cls: 'cr-place-generator-note-link'
+			});
+			nameLink.addEventListener('click', (e) => {
+				e.preventDefault();
+				void this.app.workspace.openLinkText(note.path, '');
+			});
+
+			// Status
+			const statusCell = row.createEl('td');
+			statusCell.textContent = note.isNew ? 'Created' : 'Existing';
+			statusCell.addClass(note.isNew ? 'cr-text-success' : 'crc-text--muted');
+
+			// Edit button
+			const actionCell = row.createEl('td', { cls: 'cr-place-generator-action-cell' });
+			const editBtn = actionCell.createEl('button', {
+				text: 'Edit',
+				cls: 'cr-place-generator-edit-btn'
+			});
+			editBtn.addEventListener('click', () => {
+				void this.openPlaceForEdit(note);
+			});
+		}
+
+		// Empty state
+		if (pageItems.length === 0 && this.resultNotes.length > 0) {
+			const row = this.resultsTableBody.createEl('tr');
+			const cell = row.createEl('td', {
+				text: 'No matches found',
+				cls: 'crc-text--muted'
+			});
+			cell.setAttribute('colspan', '3');
+			cell.style.textAlign = 'center';
+		}
+	}
+
+	/**
+	 * Render pagination for results table
+	 */
+	private renderResultsPagination(): void {
+		if (!this.resultsPaginationContainer) return;
+
+		this.resultsPaginationContainer.empty();
+
+		const totalPages = Math.ceil(this.filteredResultNotes.length / this.pageSize);
+
+		if (totalPages <= 1) {
+			return;
+		}
+
+		// Previous button
+		const prevBtn = this.resultsPaginationContainer.createEl('button', {
+			text: '← Prev',
+			cls: 'cr-place-generator-page-btn'
+		});
+		prevBtn.disabled = this.resultsCurrentPage === 0;
+		prevBtn.addEventListener('click', () => {
+			if (this.resultsCurrentPage > 0) {
+				this.resultsCurrentPage--;
+				this.renderResultsTable();
+				this.renderResultsPagination();
+			}
+		});
+
+		// Page info
+		const startItem = this.resultsCurrentPage * this.pageSize + 1;
+		const endItem = Math.min((this.resultsCurrentPage + 1) * this.pageSize, this.filteredResultNotes.length);
+		this.resultsPaginationContainer.createSpan({
+			text: `${startItem}–${endItem} of ${this.filteredResultNotes.length}`,
+			cls: 'cr-place-generator-page-info'
+		});
+
+		// Next button
+		const nextBtn = this.resultsPaginationContainer.createEl('button', {
+			text: 'Next →',
+			cls: 'cr-place-generator-page-btn'
+		});
+		nextBtn.disabled = this.resultsCurrentPage >= totalPages - 1;
+		nextBtn.addEventListener('click', () => {
+			if (this.resultsCurrentPage < totalPages - 1) {
+				this.resultsCurrentPage++;
+				this.renderResultsTable();
+				this.renderResultsPagination();
+			}
+		});
+	}
+
+	/**
+	 * Open a place note for editing
+	 */
+	private async openPlaceForEdit(noteInfo: PlaceNoteInfo): Promise<void> {
+		// Get the file
+		const file = this.app.vault.getAbstractFileByPath(noteInfo.path);
+		if (!(file instanceof TFile)) {
+			new Notice(`Could not find file: ${noteInfo.path}`);
+			return;
+		}
+
+		// Get PlaceNode from PlaceGraphService
+		if (!this.placeGraph) {
+			// If no placeGraph, just open the file directly
+			await this.app.workspace.openLinkText(noteInfo.path, '');
+			return;
+		}
+
+		// Ensure cache is loaded
+		this.placeGraph.reloadCache();
+
+		const placeNode = this.placeGraph.getPlaceByCrId(noteInfo.crId);
+		if (!placeNode) {
+			// Fallback: just open the file
+			await this.app.workspace.openLinkText(noteInfo.path, '');
+			return;
+		}
+
+		// Open CreatePlaceModal in edit mode
+		new CreatePlaceModal(this.app, {
+			editPlace: placeNode,
+			editFile: file,
+			placeGraph: this.placeGraph,
+			settings: this.settings,
+			onUpdated: () => {
+				new Notice(`Updated: ${noteInfo.name}`);
+				this.placeGraph?.reloadCache();
+			}
+		}).open();
 	}
 
 	/**
@@ -735,6 +1071,15 @@ export class PlaceGeneratorModal extends Modal {
 		if (this.generateButton) {
 			this.generateButton.disabled = !canGenerate;
 			this.generateButton.textContent = this.isGenerating ? 'Generating...' : 'Generate';
+			// Hide generate button when generating (cancel button will show)
+			this.generateButton.style.display = this.isGenerating ? 'none' : '';
+		}
+
+		if (this.cancelButton) {
+			// Show cancel button only while generating
+			this.cancelButton.style.display = this.isGenerating ? '' : 'none';
+			this.cancelButton.disabled = this.isCancelled;
+			this.cancelButton.textContent = this.isCancelled ? 'Cancelling...' : 'Cancel';
 		}
 	}
 }

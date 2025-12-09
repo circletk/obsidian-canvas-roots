@@ -79,6 +79,8 @@ export interface PlaceGeneratorResult {
 	foundPlaces: FoundPlace[];
 	/** Created/matched place notes (for summary) */
 	placeNotes: PlaceNoteInfo[];
+	/** Whether operation was cancelled */
+	cancelled?: boolean;
 }
 
 /**
@@ -88,6 +90,16 @@ export interface SinglePlaceResult {
 	success: boolean;
 	error?: string;
 	noteInfo?: PlaceNoteInfo;
+}
+
+/**
+ * Progress callback options for generation
+ */
+export interface PlaceGeneratorProgressOptions {
+	/** Called for each place being processed */
+	onProgress?: (current: number, total: number, placeName: string) => void;
+	/** Check if operation should be cancelled */
+	isCancelled?: () => boolean;
 }
 
 /**
@@ -149,7 +161,10 @@ export class PlaceGeneratorService {
 	/**
 	 * Generate place notes
 	 */
-	async generate(options: Partial<PlaceGeneratorOptions> = {}): Promise<PlaceGeneratorResult> {
+	async generate(
+		options: Partial<PlaceGeneratorOptions> = {},
+		progressOptions?: PlaceGeneratorProgressOptions
+	): Promise<PlaceGeneratorResult> {
 		const fullOptions: PlaceGeneratorOptions = {
 			...DEFAULT_PLACE_GENERATOR_OPTIONS,
 			placesFolder: this.settings.placesFolder || DEFAULT_PLACE_GENERATOR_OPTIONS.placesFolder,
@@ -164,7 +179,8 @@ export class PlaceGeneratorService {
 			filesModified: 0,
 			errors: [],
 			foundPlaces: [],
-			placeNotes: []
+			placeNotes: [],
+			cancelled: false
 		};
 
 		try {
@@ -197,8 +213,21 @@ export class PlaceGeneratorService {
 			// Step 3: Create place notes (hierarchy order - most general first)
 			const placeToNoteInfo = new Map<string, PlaceNoteInfo>();
 			const sortedPlaces = this.sortByHierarchyDepth(result.foundPlaces);
+			const totalPlaces = sortedPlaces.length;
 
-			for (const place of sortedPlaces) {
+			for (let i = 0; i < sortedPlaces.length; i++) {
+				// Check for cancellation
+				if (progressOptions?.isCancelled?.()) {
+					result.cancelled = true;
+					logger.info('generate', 'Place generation cancelled by user');
+					break;
+				}
+
+				const place = sortedPlaces[i];
+
+				// Report progress
+				progressOptions?.onProgress?.(i + 1, totalPlaces, place.placeString);
+
 				try {
 					const noteInfo = await this.createOrMatchPlaceNote(
 						place,
@@ -223,9 +252,16 @@ export class PlaceGeneratorService {
 			}
 
 			// Step 4: Update references to use wikilinks
-			if (fullOptions.updateReferences) {
+			if (fullOptions.updateReferences && !result.cancelled) {
 				const modifiedFiles = new Set<string>();
 				for (const place of result.foundPlaces) {
+					// Check for cancellation
+					if (progressOptions?.isCancelled?.()) {
+						result.cancelled = true;
+						logger.info('generate', 'Reference update cancelled by user');
+						break;
+					}
+
 					const noteInfo = placeToNoteInfo.get(place.normalizedString);
 					if (!noteInfo) continue;
 

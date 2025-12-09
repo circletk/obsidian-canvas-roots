@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.17] - 2025-12-09
+
+Data Enhancement Pass: Improved place generation workflow.
+
+### Added
+
+- **Generate place notes - Progress indicator**: Real-time progress tracking during bulk place note creation
+  - Animated progress bar with phase indicator
+  - Current place name displayed during generation
+  - Cancel button to stop long-running operations
+
+- **Generate place notes - Paginated results table**: Full-featured table replaces simple list after generation
+  - Search filter to find specific places by name
+  - Sort by place name or status (created/existing)
+  - Pagination controls for navigating large result sets
+
+- **Generate place notes - Edit integration**: Each result row has an edit button
+  - Opens Edit Place modal for the selected place
+  - Allows immediate refinement of generated place notes
+
+---
+
 ## [0.10.16] - 2025-12-09
 
 Place management improvements and Calendarium integration planning.
