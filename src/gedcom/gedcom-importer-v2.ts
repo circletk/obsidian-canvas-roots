@@ -23,6 +23,25 @@ import { getErrorMessage } from '../core/error-utils';
 import type { CreateEventData, DatePrecision, EventConfidence } from '../events/types/event-types';
 
 /**
+ * US State abbreviation to full name mapping for normalizing place names
+ */
+const US_STATE_ABBREVIATIONS: Record<string, string> = {
+	'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+	'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+	'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+	'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+	'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+	'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+	'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+	'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+	'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+	'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+	'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+	'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+	'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+};
+
+/**
  * Information about a created place note
  */
 interface PlaceNoteInfo {
@@ -901,20 +920,45 @@ export class GedcomImporterV2 {
 	 * - Collapses multiple spaces into single space
 	 * - Removes empty parts between commas
 	 * - Normalizes comma spacing
+	 * - Expands US state abbreviations to full names (e.g., "SC" → "South Carolina")
+	 * - Handles space-separated state abbreviations (e.g., "Abbeville SC" → "Abbeville, South Carolina")
 	 *
 	 * Examples:
 	 * - ", Scotland, Missouri, USA" → "Scotland, Missouri, USA"
 	 * - ", Scotland , Missouri, USA" → "Scotland, Missouri, USA"
 	 * - "Springfield,  Sangamon,, Illinois" → "Springfield, Sangamon, Illinois"
+	 * - "Abbeville, SC, USA" → "Abbeville, South Carolina, USA"
+	 * - "Abbeville SC" → "Abbeville, South Carolina"
 	 */
 	private normalizePlaceString(placeString: string): string {
 		if (!placeString) return '';
 
-		// Split by comma, trim each part, filter empty parts, rejoin
+		// Split by comma, trim each part, filter empty parts
 		const parts = placeString
 			.split(',')
 			.map(p => p.trim().replace(/\s+/g, ' ')) // Collapse multiple spaces
-			.filter(p => p.length > 0);
+			.filter(p => p.length > 0)
+			.flatMap(p => {
+				// First check if the whole part is a state abbreviation
+				const upperPart = p.toUpperCase();
+				if (US_STATE_ABBREVIATIONS[upperPart]) {
+					return [US_STATE_ABBREVIATIONS[upperPart]];
+				}
+
+				// Check for space-separated state abbreviation at the end (e.g., "Abbeville SC")
+				const words = p.split(' ');
+				if (words.length >= 2) {
+					const lastWord = words[words.length - 1].toUpperCase();
+					if (US_STATE_ABBREVIATIONS[lastWord]) {
+						// Split into locality and state
+						const locality = words.slice(0, -1).join(' ');
+						const state = US_STATE_ABBREVIATIONS[lastWord];
+						return [locality, state];
+					}
+				}
+
+				return [p];
+			});
 
 		return parts.join(', ');
 	}
