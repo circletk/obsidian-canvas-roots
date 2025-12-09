@@ -2832,17 +2832,17 @@ export default class CanvasRootsPlugin extends Plugin {
 						(('children' in frontmatter) || ('children_id' in frontmatter)) &&
 						('group_name' in frontmatter);
 
-					// Check place properties
+					// Check place properties (supports both cr_type and legacy type)
 					const hasAllPlaceProperties =
-						frontmatter.type === 'place' &&
+						(frontmatter.cr_type === 'place' || frontmatter.type === 'place') &&
 						frontmatter.cr_id &&
 						frontmatter.name &&
 						('place_type' in frontmatter) &&
 						('place_category' in frontmatter);
 
-					// Check source properties
+					// Check source properties (supports both cr_type and legacy type)
 					const hasAllSourceProperties =
-						frontmatter.type === 'source' &&
+						(frontmatter.cr_type === 'source' || frontmatter.type === 'source') &&
 						frontmatter.cr_id &&
 						frontmatter.title &&
 						frontmatter.source_type &&
@@ -4700,9 +4700,14 @@ export default class CanvasRootsPlugin extends Plugin {
 					let propertiesAdded = false;
 
 					await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-						// type: Must be "place"
-						if (frontmatter.type !== 'place') {
-							frontmatter.type = 'place';
+						// cr_type: Must be "place" (migrate from legacy 'type' property)
+						if (frontmatter.cr_type !== 'place') {
+							frontmatter.cr_type = 'place';
+							propertiesAdded = true;
+						}
+						// Remove legacy 'type' property if it exists (migrated to cr_type)
+						if (frontmatter.type === 'place') {
+							delete frontmatter.type;
 							propertiesAdded = true;
 						}
 

@@ -14,6 +14,7 @@ import {
 	HistoricalName,
 	DEFAULT_PLACE_CATEGORY
 } from '../models/place';
+import { isPlaceNote } from '../utils/note-type-detection';
 
 const logger = getLogger('PlaceNoteWriter');
 
@@ -77,7 +78,7 @@ export async function createPlaceNote(
 
 	// Build frontmatter
 	const frontmatter: Record<string, unknown> = {
-		type: 'place',
+		cr_type: 'place',
 		cr_id: crId,
 		name: place.name || ''
 	};
@@ -324,7 +325,7 @@ export function findPlaceNoteByCrId(
 		}
 
 		const cache = app.metadataCache.getFileCache(file);
-		if (cache?.frontmatter?.type === 'place' && cache.frontmatter.cr_id === crId) {
+		if (isPlaceNote(cache?.frontmatter, cache) && cache?.frontmatter?.cr_id === crId) {
 			return file;
 		}
 	}
@@ -353,7 +354,7 @@ export function findAllPlaceNotes(
 		}
 
 		const cache = app.metadataCache.getFileCache(file);
-		if (cache?.frontmatter?.type === 'place') {
+		if (isPlaceNote(cache?.frontmatter, cache)) {
 			placeNotes.push(file);
 		}
 	}

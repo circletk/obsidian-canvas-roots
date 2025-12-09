@@ -119,6 +119,7 @@ function loadDataQualityCard(
 	container.empty();
 
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 
@@ -249,6 +250,7 @@ function loadDataQualityCard(
 				label: 'Bulk geocode all',
 				onClick: () => {
 					const placeGraph = new PlaceGraphService(plugin.app);
+					placeGraph.setSettings(plugin.settings);
 					placeGraph.setValueAliases(plugin.settings.valueAliases);
 					placeGraph.reloadCache();
 					new BulkGeocodeModal(plugin.app, placeGraph, {
@@ -278,6 +280,7 @@ function loadDataQualityCard(
 				label: 'Enrich hierarchy',
 				onClick: () => {
 					const placeGraph = new PlaceGraphService(plugin.app);
+					placeGraph.setSettings(plugin.settings);
 					placeGraph.setValueAliases(plugin.settings.valueAliases);
 					placeGraph.reloadCache();
 					new EnrichPlaceHierarchyModal(plugin.app, placeGraph, {
@@ -598,6 +601,7 @@ function loadPlaceStatistics(container: HTMLElement, plugin: CanvasRootsPlugin):
 	container.empty();
 
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 
@@ -745,6 +749,7 @@ function loadPlaceList(
 	container.empty();
 
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 
@@ -1033,6 +1038,7 @@ function loadReferencedPlaces(
 	container.empty();
 
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 
@@ -1241,6 +1247,7 @@ function formatPlaceCategoryName(category: PlaceCategory): string {
  */
 function showCreateMissingPlacesModal(plugin: CanvasRootsPlugin, showTab: (tabId: string) => void): void {
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 
@@ -1308,6 +1315,7 @@ function showQuickCreatePlaceModal(
 function showBuildHierarchyModal(plugin: CanvasRootsPlugin, showTab: (tabId: string) => void): void {
 	const { Notice } = require('obsidian');
 	const placeService = new PlaceGraphService(plugin.app);
+	placeService.setSettings(plugin.settings);
 	placeService.setValueAliases(plugin.settings.valueAliases);
 	placeService.reloadCache();
 

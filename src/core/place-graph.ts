@@ -128,17 +128,22 @@ export class PlaceGraphService {
 	}
 
 	/**
-	 * Gets a place by name (case-insensitive, checks name and aliases)
+	 * Gets a place by name (case-insensitive, checks name, aliases, and filename)
 	 */
 	getPlaceByName(name: string): PlaceNode | undefined {
 		this.ensureCacheLoaded();
-		const lowerName = name.toLowerCase();
+		const lowerName = name.toLowerCase().trim();
 
 		for (const place of this.placeCache.values()) {
-			if (place.name.toLowerCase() === lowerName) {
+			if (place.name.toLowerCase().trim() === lowerName) {
 				return place;
 			}
-			if (place.aliases.some(a => a.toLowerCase() === lowerName)) {
+			if (place.aliases.some(a => a.toLowerCase().trim() === lowerName)) {
+				return place;
+			}
+			// Also check filename (without extension) for wikilink resolution
+			const basename = place.filePath.replace(/\.md$/, '').split('/').pop() || '';
+			if (basename.toLowerCase().trim() === lowerName) {
 				return place;
 			}
 		}
@@ -965,6 +970,14 @@ export class PlaceGraphService {
 		} else if (placeId) {
 			// Direct ID reference
 			isLinked = this.placeCache.has(placeId);
+		} else {
+			// Plain text reference (no wikilink, no ID) - try to match by name
+			// This handles GEDCOM imports which store places as plain text
+			const place = this.getPlaceByName(rawValue);
+			if (place) {
+				resolvedPlaceId = place.id;
+				isLinked = true;
+			}
 		}
 
 		return {
@@ -1002,6 +1015,14 @@ export class PlaceGraphService {
 		const aliases: string[] = Array.isArray(fm.aliases)
 			? fm.aliases
 			: fm.aliases ? [fm.aliases] : [];
+
+		// Add full_name to aliases for lookup purposes (if different from name)
+		// This allows matching "Hartford, Hartford, Connecticut, USA" to a place named "Hartford"
+		if (fm.full_name && typeof fm.full_name === 'string' && fm.full_name !== name) {
+			if (!aliases.includes(fm.full_name)) {
+				aliases.push(fm.full_name);
+			}
+		}
 
 		// Extract parent ID or wikilink
 		// Supports: parent_place_id (preferred), parent_place, parent (GEDCOM import uses 'parent')
