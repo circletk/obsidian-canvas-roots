@@ -517,19 +517,34 @@ When importing GEDCOM files or building place notes manually, you may end up wit
 
 ### How Duplicates Are Detected
 
-Places are grouped as potential duplicates when they share:
-- **Same name** (case-insensitive)
-- **Same parent place name** (the immediate parent in the hierarchy)
+The duplicate detection algorithm uses multiple passes to identify potential duplicates:
 
-This approach handles cases where parent places themselves may be duplicates. For example, if you have two "Alabama" place notes with different `cr_id` values, places within them will still be correctly grouped by parent name.
+**Pass 1-3: Name Matching**
+- **Exact name match** (case-insensitive)
+- **Similar name match** (fuzzy matching for typos)
+- **Same parent + same name** (places with identical names under the same parent)
+
+**Pass 4: Same Parent + Shared Base Name**
+Places under the same parent that share a base name (first word) are grouped. This catches GEDCOM import fragments like "Abbeville" and "Abbeville County" under "South Carolina".
+
+- Administrative divisions (County, Parish, Township, etc.) are grouped separately from settlements
+- Prevents incorrect grouping of "Abbeville County" with "Abbeville" (the city) — they're different entities
+
+**Pass 5: State Abbreviation Variants**
+Detects places that differ only in US state name format:
+- "Abbeville SC" ↔ "Abbeville South Carolina"
+- Checks both frontmatter title and filename for state components
+- Supports various filename formats: spaces, kebab-case (`abbeville-south-carolina`), and snake_case (`abbeville_south_carolina`)
 
 **Example duplicates detected:**
 - "Birmingham, Alabama" and "Birmingham, Alabama" (different `cr_id` values)
 - "Hartford, Hartford County" (two notes with same parent name)
+- "Abbeville SC" and "Abbeville South Carolina" (state abbreviation variant)
 
 **Not grouped together:**
 - "Hartford, Hartford County, Connecticut" vs "Hartford, Oxfordshire, England" (different parents)
 - "Washington, Wilkes County" vs "Washington, D.C." (different parents)
+- "Abbeville County" vs "Abbeville" (administrative division vs settlement)
 
 ### Sorting and Filtering
 

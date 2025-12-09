@@ -106,6 +106,18 @@ Place duplicate detection uses multiple strategies:
 - **Fallback:** Match by title + parent combination (for places with same name in different regions)
 - Existing places are updated (missing parent links added) rather than duplicated
 
+**State Abbreviation Normalization:**
+US state abbreviations are automatically expanded to full names during import:
+- Comma-separated: `Abbeville, SC, USA` → `Abbeville, South Carolina, USA`
+- Space-separated: `Abbeville SC` → `Abbeville, South Carolina`
+
+This prevents duplicate place notes from being created when GEDCOM data contains inconsistent state formats. All 50 US states plus DC are supported.
+
+**Place Type Inference:**
+When importing places, Canvas Roots uses context-aware type inference:
+- Administrative division suffixes (County, Parish, Township, etc.) are detected
+- When both "Abbeville" and "Abbeville County" exist as siblings, the non-suffixed version is inferred as a city/town rather than a county
+
 ### Exporting to GEDCOM
 
 Export your family data back to GEDCOM format for sharing with other genealogy software or family members.

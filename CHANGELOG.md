@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.15] - 2025-12-08
+
+Improved duplicate place detection and GEDCOM import normalization for US state abbreviations.
+
+### Added
+
+- **Merge Duplicates - Pass 5: State Abbreviation Variants**: New detection pass identifies place notes that differ only in state name format
+  - Detects pairs like "Abbeville SC" and "Abbeville South Carolina" as duplicates
+  - Checks both frontmatter title and filename for state components
+  - Supports various filename formats: spaces, kebab-case (`abbeville-south-carolina`), and snake_case (`abbeville_south_carolina`)
+
+### Changed
+
+- **GEDCOM Import: State Abbreviation Normalization**: US state abbreviations are now automatically expanded to full names during place import
+  - Comma-separated: `Abbeville, SC, USA` → `Abbeville, South Carolina, USA`
+  - Space-separated: `Abbeville SC` → `Abbeville, South Carolina`
+  - Prevents duplicate place notes from being created during import
+
+### Improved
+
+- **Merge Duplicates - Pass 4**: Administrative divisions (County, Parish, etc.) are now separated from settlements before grouping
+  - Prevents "Abbeville County" from being incorrectly grouped with "Abbeville" (the city)
+  - Each category groups independently by base name
+
+- **GEDCOM Import Type Inference**: Context-aware detection prevents mislabeling cities as counties
+  - When importing "Abbeville", checks if "Abbeville County" exists as a sibling
+  - If explicit county sibling exists, infers the non-suffixed place as a city/town rather than county
+
+---
+
 ## [0.10.14] - 2025-12-08
 
 Control Center UI consistency improvements, Places tab UX overhaul, and new hierarchy enrichment tool.
