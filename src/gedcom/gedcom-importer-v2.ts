@@ -294,7 +294,8 @@ export class GedcomImporterV2 {
 							individual,
 							gedcomData,
 							options,
-							gedcomToCrId
+							gedcomToCrId,
+							placeToNoteInfo
 						);
 
 						gedcomToCrId.set(gedcomId, crId);
@@ -426,9 +427,32 @@ export class GedcomImporterV2 {
 		individual: GedcomIndividualV2,
 		gedcomData: GedcomDataV2,
 		options: GedcomImportOptionsV2,
-		gedcomToCrId: Map<string, string>
+		gedcomToCrId: Map<string, string>,
+		placeToNoteInfo: Map<string, PlaceNoteInfo>
 	): Promise<{ crId: string; notePath: string }> {
 		const crId = generateCrId();
+
+		// Convert place strings to wikilinks if place notes were created
+		let birthPlaceValue = individual.birthPlace;
+		let deathPlaceValue = individual.deathPlace;
+
+		if (individual.birthPlace) {
+			const normalizedPlace = this.normalizePlaceString(individual.birthPlace);
+			const placeInfo = placeToNoteInfo.get(normalizedPlace);
+			if (placeInfo) {
+				const placeBaseName = placeInfo.path.replace(/\.md$/, '').split('/').pop() || '';
+				birthPlaceValue = `[[${placeBaseName}]]`;
+			}
+		}
+
+		if (individual.deathPlace) {
+			const normalizedPlace = this.normalizePlaceString(individual.deathPlace);
+			const placeInfo = placeToNoteInfo.get(normalizedPlace);
+			if (placeInfo) {
+				const placeBaseName = placeInfo.path.replace(/\.md$/, '').split('/').pop() || '';
+				deathPlaceValue = `[[${placeBaseName}]]`;
+			}
+		}
 
 		// Convert GEDCOM individual to PersonData
 		const personData: PersonData = {
@@ -436,8 +460,8 @@ export class GedcomImporterV2 {
 			crId: crId,
 			birthDate: GedcomParserV2.gedcomDateToISO(individual.birthDate || ''),
 			deathDate: GedcomParserV2.gedcomDateToISO(individual.deathDate || ''),
-			birthPlace: individual.birthPlace,
-			deathPlace: individual.deathPlace,
+			birthPlace: birthPlaceValue,
+			deathPlace: deathPlaceValue,
 			occupation: individual.occupation,
 			sex: individual.sex === 'M' ? 'male' : individual.sex === 'F' ? 'female' : undefined
 		};
