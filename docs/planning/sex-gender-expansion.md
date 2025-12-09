@@ -46,6 +46,19 @@ Add optional `gender_identity` field to person notes, distinct from biological `
 - Tree visualization (continues to use `sex` for colors)
 - GEDCOM export (no standard field for gender identity)
 
+**Respectful handling of trans individuals:**
+
+When documenting trans family members or historical figures, users may need to track both legal/historical records and current identity. The plugin should support this respectfully:
+
+- `name` field holds the person's chosen/current name (displayed by default)
+- Optional `birth_name` field can hold the name from birth records if needed for research
+- `gender_identity` captures current identity; `sex` captures what appears on historical records
+- UI and exports should prioritize `name` over `birth_name` by default
+- Export privacy options should allow excluding `birth_name` and `sex` fields
+- Search should find the person by either name
+
+This approach allows genealogists to maintain accurate historical documentation while respecting individuals' identities. The goal is to support research needs without forcing users to deadname individuals in everyday use.
+
 ### Phase 2: Schema-Based Sex/Gender Definitions
 
 **Complexity:** Already done
