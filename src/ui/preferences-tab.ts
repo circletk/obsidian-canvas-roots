@@ -124,35 +124,43 @@ function renderPropertySection(
 				.addText(text => {
 					text
 						.setPlaceholder(meta.canonical)
-						.setValue(currentAlias)
-						.onChange(async (value) => {
-							const trimmed = value.trim();
+						.setValue(currentAlias);
 
-							if (trimmed === '') {
-								// Empty = remove alias
+					// Validate and save only on blur (when user finishes typing)
+					text.inputEl.addEventListener('blur', async () => {
+						const value = text.inputEl.value;
+						const trimmed = value.trim();
+
+						if (trimmed === '') {
+							// Empty = remove alias
+							if (currentAlias) {
 								await propertyAliasService.removeAlias(currentAlias);
 								showTab('preferences'); // Refresh
-								return;
 							}
+							return;
+						}
 
-							// Check if aliasing to itself (warning)
-							if (trimmed === meta.canonical) {
-								new Notice(`"${trimmed}" is already the canonical name`);
-								await propertyAliasService.removeAlias(trimmed);
-								showTab('preferences'); // Refresh
-								return;
-							}
+						// Check if aliasing to itself (warning)
+						if (trimmed === meta.canonical) {
+							new Notice(`"${trimmed}" is already the canonical name`);
+							text.inputEl.value = currentAlias; // Restore previous value
+							return;
+						}
 
-							// Check for duplicate
-							const existingMapping = propertyAliasService.aliases[trimmed];
-							if (existingMapping && existingMapping !== meta.canonical) {
-								new Notice(`"${trimmed}" is already mapped to "${existingMapping}"`);
-								return;
-							}
+						// Check for duplicate
+						const existingMapping = propertyAliasService.aliases[trimmed];
+						if (existingMapping && existingMapping !== meta.canonical) {
+							new Notice(`"${trimmed}" is already mapped to "${existingMapping}"`);
+							text.inputEl.value = currentAlias; // Restore previous value
+							return;
+						}
 
-							// Valid - save
+						// Valid - save
+						if (trimmed !== currentAlias) {
 							await propertyAliasService.setAlias(trimmed, meta.canonical);
-						});
+							showTab('preferences'); // Refresh
+						}
+					});
 				})
 				.addExtraButton(button => {
 					button
