@@ -123,6 +123,7 @@ export interface CanvasRootsSettings {
 	historyRetentionDays: number;
 	// Export settings
 	exportFilenamePattern: string;
+	preferredGedcomVersion: '5.5.1' | '7.0';
 	// Folder filtering
 	folderFilterMode: FolderFilterMode;
 	excludedFolders: string[];
@@ -349,6 +350,7 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	historyRetentionDays: 30,           // Keep history for 30 days by default
 	// Export defaults
 	exportFilenamePattern: '{name}-family-chart-{date}',  // Pattern with {name} and {date} placeholders
+	preferredGedcomVersion: '5.5.1',  // Default to 5.5.1 for maximum compatibility
 	// Folder filtering defaults
 	folderFilterMode: 'disabled',  // Default: scan all folders (preserves existing behavior)
 	excludedFolders: [],           // No folders excluded by default

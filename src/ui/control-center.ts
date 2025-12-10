@@ -7976,6 +7976,47 @@ export class ControlCenterModal extends Modal {
 		// Forward-declare updateStatsPreview so we can reference it in onChange handlers
 		let updateStatsPreview: () => Promise<void>;
 
+		// GEDCOM version selection
+		let gedcomVersion: '5.5.1' | '7.0' = this.plugin.settings.preferredGedcomVersion;
+		const versionSetting = new Setting(content)
+			.setName('GEDCOM version')
+			.setDesc('Choose the GEDCOM standard version for export');
+
+		// Create radio-style buttons for version selection
+		const versionContainer = versionSetting.settingEl.createDiv({ cls: 'crc-gedcom-version-selector' });
+
+		const version551Button = versionContainer.createDiv({ cls: 'crc-version-option crc-version-option--selected' });
+		version551Button.createEl('div', { cls: 'crc-version-option__radio' });
+		const version551Content = version551Button.createDiv({ cls: 'crc-version-option__content' });
+		version551Content.createEl('div', { cls: 'crc-version-option__title', text: 'GEDCOM 5.5.1 (Legacy)' });
+		version551Content.createEl('div', { cls: 'crc-version-option__desc', text: 'Maximum compatibility with older software. Widely supported standard.' });
+
+		const version70Button = versionContainer.createDiv({ cls: 'crc-version-option crc-version-option--disabled' });
+		version70Button.createEl('div', { cls: 'crc-version-option__radio' });
+		const version70Content = version70Button.createDiv({ cls: 'crc-version-option__content' });
+		version70Content.createEl('div', { cls: 'crc-version-option__title', text: 'GEDCOM 7.0 (Coming Soon)' });
+		version70Content.createEl('div', { cls: 'crc-version-option__desc', text: 'Modern format with enhanced features. Not yet implemented.' });
+
+		// 5.5.1 click handler
+		version551Button.addEventListener('click', () => {
+			gedcomVersion = '5.5.1';
+			this.plugin.settings.preferredGedcomVersion = '5.5.1';
+			void this.plugin.saveSettings();
+			version551Button.addClass('crc-version-option--selected');
+			version70Button.removeClass('crc-version-option--selected');
+		});
+
+		// 7.0 click handler (disabled for now)
+		version70Button.addEventListener('click', () => {
+			// Currently disabled - do nothing
+			// When 7.0 is implemented, uncomment:
+			// gedcomVersion = '7.0';
+			// this.plugin.settings.preferredGedcomVersion = '7.0';
+			// void this.plugin.saveSettings();
+			// version70Button.addClass('crc-version-option--selected');
+			// version551Button.removeClass('crc-version-option--selected');
+		});
+
 		// Export options
 		new Setting(content)
 			.setName('People folder')

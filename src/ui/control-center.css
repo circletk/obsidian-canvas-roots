@@ -506,3 +506,84 @@
   border-radius: 4px;
   border-left: 3px solid var(--color-orange);
 }
+
+/* ==========================================================================
+   GEDCOM VERSION SELECTOR
+   ========================================================================== */
+
+.crc-gedcom-version-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.crc-version-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 2px solid var(--background-modifier-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--background-secondary);
+}
+
+.crc-version-option:hover:not(.crc-version-option--disabled) {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.crc-version-option--selected {
+  border-color: var(--interactive-accent);
+  background: var(--background-modifier-hover);
+}
+
+.crc-version-option--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.crc-version-option__radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--text-muted);
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+  position: relative;
+}
+
+.crc-version-option--selected .crc-version-option__radio {
+  border-color: var(--interactive-accent);
+}
+
+.crc-version-option--selected .crc-version-option__radio::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: var(--interactive-accent);
+  border-radius: 50%;
+}
+
+.crc-version-option__content {
+  flex: 1;
+}
+
+.crc-version-option__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-normal);
+  margin-bottom: 4px;
+}
+
+.crc-version-option__desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
