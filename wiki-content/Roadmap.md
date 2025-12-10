@@ -72,7 +72,7 @@ Features are prioritized to complete the data lifecycle: **import → enhance �
 
 | Phase | Feature | Complexity | Status |
 |-------|---------|------------|--------|
-| 1 | Separate `gender_identity` field | Low | Planned |
+| 1 | Separate `gender_identity` field | Low | ✅ Complete (v0.10.20) |
 | 2 | Schema-based sex/gender definitions | Done | ✅ Complete (v0.6.3) |
 | 3 | Value Aliases for sex field | Low-Medium | ✅ Complete (v0.9.4, enhanced v0.10.19) |
 | 4 | Configurable normalization | Medium | Planned |

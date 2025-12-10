@@ -51,7 +51,7 @@ See [unified-property-config.md](https://github.com/banisterious/obsidian-canvas
 **Features:**
 
 **Property Aliases:**
-- **Comprehensive coverage**: All 55 canonical properties across Person (27), Event (20), and Place (8) entity types
+- **Comprehensive coverage**: All 56 canonical properties across Person (28), Event (20), and Place (8) entity types
 - **Collapsible sections**: Properties grouped by entity type (all collapsed by default)
 - **Lazy rendering**: Section content only renders when first expanded for performance
 - **Search/filter**: Find properties by label, description, canonical name, or common aliases
@@ -75,7 +75,7 @@ See [unified-property-config.md](https://github.com/banisterious/obsidian-canvas
 
 | Entity Type | Properties | Examples |
 |-------------|------------|----------|
-| Person | 27 | name, born, died, cr_id, sex, father, mother, spouse, children, birth_place, death_place, occupation, nickname, maiden_name |
+| Person | 28 | name, born, died, cr_id, sex, gender_identity, father, mother, spouse, children, birth_place, death_place, occupation, nickname, maiden_name |
 | Event | 20 | title, event_type, date, date_precision, place, person, participants, groups, sources, confidence |
 | Place | 8 | name, full_name, parent_place, latitude, longitude, place_type, place_category, historical_name |
 

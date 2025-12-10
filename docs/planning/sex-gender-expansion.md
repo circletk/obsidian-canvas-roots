@@ -212,7 +212,7 @@ Rationale: Phase 2 is free (already works), Phase 1 is standalone, Phases 3-4 bu
 
 ## Success Criteria
 
-- [ ] `gender_identity` field supported in person notes
+- [x] `gender_identity` field supported in person notes (Phase 1 - v0.10.20)
 - [x] Schema documentation includes sex/gender customization example (Phase 2)
 - [x] Value Aliases extended to support sex field (Phase 3 - v0.9.4, enhanced v0.10.19)
 - [ ] Batch normalization respects schema-defined values
@@ -223,7 +223,7 @@ Rationale: Phase 2 is free (already works), Phase 1 is standalone, Phases 3-4 bu
 
 **🔄 In Progress**
 
+- Phase 1: ✅ Complete (v0.10.20 - added gender_identity field)
 - Phase 2: ✅ Complete (existing Schema system supports custom sex enums)
 - Phase 3: ✅ Complete (v0.9.4, enhanced v0.10.19)
-- Phase 1: 📋 In progress (adding gender_identity field)
 - Phase 4: 📋 Planned (configurable normalization)
