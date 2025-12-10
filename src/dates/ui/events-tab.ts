@@ -18,6 +18,7 @@ import { TimelineMarkdownExporter, TimelineExportFormat } from '../../events/ser
 import { computeSortOrder } from '../../events/services/sort-order-service';
 import { renderEventTypeManagerCard } from '../../events/ui/event-type-manager-card';
 import { isEventNote, isPersonNote } from '../../utils/note-type-detection';
+import { PropertyAliasService } from '../../core/property-alias-service';
 
 /**
  * Render the Events tab content
@@ -1453,6 +1454,7 @@ function calculateDateStatistics(plugin: CanvasRootsPlugin): DateStatistics {
 	// Get all markdown files
 	const files = plugin.app.vault.getMarkdownFiles();
 	const systemCounts: Record<string, number> = {};
+	const aliasService = new PropertyAliasService(plugin);
 
 	for (const file of files) {
 		const cache = plugin.app.metadataCache.getFileCache(file);
@@ -1465,8 +1467,9 @@ function calculateDateStatistics(plugin: CanvasRootsPlugin): DateStatistics {
 
 		stats.totalPersons++;
 
-		// Check for birth date
-		const bornValue = frontmatter.born;
+		// Check for birth date using property alias service
+		// Also check common alternatives (birth_date) directly
+		const bornValue = aliasService.resolve(frontmatter, 'born') ?? frontmatter.birth_date;
 		if (bornValue !== undefined && bornValue !== null && bornValue !== '') {
 			stats.withBirthDates++;
 
@@ -1480,8 +1483,9 @@ function calculateDateStatistics(plugin: CanvasRootsPlugin): DateStatistics {
 			}
 		}
 
-		// Check for death date
-		const diedValue = frontmatter.died;
+		// Check for death date using property alias service
+		// Also check common alternatives (death_date) directly
+		const diedValue = aliasService.resolve(frontmatter, 'died') ?? frontmatter.death_date;
 		if (diedValue !== undefined && diedValue !== null && diedValue !== '') {
 			stats.withDeathDates++;
 
@@ -1506,11 +1510,24 @@ function calculateDateStatistics(plugin: CanvasRootsPlugin): DateStatistics {
 
 /**
  * Check if a date string looks like a fictional date (has era abbreviation)
+ *
+ * Supported formats:
+ * - "TA 2941", "AC 300", "BBY 19" (era space year)
+ * - "TA2941", "AC300" (era directly followed by year)
+ * - "2941 TA", "300 AC" (year space era)
+ * - "2941TA" (year directly followed by era)
  */
 function looksLikeFictionalDate(dateStr: string): boolean {
-	// Look for era patterns like "TA 2941", "AC 300", "BBY 19"
-	return /^[A-Z]{1,4}\s+\d+/i.test(dateStr.trim()) ||
-		/\d+\s+[A-Z]{1,4}$/i.test(dateStr.trim());
+	const trimmed = dateStr.trim();
+
+	// Exclude ISO date patterns first
+	if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(trimmed)) {
+		return false;
+	}
+
+	// Look for era patterns (letters + optional space + digits, or digits + optional space + letters)
+	return /^[A-Za-z]+\s*\d+$/.test(trimmed) ||
+		/^\d+\s*[A-Za-z]+$/.test(trimmed);
 }
 
 /**
