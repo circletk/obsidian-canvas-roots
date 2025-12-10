@@ -120,8 +120,6 @@ export class FamilyChartView extends ItemView {
 
 	// eslint-disable-next-line @typescript-eslint/require-await -- Base class requires Promise<void> return type
 	async onOpen(): Promise<void> {
-		logger.debug('view-open', 'Opening FamilyChartView');
-
 		// Build UI structure
 		this.buildUI();
 
@@ -360,41 +358,76 @@ export class FamilyChartView extends ItemView {
 			color: isDarkMode ? '#fff' : '#333'
 		});
 
-		// Create the chart
-		this.f3Chart = f3.createChart(this.chartContainerEl, this.chartData)
-			.setTransitionTime(800)
-			.setCardXSpacing(this.nodeSpacing)
-			.setCardYSpacing(this.levelSpacing);
+		// Show loading overlay during initial positioning (positioned absolutely over the container)
+		const loadingOverlay = this.chartContainerEl.createDiv({ cls: 'cr-family-chart-loading' });
+		loadingOverlay.createSpan({ cls: 'cr-family-chart-loading__spinner' });
+		loadingOverlay.createSpan({ cls: 'cr-family-chart-loading__text', text: 'Loading chart...' });
 
-		// Configure SVG cards with current display options
-		const displayFields: string[][] = [['first name', 'last name']];
-		if (this.showBirthDates && this.showDeathDates) {
-			displayFields.push(['birthday', 'deathday']);
-		} else if (this.showBirthDates) {
-			displayFields.push(['birthday']);
-		} else if (this.showDeathDates) {
-			displayFields.push(['deathday']);
-		}
+		try {
+			// Create the chart with normal transition time
+			this.f3Chart = f3.createChart(this.chartContainerEl, this.chartData)
+				.setTransitionTime(800)
+				.setCardXSpacing(this.nodeSpacing)
+				.setCardYSpacing(this.levelSpacing);
 
-		this.f3Card = this.f3Chart.setCardSvg()
-			.setCardDisplay(displayFields)
-			.setCardDim({ w: 200, h: 70, text_x: 75, text_y: 15, img_w: 60, img_h: 60, img_x: 5, img_y: 5 })
-			.setOnCardClick((e, d) => this.handleCardClick(e, d));
+			// Configure SVG cards with current display options
+			const displayFields: string[][] = [['first name', 'last name']];
+			if (this.showBirthDates && this.showDeathDates) {
+				displayFields.push(['birthday', 'deathday']);
+			} else if (this.showBirthDates) {
+				displayFields.push(['birthday']);
+			} else if (this.showDeathDates) {
+				displayFields.push(['deathday']);
+			}
 
-		// Initialize EditTree for editing capabilities
-		this.initializeEditTree();
+			this.f3Card = this.f3Chart.setCardSvg()
+				.setCardDisplay(displayFields)
+				.setCardDim({ w: 200, h: 70, text_x: 75, text_y: 15, img_w: 60, img_h: 60, img_x: 5, img_y: 5 })
+				.setOnCardClick((e, d) => this.handleCardClick(e, d));
 
-		// Set main/root person if specified
-		if (this.rootPersonId) {
-			this.f3Chart.updateMainId(this.rootPersonId);
-		}
+			// Initialize EditTree for editing capabilities
+			this.initializeEditTree();
 
-		// Initial render
-		this.f3Chart.updateTree({ initial: true });
+			// Set main/root person if specified
+			if (this.rootPersonId) {
+				this.f3Chart.updateMainId(this.rootPersonId);
+			}
 
-		// Render kinship labels if enabled (after chart is rendered)
-		if (this.showKinshipLabels) {
-			setTimeout(() => this.renderKinshipLabels(), 100);
+			// Initial render without fit (just get the tree in the DOM)
+			this.f3Chart.updateTree({ initial: true });
+
+			// Defer fit operation until container dimensions are stable
+			setTimeout(() => {
+				if (this.f3Chart && this.chartContainerEl) {
+					// Trigger fit when container has proper dimensions
+					this.f3Chart.updateTree({ tree_position: 'fit' });
+					// Show container after animation completes
+					setTimeout(() => {
+						if (this.chartContainerEl) {
+							this.chartContainerEl.style.visibility = 'visible';
+							loadingOverlay.remove();
+						}
+					}, 850);
+				}
+			}, 50);
+
+			// Render kinship labels if enabled (after chart is rendered)
+			if (this.showKinshipLabels) {
+				setTimeout(() => this.renderKinshipLabels(), 100);
+			}
+		} catch (error) {
+			// Remove loading overlay and show error state
+			loadingOverlay.remove();
+			const errorMessage = error instanceof Error ? error.message : String(error);
+			const errorStack = error instanceof Error ? error.stack : undefined;
+			logger.error('chart-init', 'Failed to initialize chart', { message: errorMessage, stack: errorStack });
+			console.error('[Canvas Roots] Family chart initialization error:', error);
+
+			// Show error state with more detail
+			const errorContainer = this.chartContainerEl.createDiv({ cls: 'cr-family-chart-error' });
+			errorContainer.createEl('h3', { text: 'Chart Error' });
+			errorContainer.createEl('p', { text: errorMessage || 'Failed to render family chart. Check the console for details.' });
+			return;
 		}
 
 		logger.info('chart-init', 'Chart initialized', {
@@ -413,16 +446,21 @@ export class FamilyChartView extends ItemView {
 		// Get all people from the vault
 		const people = this.familyGraphService.getAllPeople();
 
-		// Transform to family-chart format
-		this.chartData = people.map(person => this.transformPersonNode(person));
+		// Build set of valid IDs first (needed to filter out broken relationship references)
+		const validIds = new Set(people.map(p => p.crId));
+
+		// Transform to family-chart format, filtering relationship IDs to only valid ones
+		this.chartData = people.map(person => this.transformPersonNode(person, validIds));
 
 		logger.debug('data-load', 'Loaded chart data', { count: this.chartData.length });
 	}
 
 	/**
 	 * Transform PersonNode to family-chart format
+	 * @param person The person node to transform
+	 * @param validIds Set of valid person IDs (for filtering broken relationship references)
 	 */
-	private transformPersonNode(person: PersonNode): FamilyChartPerson {
+	private transformPersonNode(person: PersonNode, validIds: Set<string>): FamilyChartPerson {
 		// Parse name into first and last
 		const nameParts = (person.name || '').trim().split(' ');
 		const firstName = nameParts[0] || '';
@@ -435,14 +473,23 @@ export class FamilyChartView extends ItemView {
 			gender = 'F';
 		}
 
-		// Build parents array from father and mother
+		// Build parents array from father and mother, filtering to only valid IDs
+		// (prevents family-chart crash when referenced person is outside folder filter)
 		const parents: string[] = [];
-		if (person.fatherCrId) {
+		if (person.fatherCrId && validIds.has(person.fatherCrId)) {
 			parents.push(person.fatherCrId);
 		}
-		if (person.motherCrId) {
+		if (person.motherCrId && validIds.has(person.motherCrId)) {
 			parents.push(person.motherCrId);
 		}
+
+		// Filter spouses to only valid IDs
+		const spouses = (person.spouseCrIds || []).filter(id => validIds.has(id));
+
+		// NOTE: We do NOT pass the children array to family-chart.
+		// The library derives children automatically from parent relationships.
+		// Passing children explicitly causes "child has more than 1 parent" errors
+		// when our bidirectional data has children listed in multiple places.
 
 		return {
 			id: person.crId,
@@ -455,8 +502,10 @@ export class FamilyChartView extends ItemView {
 			},
 			rels: {
 				parents,
-				spouses: person.spouseCrIds || [],
-				children: person.childrenCrIds || [],
+				spouses,
+				// Empty children array - family-chart derives children from parent relationships.
+				// Passing our bidirectional children data causes "child has more than 1 parent" errors.
+				children: [],
 			}
 		};
 	}
@@ -1810,9 +1859,14 @@ export class FamilyChartView extends ItemView {
 			this.showKinshipLabels = state.showKinshipLabels;
 		}
 
-		// Re-initialize if we have a root person
-		if (this.rootPersonId && this.chartContainerEl) {
-			this.initializeChart();
+		// Re-initialize chart if the view is already open (chartContainerEl exists)
+		// If called before onOpen(), the state is just stored and onOpen() will use it
+		if (this.chartContainerEl) {
+			if (this.rootPersonId) {
+				this.initializeChart();
+			} else {
+				this.showEmptyState();
+			}
 		}
 	}
 

@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-10 00:55:45 UTC
+ * - Generated: 2025-12-10 02:57:02 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -449,7 +449,7 @@ settings:
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 5107 lines, 93.14 KB */
+/* Component Size: 5133 lines, 93.58 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -1605,6 +1605,32 @@ settings:
   font-size: 14px;
   font-weight: 500;
   color: var(--text-normal);
+}
+
+.crc-picker-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  color: var(--text-muted);
+  text-align: center;
+  min-height: 200px;
+}
+
+.crc-picker-loading__spinner {
+  color: var(--interactive-accent);
+  margin-bottom: 12px;
+}
+
+.crc-picker-loading__spinner svg {
+  width: 32px;
+  height: 32px;
+}
+
+.crc-picker-loading__text {
+  font-size: 14px;
+  color: var(--text-muted);
 }
 
 /* ==========================================================================
@@ -6478,7 +6504,7 @@ settings:
    COMPONENT: FAMILY-CHART-VIEW.CSS
    ========================================================================== */
 
-/* Component Size: 629 lines, 14.76 KB */
+/* Component Size: 694 lines, 16.14 KB */
 
 /**
  * Family Chart View Styles
@@ -7107,6 +7133,71 @@ settings:
   .cr-fcv-label {
     display: none;
   }
+}
+
+/* ============================================================
+ * Loading Overlay
+ * Shown during initial chart positioning
+ * ============================================================ */
+
+.cr-family-chart-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-4-3);
+  background-color: var(--background-primary);
+  z-index: 100;
+}
+
+.cr-family-chart-loading__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--background-modifier-border);
+  border-top-color: var(--interactive-accent);
+  border-radius: 50%;
+  animation: cr-fcv-spin 0.8s linear infinite;
+}
+
+.cr-family-chart-loading__text {
+  font-size: var(--font-ui-small);
+  color: var(--text-muted);
+}
+
+@keyframes cr-fcv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+ * Error State
+ * Shown when chart initialization fails
+ * ============================================================ */
+
+.cr-family-chart-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--size-4-4);
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.cr-family-chart-error h3 {
+  margin: 0 0 var(--size-4-2);
+  color: var(--text-error);
+}
+
+.cr-family-chart-error p {
+  margin: 0;
 }
 
 
@@ -15842,11 +15933,11 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-10 00:55:45 UTC
+ * Build completed: 2025-12-10 02:57:02 UTC
  * Components processed: 30
- * Total lines: 15549
- * Total size: 305.42 KB
- * Build duration: 0.03 seconds
+ * Total lines: 15640
+ * Total size: 307.25 KB
+ * Build duration: 0.04 seconds
  *
  * Component breakdown:
  * - variables.css: 48 lines, 1.33 KB
@@ -15857,14 +15948,14 @@ body.wide-timeline .view-content {
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 4 lines, 0.07 KB
- * - modals.css: 5107 lines, 93.14 KB
+ * - modals.css: 5133 lines, 93.58 KB
  * - duplicate-detection.css: 163 lines, 2.82 KB
  * - tree-statistics.css: 41 lines, 0.6 KB
  * - validation.css: 84 lines, 1.47 KB
  * - find-on-canvas.css: 114 lines, 1.97 KB
  * - folder-scan.css: 155 lines, 2.56 KB
  * - relationship-calculator.css: 302 lines, 5.21 KB
- * - family-chart-view.css: 629 lines, 14.76 KB
+ * - family-chart-view.css: 694 lines, 16.14 KB
  * - data-quality.css: 1182 lines, 23.26 KB
  * - relationships.css: 517 lines, 9.76 KB
  * - canvas-navigation.css: 683 lines, 14.64 KB
