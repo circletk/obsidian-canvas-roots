@@ -1183,6 +1183,358 @@ src/
     └── export-history-modal.ts        # View past exports
 ```
 
+## Phase 5: Property & Value Alias Integration
+
+**Goal:** Ensure exporters correctly handle property aliases and value aliases when reading note data.
+
+### Problem Statement
+
+Canvas Roots v0.9.3+ allows users to configure custom property names (property aliases) and custom property values (value aliases). Exporters must respect these configurations when reading note frontmatter.
+
+**Example scenarios:**
+- User has `dob` aliased to canonical `born` property
+- User has `M` aliased to canonical `male` sex value
+- User has `hometown` aliased to canonical `birth_place` property
+
+Without alias resolution, the exporter would miss these fields entirely.
+
+### Property Alias Resolution
+
+All exporters must use the `PropertyAliasService` to resolve property names when reading frontmatter.
+
+**Current approach (problematic):**
+```typescript
+const birthDate = frontmatter.born || frontmatter.birth_date;
+const sex = frontmatter.sex || frontmatter.gender;
+```
+
+**Correct approach:**
+```typescript
+const propertyService = this.plugin.propertyAliasService;
+const birthDate = propertyService.resolve(frontmatter, 'born');
+const sex = propertyService.resolve(frontmatter, 'sex');
+```
+
+The `PropertyAliasService.resolve()` method:
+1. Checks the canonical property name first
+2. Checks configured aliases second
+3. Returns `undefined` if neither found
+
+**Implementation checklist:**
+- [ ] Update GEDCOM 5.5.1 exporter to use `PropertyAliasService.resolve()`
+- [ ] Update GEDCOM 7.0 exporter to use `PropertyAliasService.resolve()`
+- [ ] Update GEDCOM X exporter to use `PropertyAliasService.resolve()`
+- [ ] Update Gramps XML exporter to use `PropertyAliasService.resolve()`
+- [ ] Update CSV exporter to use `PropertyAliasService.resolve()`
+- [ ] Add unit tests for alias resolution in each exporter
+
+### Value Alias Resolution
+
+All exporters must use the `ValueAliasService` to resolve property values before exporting.
+
+**Supported value alias fields:**
+- `event_type` (13 canonical values)
+- `sex` (4 canonical values: male, female, nonbinary, unknown)
+- `place_category` (6 canonical values)
+- `note_type` (8 canonical values)
+
+**Example:**
+```typescript
+const valueService = this.plugin.valueAliasService;
+
+// Read raw sex value from frontmatter (might be aliased)
+const rawSex = propertyService.resolve(frontmatter, 'sex');
+
+// Resolve to canonical value
+const canonicalSex = valueService.resolveAlias('sex', rawSex);
+// "M" → "male", "F" → "female", etc.
+
+// Map canonical value to GEDCOM tag
+const gedcomSex = this.mapSexToGedcom(canonicalSex);
+// "male" → "M", "female" → "F"
+```
+
+**Sex Value Mapping (Export):**
+
+| User Value | Value Alias → | Canonical Value | GEDCOM Output |
+|------------|---------------|-----------------|---------------|
+| `M` | (built-in) | `male` | `M` |
+| `F` | (built-in) | `female` | `F` |
+| `nb` | (built-in) | `nonbinary` | `U` (unknown) |
+| `unknown` | (no alias) | `unknown` | `U` |
+| Custom (via schema) | (user config) | Varies | `U` or NOTE |
+
+**Event Type Mapping:**
+
+Similar approach for `event_type` - resolve alias first, then map canonical value to format-specific tag.
+
+**Implementation checklist:**
+- [ ] Add `ValueAliasService.resolveAlias()` calls for sex values
+- [ ] Add `ValueAliasService.resolveAlias()` calls for event_type values
+- [ ] Add `ValueAliasService.resolveAlias()` calls for place_category values
+- [ ] Handle unrecognized values gracefully (map to "unknown" or add NOTE)
+- [ ] Add unit tests for value alias resolution
+
+## Phase 6: Gender Identity Field Handling
+
+**Goal:** Export the new `gender_identity` field added in v0.10.20.
+
+### Problem Statement
+
+The `gender_identity` field is distinct from biological `sex` and represents a person's gender identity. GEDCOM 5.5.1/7.0 have no standard field for this concept.
+
+**Export strategy:**
+
+#### GEDCOM 5.5.1 & 7.0
+
+Export `gender_identity` as a custom fact with NOTE:
+
+```gedcom
+0 @I1@ INDI
+1 NAME Jane /Doe/
+1 SEX F
+1 EVEN
+2 TYPE Gender Identity
+2 DATE 2020
+2 NOTE Identifies as nonbinary
+```
+
+Or as inline NOTE under the individual:
+
+```gedcom
+0 @I1@ INDI
+1 NAME Jane /Doe/
+1 SEX F
+1 NOTE Gender identity: nonbinary
+```
+
+**Recommendation:** Use EVEN with TYPE for structured data that importing software can parse.
+
+#### GEDCOM X
+
+GEDCOM X supports custom fact types:
+
+```json
+{
+  "persons": [{
+    "facts": [
+      {
+        "type": "http://customontology.org/GenderIdentity",
+        "value": "nonbinary"
+      }
+    ]
+  }]
+}
+```
+
+#### Gramps XML
+
+Gramps supports attributes:
+
+```xml
+<person>
+  <attribute type="Gender Identity" value="nonbinary"/>
+</person>
+```
+
+#### CSV
+
+Add `gender_identity` column:
+
+```csv
+Type,Name,Sex,Gender Identity
+person,Jane Doe,female,nonbinary
+```
+
+**Implementation checklist:**
+- [ ] Add `gender_identity` export to GEDCOM 5.5.1 (as EVEN or NOTE)
+- [ ] Add `gender_identity` export to GEDCOM 7.0 (as EVEN or NOTE)
+- [ ] Add `gender_identity` export to GEDCOM X (as custom fact)
+- [ ] Add `gender_identity` export to Gramps XML (as attribute)
+- [ ] Add `gender_identity` column to CSV export
+- [ ] Add setting to control gender_identity export format (EVEN vs NOTE vs skip)
+- [ ] Document `gender_identity` export behavior in wiki
+
+### Privacy Considerations
+
+The `gender_identity` field may be sensitive information. Add privacy controls:
+
+**Setting:** `exportGenderIdentity`
+- `always` - Export for all persons
+- `deceased_only` - Only export for deceased persons
+- `never` - Never export gender_identity field
+
+Default: `always` (respects user's choice to include the field)
+
+## Phase 7: Organization & Custom Relationship Export
+
+**Goal:** Export organization notes and custom relationship types (both added in v0.7.0).
+
+### Organization Notes
+
+Organizations could map to:
+- **GEDCOM 5.5.1/7.0:** NOTE records or SOUR records (if organization is a repository)
+- **GEDCOM X:** `organizations` array (part of spec)
+- **Gramps XML:** No direct equivalent (could use custom XML)
+- **CSV:** Separate `organization` rows
+
+**Export strategy:**
+
+#### GEDCOM 5.5.1/7.0
+
+For organizations that are repositories (archives, libraries):
+
+```gedcom
+0 @R1@ REPO
+1 NAME National Archives
+1 ADDR
+2 ADDR 700 Pennsylvania Avenue NW
+2 CITY Washington
+2 STAE DC
+2 POST 20408
+2 CTRY USA
+```
+
+For other organizations, use NOTE:
+
+```gedcom
+0 @N1@ NOTE
+1 CONT Organization: Freemasons Lodge #42
+1 CONT Type: Fraternal Organization
+1 CONT Founded: 1850
+```
+
+#### GEDCOM X
+
+Full organization support:
+
+```json
+{
+  "organizations": [{
+    "id": "O1",
+    "names": [{"value": "Freemasons Lodge #42"}],
+    "type": "http://gedcomx.org/FraternalOrganization"
+  }],
+  "persons": [{
+    "id": "P1",
+    "facts": [{
+      "type": "http://gedcomx.org/Membership",
+      "value": "Member",
+      "qualifiers": [{
+        "name": "http://gedcomx.org/Organization",
+        "value": "#O1"
+      }]
+    }]
+  }]
+}
+```
+
+#### CSV
+
+Add organization rows:
+
+```csv
+Type,ID,Name,Type,Founded
+organization,org_001,Freemasons Lodge #42,fraternal,1850
+```
+
+**Implementation decision needed:**
+- Export organizations in v1, or defer to future version?
+- If exported, which formats get full support?
+
+### Custom Relationship Types
+
+Custom relationships (godparent, mentor, rival, etc.) could map to:
+- **GEDCOM 5.5.1/7.0:** ASSO (association) records
+- **GEDCOM X:** Relationship facts with custom types
+- **Gramps XML:** Association records
+- **CSV:** Separate relationship rows
+
+**Example GEDCOM:**
+
+```gedcom
+0 @I1@ INDI
+1 NAME John /Smith/
+1 ASSO @I2@
+2 TYPE Godfather
+2 RELA Godson
+```
+
+**Implementation decision needed:**
+- Export custom relationships in v1, or defer?
+- How to handle bidirectional relationships?
+
+## Phase 8: Fictional Calendar System Support
+
+**Goal:** Handle fictional date systems in exports (Calendarium integration pending).
+
+### Problem Statement
+
+Canvas Roots supports fictional calendar systems via the `date_system` field. When exporting fictional dates, we need to preserve:
+1. The original fictional date string
+2. The calendar system name
+3. (Optional) Gregorian equivalent if available
+
+### Export Strategies
+
+#### GEDCOM 5.5.1/7.0
+
+Use custom tags or NOTE:
+
+```gedcom
+1 EVEN Custom Event
+2 TYPE Festival
+2 _FDATE 15 Fireseek, 592 CY
+2 _FCAL Greyhawk Calendar
+2 NOTE Fictional date: 15 Fireseek, 592 CY (Greyhawk Calendar)
+```
+
+Or approximate with Gregorian:
+
+```gedcom
+1 EVEN Festival
+2 DATE ABT 592
+2 NOTE Fictional date: 15 Fireseek, 592 CY (Greyhawk Calendar)
+```
+
+#### GEDCOM X
+
+Use custom qualifiers:
+
+```json
+{
+  "facts": [{
+    "date": {
+      "original": "15 Fireseek, 592 CY",
+      "formal": "+0592"
+    },
+    "qualifiers": [
+      {"name": "http://customontology.org/CalendarSystem", "value": "Greyhawk Calendar"},
+      {"name": "http://customontology.org/FictionalDate", "value": "true"}
+    ]
+  }]
+}
+```
+
+#### CSV
+
+Include calendar system column:
+
+```csv
+Type,Event,Date,Date System,Date Precision
+event,Festival,15 Fireseek 592 CY,Greyhawk Calendar,exact
+```
+
+**Implementation decision:**
+- How to handle fictional dates when importing software doesn't support them?
+- Should we require Gregorian equivalents for export?
+- Should this be optional (skip fictional events if no Gregorian date)?
+
+**Setting:** `fictionalDateExportMode`
+- `include_with_note` - Export with calendar system in NOTE
+- `approximate_gregorian` - Convert to approximate Gregorian date
+- `skip` - Skip events with fictional dates
+
 ## Sensitive Field Handling
 
 ### Fields to Redact
@@ -1252,6 +1604,46 @@ const SENSITIVE_FIELDS: SensitiveFieldConfig[] = [
 - `test-media.md` - Source with linked media files
 - `test-large-media/` - Directory with large/many media files
 
+## Implementation Priority & Scope
+
+### v1 Core Features (Phases 1-4)
+
+**Must-have for initial release:**
+- ✅ Phase 1: Event Export
+- ✅ Phase 2: Source Export
+- ✅ Phase 3: Place Export
+- ✅ Phase 4: UI Integration (progress modal, statistics preview, entity checkboxes)
+- ✅ Phase 5: Property & Value Alias Integration (CRITICAL - required for correctness)
+- ✅ Phase 6: Gender Identity Field Handling (simple, just added in v0.10.20)
+
+### v1.1 Extended Features (Phases 7-8)
+
+**Nice-to-have, can be deferred:**
+- ⚠️ Phase 7: Organization & Custom Relationship Export
+  - Decision: **Defer organizations to v1.1** (genealogists rarely need this)
+  - Decision: **Include custom relationships in v1** via ASSO records (low complexity)
+- ⚠️ Phase 8: Fictional Calendar System Support
+  - Decision: **Defer to v1.1** (Calendarium integration not yet complete)
+  - Workaround: Export fictional dates as-is in NOTE fields for now
+
+### Critical Path for v1
+
+1. Implement PropertyAliasService integration (Phase 5) - **BLOCKING**
+2. Implement ValueAliasService integration (Phase 5) - **BLOCKING**
+3. Implement core entity export (Phases 1-3) - uses alias services
+4. Implement UI enhancements (Phase 4)
+5. Add gender_identity export (Phase 6) - simple addition
+6. Add custom relationships via ASSO (Phase 7 partial)
+
+**Estimated complexity:**
+- Phase 5 (Alias integration): 2-3 days (must update all 5 exporters)
+- Phases 1-3 (Entities): Already planned, ~5-7 days
+- Phase 4 (UI): Already planned, ~3-4 days
+- Phase 6 (Gender identity): 1 day (straightforward)
+- Phase 7 (Custom relationships): 1-2 days (ASSO records only)
+
+**Total: ~12-17 days for v1**
+
 ## Migration Path
 
 For users with existing exports:
@@ -1262,6 +1654,34 @@ For users with existing exports:
 4. **Settings** allow disabling event/source/place/media export if not needed
 5. **GEDCOM 7.0** recommended for users migrating to Gramps or other modern software
 6. **Bundled ZIP** recommended when media files need to transfer with the data
+
+## Summary of Additions
+
+This plan update adds critical missing pieces:
+
+### Phase 5: Property & Value Alias Integration ⚠️ **CRITICAL**
+- **Why:** Without this, exporters will miss user-configured property names and values
+- **Impact:** All 5 exporters (GEDCOM 5.5.1, 7.0, GEDCOM X, Gramps, CSV)
+- **Complexity:** Medium (systematic but straightforward)
+- **Priority:** **BLOCKING** - must be in v1
+
+### Phase 6: Gender Identity Field Handling
+- **Why:** New field added in v0.10.20, should be exported
+- **Impact:** All 5 exporters
+- **Complexity:** Low (simple NOTE/EVEN or attribute)
+- **Priority:** High - should be in v1
+
+### Phase 7: Organization & Custom Relationship Export
+- **Why:** Features added in v0.7.0, currently not exported
+- **Impact:** GEDCOM X has full support, others use NOTE/ASSO
+- **Complexity:** Medium-High (organizations complex, relationships simple)
+- **Priority:** Medium - custom relationships in v1, organizations defer to v1.1
+
+### Phase 8: Fictional Calendar System Support
+- **Why:** Fictional dates exist in system but export poorly
+- **Impact:** Worldbuilder persona primarily affected
+- **Complexity:** Medium (depends on Calendarium integration)
+- **Priority:** Low - defer to v1.1, use NOTE workaround for now
 
 ## Related Documentation
 
