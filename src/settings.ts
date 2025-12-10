@@ -27,6 +27,22 @@ export interface RecentImportInfo {
 }
 
 /**
+ * Information about the last export performed for a specific format
+ */
+export interface LastExportInfo {
+	/** Timestamp of the export */
+	timestamp: number;
+	/** Number of people exported */
+	peopleCount: number;
+	/** Output destination (download or vault) */
+	destination: 'download' | 'vault';
+	/** File path (if saved to vault) */
+	filePath?: string;
+	/** Number of living people excluded due to privacy */
+	privacyExcluded?: number;
+}
+
+/**
  * Arrow style for relationship edges
  * - 'directed': Single arrow pointing to child/target (default)
  * - 'bidirectional': Arrows on both ends
@@ -124,6 +140,10 @@ export interface CanvasRootsSettings {
 	// Export settings
 	exportFilenamePattern: string;
 	preferredGedcomVersion: '5.5.1' | '7.0';
+	lastGedcomExport?: LastExportInfo;
+	lastGedcomXExport?: LastExportInfo;
+	lastGrampsExport?: LastExportInfo;
+	lastCsvExport?: LastExportInfo;
 	// Folder filtering
 	folderFilterMode: FolderFilterMode;
 	excludedFolders: string[];

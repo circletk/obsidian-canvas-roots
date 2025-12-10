@@ -726,3 +726,17 @@
   border: none;
   padding: 4px 0;
 }
+
+/* Last Export Info */
+.crc-last-export-info {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.crc-last-export-info__text {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}

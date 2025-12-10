@@ -4,6 +4,7 @@ import type CanvasRootsPlugin from '../../main';
 import { PersonPickerModal, type PersonInfo } from './person-picker';
 import type { ExportFilterOptions, ExportStatistics } from '../core/export-statistics-service';
 import { ExportStatisticsService } from '../core/export-statistics-service';
+import type { LastExportInfo } from '../settings';
 
 /**
  * Export options state that will be used for actual export
@@ -560,6 +561,52 @@ export class ExportOptionsBuilder {
 		});
 
 		return locationSection;
+	}
+
+	/**
+	 * Build last export info display (static method for use in export cards)
+	 */
+	public static buildLastExportInfo(container: HTMLElement, lastExport: LastExportInfo | undefined, formatName: string): HTMLElement | null {
+		if (!lastExport) {
+			return null;
+		}
+
+		const infoSection = container.createDiv({ cls: 'crc-last-export-info crc-mb-4' });
+
+		// Format the timestamp as a relative time (e.g., "2 hours ago")
+		const now = Date.now();
+		const diff = now - lastExport.timestamp;
+		const seconds = Math.floor(diff / 1000);
+		const minutes = Math.floor(seconds / 60);
+		const hours = Math.floor(minutes / 60);
+		const days = Math.floor(hours / 24);
+
+		let timeAgo: string;
+		if (days > 0) {
+			timeAgo = `${days} day${days > 1 ? 's' : ''} ago`;
+		} else if (hours > 0) {
+			timeAgo = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+		} else if (minutes > 0) {
+			timeAgo = `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+		} else {
+			timeAgo = 'just now';
+		}
+
+		// Build the info text
+		let infoText = `Last ${formatName} export: ${lastExport.peopleCount} people, ${timeAgo}`;
+		if (lastExport.destination === 'vault' && lastExport.filePath) {
+			infoText += ` (saved to ${lastExport.filePath})`;
+		}
+		if (lastExport.privacyExcluded && lastExport.privacyExcluded > 0) {
+			infoText += ` — ${lastExport.privacyExcluded} living excluded`;
+		}
+
+		infoSection.createEl('div', {
+			cls: 'crc-last-export-info__text',
+			text: infoText
+		});
+
+		return infoSection;
 	}
 
 	/**

@@ -4964,6 +4964,14 @@ export class ControlCenterModal extends Modal {
 			enablePrivacyProtection: boolean;
 			privacyDisplayFormat: 'living' | 'private' | 'initials' | 'hidden';
 		};
+		includeEntities?: {
+			people: boolean;
+			events: boolean;
+			sources: boolean;
+			places: boolean;
+		};
+		outputDestination?: 'download' | 'vault';
+		outputFolder?: string;
 	}): Promise<void> {
 		try {
 			logger.info('gedcom-export', `Starting GEDCOM export: ${options.fileName}`);
@@ -4971,6 +4979,34 @@ export class ControlCenterModal extends Modal {
 			// Create exporter
 			const { GedcomExporter } = await import('../gedcom/gedcom-exporter');
 			const exporter = new GedcomExporter(this.app);
+
+			// Conditionally set services based on includeEntities flags
+			const includeEntities = options.includeEntities ?? {
+				people: true,
+				events: true,
+				sources: true,
+				places: true
+			};
+
+			if (includeEntities.events) {
+				exporter.setEventService(this.plugin.settings);
+			}
+
+			if (includeEntities.sources) {
+				exporter.setSourceService(this.plugin.settings);
+			}
+
+			if (includeEntities.places) {
+				exporter.setPlaceGraphService(this.plugin.settings);
+			}
+
+			// Set property/value alias services (always needed for person data)
+			const { PropertyAliasService } = await import('../core/property-alias-service');
+			const { ValueAliasService } = await import('../core/value-alias-service');
+			const propertyAliasService = new PropertyAliasService(this.plugin);
+			const valueAliasService = new ValueAliasService(this.plugin);
+			exporter.setPropertyAliasService(propertyAliasService);
+			exporter.setValueAliasService(valueAliasService);
 
 			// Export to GEDCOM
 			const result = exporter.exportToGedcom({
@@ -5000,24 +5036,62 @@ export class ControlCenterModal extends Modal {
 			}
 
 			if (result.success && result.gedcomContent) {
-				// Create blob and trigger download
-				const blob = new Blob([result.gedcomContent], { type: 'text/plain' });
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `${result.fileName}.ged`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
+				const outputDestination = options.outputDestination ?? 'download';
 
-				let noticeMsg = `GEDCOM exported: ${result.individualsExported} people, ${result.familiesExported} families`;
-				if (result.privacyExcluded && result.privacyExcluded > 0) {
-					noticeMsg += ` (${result.privacyExcluded} living excluded)`;
-				} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
-					noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+				if (outputDestination === 'vault') {
+					// Save to vault
+					const outputFolder = options.outputFolder || '';
+					const fileName = `${result.fileName}.ged`;
+					const filePath = outputFolder ? `${outputFolder}/${fileName}` : fileName;
+
+					await this.app.vault.adapter.write(filePath, result.gedcomContent);
+
+					// Save last export info
+					this.plugin.settings.lastGedcomExport = {
+						timestamp: Date.now(),
+						peopleCount: result.individualsExported,
+						destination: 'vault',
+						filePath: filePath,
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `GEDCOM saved to vault: ${filePath}`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
+				} else {
+					// Download file
+					const blob = new Blob([result.gedcomContent], { type: 'text/plain' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `${result.fileName}.ged`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+
+					// Save last export info
+					this.plugin.settings.lastGedcomExport = {
+						timestamp: Date.now(),
+						peopleCount: result.individualsExported,
+						destination: 'download',
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `GEDCOM exported: ${result.individualsExported} people, ${result.familiesExported} families`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
 				}
-				new Notice(noticeMsg);
 			} else {
 				throw new Error('Export failed to generate content');
 			}
@@ -7977,6 +8051,9 @@ export class ControlCenterModal extends Modal {
 		const { ExportOptionsBuilder } = require('./export-options-builder');
 		const optionsBuilder = new ExportOptionsBuilder(this.app, this.plugin);
 
+		// Last export info
+		ExportOptionsBuilder.buildLastExportInfo(content, this.plugin.settings.lastGedcomExport, 'GEDCOM');
+
 		// GEDCOM version selector
 		optionsBuilder.buildGedcomVersionSelector(content);
 
@@ -8023,7 +8100,10 @@ export class ControlCenterModal extends Modal {
 					privacyOverride: options.privacyOverrideEnabled ? {
 						enablePrivacyProtection: privacySettings.enablePrivacyProtection,
 						privacyDisplayFormat: privacySettings.privacyDisplayFormat
-					} : undefined
+					} : undefined,
+					includeEntities: options.includeEntities,
+					outputDestination: options.outputDestination,
+					outputFolder: options.outputFolder
 				});
 			})();
 		});
@@ -8278,6 +8358,9 @@ export class ControlCenterModal extends Modal {
 		const { ExportOptionsBuilder } = require('./export-options-builder');
 		const optionsBuilder = new ExportOptionsBuilder(this.app, this.plugin);
 
+		// Last export info
+		ExportOptionsBuilder.buildLastExportInfo(content, this.plugin.settings.lastGedcomXExport, 'GEDCOM X');
+
 		// People folder (read-only display)
 		new Setting(content)
 			.setName('People folder')
@@ -8317,7 +8400,10 @@ export class ControlCenterModal extends Modal {
 					privacyOverride: options.privacyOverrideEnabled ? {
 						enablePrivacyProtection: privacySettings.enablePrivacyProtection,
 						privacyDisplayFormat: privacySettings.privacyDisplayFormat
-					} : undefined
+					} : undefined,
+					includeEntities: options.includeEntities,
+					outputDestination: options.outputDestination,
+					outputFolder: options.outputFolder
 				});
 			})();
 		});
@@ -8338,6 +8424,14 @@ export class ControlCenterModal extends Modal {
 			enablePrivacyProtection: boolean;
 			privacyDisplayFormat: 'living' | 'private' | 'initials' | 'hidden';
 		};
+		includeEntities?: {
+			people: boolean;
+			events: boolean;
+			sources: boolean;
+			places: boolean;
+		};
+		outputDestination?: 'download' | 'vault';
+		outputFolder?: string;
 	}): Promise<void> {
 		try {
 			logger.info('gedcomx-export', `Starting GEDCOM X export: ${options.fileName}`);
@@ -8345,6 +8439,34 @@ export class ControlCenterModal extends Modal {
 			// Create exporter
 			const { GedcomXExporter } = await import('../gedcomx/gedcomx-exporter');
 			const exporter = new GedcomXExporter(this.app);
+
+			// Conditionally set services based on includeEntities flags
+			const includeEntities = options.includeEntities ?? {
+				people: true,
+				events: true,
+				sources: true,
+				places: true
+			};
+
+			if (includeEntities.events) {
+				exporter.setEventService(this.plugin.settings);
+			}
+
+			if (includeEntities.sources) {
+				exporter.setSourceService(this.plugin.settings);
+			}
+
+			if (includeEntities.places) {
+				exporter.setPlaceGraphService(this.plugin.settings);
+			}
+
+			// Set property/value alias services (always needed for person data)
+			const { PropertyAliasService } = await import('../core/property-alias-service');
+			const { ValueAliasService } = await import('../core/value-alias-service');
+			const propertyAliasService = new PropertyAliasService(this.plugin);
+			const valueAliasService = new ValueAliasService(this.plugin);
+			exporter.setPropertyAliasService(propertyAliasService);
+			exporter.setValueAliasService(valueAliasService);
 
 			// Export to GEDCOM X
 			const result = exporter.exportToGedcomX({
@@ -8373,24 +8495,62 @@ export class ControlCenterModal extends Modal {
 			}
 
 			if (result.success && result.jsonContent) {
-				// Create blob and trigger download
-				const blob = new Blob([result.jsonContent], { type: 'application/json' });
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `${result.fileName}.json`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
+				const outputDestination = options.outputDestination ?? 'download';
 
-				let noticeMsg = `GEDCOM X exported: ${result.personsExported} people, ${result.relationshipsExported} relationships`;
-				if (result.privacyExcluded && result.privacyExcluded > 0) {
-					noticeMsg += ` (${result.privacyExcluded} living excluded)`;
-				} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
-					noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+				if (outputDestination === 'vault') {
+					// Save to vault
+					const outputFolder = options.outputFolder || '';
+					const fileName = `${result.fileName}.json`;
+					const filePath = outputFolder ? `${outputFolder}/${fileName}` : fileName;
+
+					await this.app.vault.adapter.write(filePath, result.jsonContent);
+
+					// Save last export info
+					this.plugin.settings.lastGedcomXExport = {
+						timestamp: Date.now(),
+						peopleCount: result.personsExported,
+						destination: 'vault',
+						filePath: filePath,
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `GEDCOM X saved to vault: ${filePath}`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
+				} else {
+					// Download file
+					const blob = new Blob([result.jsonContent], { type: 'application/json' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `${result.fileName}.json`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+
+					// Save last export info
+					this.plugin.settings.lastGedcomXExport = {
+						timestamp: Date.now(),
+						peopleCount: result.personsExported,
+						destination: 'download',
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `GEDCOM X exported: ${result.personsExported} people, ${result.relationshipsExported} relationships`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
 				}
-				new Notice(noticeMsg);
 			} else {
 				throw new Error('Export failed to generate content');
 			}
@@ -8648,6 +8808,9 @@ export class ControlCenterModal extends Modal {
 		const { ExportOptionsBuilder } = require('./export-options-builder');
 		const optionsBuilder = new ExportOptionsBuilder(this.app, this.plugin);
 
+		// Last export info
+		ExportOptionsBuilder.buildLastExportInfo(content, this.plugin.settings.lastGrampsExport, 'Gramps XML');
+
 		// People folder (read-only display)
 		new Setting(content)
 			.setName('People folder')
@@ -8689,7 +8852,10 @@ export class ControlCenterModal extends Modal {
 					privacyOverride: options.privacyOverrideEnabled ? {
 						enablePrivacyProtection: privacySettings.enablePrivacyProtection,
 						privacyDisplayFormat: privacySettings.privacyDisplayFormat
-					} : undefined
+					} : undefined,
+					includeEntities: options.includeEntities,
+					outputDestination: options.outputDestination,
+					outputFolder: options.outputFolder
 				});
 			})();
 		});
@@ -8710,6 +8876,14 @@ export class ControlCenterModal extends Modal {
 			enablePrivacyProtection: boolean;
 			privacyDisplayFormat: 'living' | 'private' | 'initials' | 'hidden';
 		};
+		includeEntities?: {
+			people: boolean;
+			events: boolean;
+			sources: boolean;
+			places: boolean;
+		};
+		outputDestination?: 'download' | 'vault';
+		outputFolder?: string;
 	}): Promise<void> {
 		try {
 			logger.info('gramps-export', `Starting Gramps export: ${options.fileName}`);
@@ -8717,6 +8891,34 @@ export class ControlCenterModal extends Modal {
 			// Create exporter
 			const { GrampsExporter } = await import('../gramps/gramps-exporter');
 			const exporter = new GrampsExporter(this.app);
+
+			// Conditionally set services based on includeEntities flags
+			const includeEntities = options.includeEntities ?? {
+				people: true,
+				events: true,
+				sources: true,
+				places: true
+			};
+
+			if (includeEntities.events) {
+				exporter.setEventService(this.plugin.settings);
+			}
+
+			if (includeEntities.sources) {
+				exporter.setSourceService(this.plugin.settings);
+			}
+
+			if (includeEntities.places) {
+				exporter.setPlaceGraphService(this.plugin.settings);
+			}
+
+			// Set property/value alias services (always needed for person data)
+			const { PropertyAliasService } = await import('../core/property-alias-service');
+			const { ValueAliasService } = await import('../core/value-alias-service');
+			const propertyAliasService = new PropertyAliasService(this.plugin);
+			const valueAliasService = new ValueAliasService(this.plugin);
+			exporter.setPropertyAliasService(propertyAliasService);
+			exporter.setValueAliasService(valueAliasService);
 
 			// Export to Gramps
 			const result = exporter.exportToGramps({
@@ -8745,24 +8947,62 @@ export class ControlCenterModal extends Modal {
 			}
 
 			if (result.success && result.xmlContent) {
-				// Create blob and trigger download
-				const blob = new Blob([result.xmlContent], { type: 'application/xml' });
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `${result.fileName}.gramps`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
+				const outputDestination = options.outputDestination ?? 'download';
 
-				let noticeMsg = `Gramps exported: ${result.personsExported} people, ${result.familiesExported} families`;
-				if (result.privacyExcluded && result.privacyExcluded > 0) {
-					noticeMsg += ` (${result.privacyExcluded} living excluded)`;
-				} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
-					noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+				if (outputDestination === 'vault') {
+					// Save to vault
+					const outputFolder = options.outputFolder || '';
+					const fileName = `${result.fileName}.gramps`;
+					const filePath = outputFolder ? `${outputFolder}/${fileName}` : fileName;
+
+					await this.app.vault.adapter.write(filePath, result.xmlContent);
+
+					// Save last export info
+					this.plugin.settings.lastGrampsExport = {
+						timestamp: Date.now(),
+						peopleCount: result.personsExported,
+						destination: 'vault',
+						filePath: filePath,
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `Gramps saved to vault: ${filePath}`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
+				} else {
+					// Download file
+					const blob = new Blob([result.xmlContent], { type: 'application/xml' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `${result.fileName}.gramps`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+
+					// Save last export info
+					this.plugin.settings.lastGrampsExport = {
+						timestamp: Date.now(),
+						peopleCount: result.personsExported,
+						destination: 'download',
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `Gramps exported: ${result.personsExported} people, ${result.familiesExported} families`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
 				}
-				new Notice(noticeMsg);
 			} else {
 				throw new Error('Export failed to generate content');
 			}
@@ -8888,6 +9128,9 @@ export class ControlCenterModal extends Modal {
 		const { ExportOptionsBuilder } = require('./export-options-builder');
 		const optionsBuilder = new ExportOptionsBuilder(this.app, this.plugin);
 
+		// Last export info
+		ExportOptionsBuilder.buildLastExportInfo(content, this.plugin.settings.lastCsvExport, 'CSV');
+
 		// People folder (read-only display)
 		new Setting(content)
 			.setName('People folder')
@@ -8929,7 +9172,10 @@ export class ControlCenterModal extends Modal {
 					privacyOverride: options.privacyOverrideEnabled ? {
 						enablePrivacyProtection: privacySettings.enablePrivacyProtection,
 						privacyDisplayFormat: privacySettings.privacyDisplayFormat
-					} : undefined
+					} : undefined,
+					includeEntities: options.includeEntities,
+					outputDestination: options.outputDestination,
+					outputFolder: options.outputFolder
 				});
 			})();
 		});
@@ -9142,6 +9388,14 @@ export class ControlCenterModal extends Modal {
 			enablePrivacyProtection: boolean;
 			privacyDisplayFormat: 'living' | 'private' | 'initials' | 'hidden';
 		};
+		includeEntities?: {
+			people: boolean;
+			events: boolean;
+			sources: boolean;
+			places: boolean;
+		};
+		outputDestination?: 'download' | 'vault';
+		outputFolder?: string;
 	}): Promise<void> {
 		try {
 			logger.info('csv-export', `Starting CSV export: ${options.fileName}`);
@@ -9149,6 +9403,34 @@ export class ControlCenterModal extends Modal {
 			// Create exporter
 			const { CsvExporter } = await import('../csv/csv-exporter');
 			const exporter = new CsvExporter(this.app);
+
+			// Conditionally set services based on includeEntities flags
+			const includeEntities = options.includeEntities ?? {
+				people: true,
+				events: true,
+				sources: true,
+				places: true
+			};
+
+			if (includeEntities.events) {
+				exporter.setEventService(this.plugin.settings);
+			}
+
+			if (includeEntities.sources) {
+				exporter.setSourceService(this.plugin.settings);
+			}
+
+			if (includeEntities.places) {
+				exporter.setPlaceGraphService(this.plugin.settings);
+			}
+
+			// Set property/value alias services (always needed for person data)
+			const { PropertyAliasService } = await import('../core/property-alias-service');
+			const { ValueAliasService } = await import('../core/value-alias-service');
+			const propertyAliasService = new PropertyAliasService(this.plugin);
+			const valueAliasService = new ValueAliasService(this.plugin);
+			exporter.setPropertyAliasService(propertyAliasService);
+			exporter.setValueAliasService(valueAliasService);
 
 			// Export to CSV
 			const result = exporter.exportToCsv({
@@ -9175,24 +9457,62 @@ export class ControlCenterModal extends Modal {
 			}
 
 			if (result.success && result.csvContent) {
-				// Create blob and trigger download
-				const blob = new Blob([result.csvContent], { type: 'text/csv;charset=utf-8' });
-				const url = URL.createObjectURL(blob);
-				const a = document.createElement('a');
-				a.href = url;
-				a.download = `${result.fileName}.csv`;
-				document.body.appendChild(a);
-				a.click();
-				document.body.removeChild(a);
-				URL.revokeObjectURL(url);
+				const outputDestination = options.outputDestination ?? 'download';
 
-				let noticeMsg = `CSV exported: ${result.recordsExported} people`;
-				if (result.privacyExcluded && result.privacyExcluded > 0) {
-					noticeMsg += ` (${result.privacyExcluded} living excluded)`;
-				} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
-					noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+				if (outputDestination === 'vault') {
+					// Save to vault
+					const outputFolder = options.outputFolder || '';
+					const fileName = `${result.fileName}.csv`;
+					const filePath = outputFolder ? `${outputFolder}/${fileName}` : fileName;
+
+					await this.app.vault.adapter.write(filePath, result.csvContent);
+
+					// Save last export info
+					this.plugin.settings.lastCsvExport = {
+						timestamp: Date.now(),
+						peopleCount: result.recordsExported,
+						destination: 'vault',
+						filePath: filePath,
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `CSV saved to vault: ${filePath}`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
+				} else {
+					// Download file
+					const blob = new Blob([result.csvContent], { type: 'text/csv;charset=utf-8' });
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `${result.fileName}.csv`;
+					document.body.appendChild(a);
+					a.click();
+					document.body.removeChild(a);
+					URL.revokeObjectURL(url);
+
+					// Save last export info
+					this.plugin.settings.lastCsvExport = {
+						timestamp: Date.now(),
+						peopleCount: result.recordsExported,
+						destination: 'download',
+						privacyExcluded: result.privacyExcluded
+					};
+					await this.plugin.saveSettings();
+
+					let noticeMsg = `CSV exported: ${result.recordsExported} people`;
+					if (result.privacyExcluded && result.privacyExcluded > 0) {
+						noticeMsg += ` (${result.privacyExcluded} living excluded)`;
+					} else if (result.privacyObfuscated && result.privacyObfuscated > 0) {
+						noticeMsg += ` (${result.privacyObfuscated} living obfuscated)`;
+					}
+					new Notice(noticeMsg);
 				}
-				new Notice(noticeMsg);
 			} else {
 				throw new Error('Export failed to generate content');
 			}
