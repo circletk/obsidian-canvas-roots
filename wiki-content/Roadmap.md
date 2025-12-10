@@ -12,7 +12,7 @@ This document outlines planned features for Canvas Roots. For completed features
   - [Export v2: Full Entity Export](#export-v2-full-entity-export) ⚡ High
   - [Calendarium Integration](#calendarium-integration) 📋 Medium
   - [Reports & Print Export](#reports--print-export) 📋 Medium
-  - [Research & Analysis Tools](#research--analysis-tools) 📋 Medium
+  - [Statistics Dashboard](#statistics-dashboard) 📋 Medium
   - [Transcript Nodes & Oral History](#transcript-nodes--oral-history) 💡 Low
 - [Future Considerations](#future-considerations)
 - [Known Limitations](#known-limitations)
@@ -286,27 +286,116 @@ See [Reports Planning Document](https://github.com/banisterious/obsidian-canvas-
 
 ---
 
-### Research & Analysis Tools
+### Statistics Dashboard
 
-**Priority:** 📋 Medium — Analytics and tracking for serious researchers
+**Priority:** 📋 Medium — At-a-glance insights into your data
 
-**Family Statistics Dashboard:**
-- Longevity analysis by generation/period
-- Geographic distribution maps
-- Most common names, occupations, places
-- Generation gap analysis
-- Marriage patterns
+**Summary:** A dedicated Statistics tab in the Control Center providing quantitative insights across all entity types. Designed for genealogists tracking research progress, worldbuilders auditing consistency, and historians analyzing patterns.
 
-**Research Tracking:**
-- "Needs research" tags with to-dos
-- Confidence levels: verified, probable, possible
-- Source documentation per fact
-- DNA match tracking
+**User Personas:**
+- **Genealogists:** Track completeness, identify under-researched branches, spot data gaps
+- **Worldbuilders:** Audit character demographics, detect timeline inconsistencies
+- **Historians:** Analyze cohort patterns, geographic distributions, temporal clustering
 
-**Dynasty Management:**
-- Line of succession calculator
-- Title/position inheritance
-- Regnal numbering
+---
+
+#### Core Statistics (v1)
+
+**Entity Overview:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Entity counts** | People, events, sources, places, organizations by type |
+| **Completeness scores** | % of people with birth date, death date, at least one source |
+| **Date range** | Earliest to latest dates across all entities |
+| **Gender/sex breakdown** | Distribution with chart visualization |
+
+**Top Lists:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Top surnames** | Most common surnames with counts |
+| **Top locations** | Most referenced places (birth, death, residence) |
+| **Top occupations** | Most common occupations |
+| **Top sources** | Most-cited sources |
+
+**Quality Metrics:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Unsourced facts** | Count of events without source citations |
+| **Orphan entities** | Events/sources not linked to any person |
+| **Missing vitals** | People missing birth or death dates |
+| **Duplicate candidates** | Potential duplicates by name similarity |
+
+---
+
+#### Extended Statistics (v2)
+
+**Demographic Analysis:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Longevity analysis** | Average lifespan by generation, time period, or location |
+| **Family size patterns** | Average children per family by generation |
+| **Marriage patterns** | Age at marriage, remarriage rates, spouse age gaps |
+| **Migration flows** | Birth-to-death location changes, immigration patterns |
+
+**Source Coverage:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Coverage by generation** | % sourced facts per generation (shows research depth) |
+| **Source type distribution** | Primary vs secondary vs derivative sources |
+| **Citation density** | Average sources per person/event |
+
+**Worldbuilding Statistics:**
+
+| Statistic | Description |
+|-----------|-------------|
+| **Characters by universe** | Breakdown across fictional universes |
+| **Characters by faction** | Distribution across organizations/factions |
+| **Timeline density** | Events per year/era (spot sparse periods) |
+| **Active characters by period** | Who was alive when? |
+
+**User-Defined Property Statistics:**
+
+Canvas Roots supports [user-defined schemas](Release-History#schema-validation-v063) with custom properties. v2 statistics will aggregate these:
+
+| Feature | Description |
+|---------|-------------|
+| **Enum distributions** | For any schema-defined enum property, show value counts |
+| **Numeric aggregates** | For numeric properties, show min/max/average/sum |
+| **Boolean counts** | For boolean properties, show true/false counts |
+| **Property coverage** | % of entities with each custom property populated |
+
+**Example:** If you define a `nobility_rank` enum with values `king`, `duke`, `baron`, `commoner`, the dashboard shows the distribution across your characters.
+
+---
+
+#### UI Design
+
+**Statistics Tab:** New Control Center tab between Events and Import/Export.
+
+**Dashboard Layout:**
+- Summary cards at top (entity counts, completeness %)
+- Expandable sections by category (Demographics, Quality, Sources, etc.)
+- Charts where appropriate (bar charts for distributions, line for trends)
+- Drill-down links to filtered entity lists
+
+**Filtering:**
+- Scope by collection/universe
+- Scope by date range
+- Scope by folder (main tree vs staging)
+
+---
+
+#### v1 Priorities
+
+1. **Entity counts** — Basic counts by type
+2. **Completeness scores** — Birth/death/source coverage
+3. **Top lists** — Surnames, locations, occupations, sources
+4. **Quality metrics** — Unsourced, orphans, missing vitals
 
 ---
 
@@ -341,6 +430,25 @@ oral_facts:
 ## Future Considerations
 
 These features are under consideration but not yet prioritized.
+
+### Research Tracking
+
+Advanced research workflow tools for serious genealogists:
+
+- "Needs research" tags with to-dos
+- Confidence levels: verified, probable, possible
+- Source documentation per fact
+- DNA match tracking
+- Research log notes
+
+### Dynasty Management
+
+Tools for tracking succession and inheritance in worldbuilding:
+
+- Line of succession calculator
+- Title/position inheritance rules
+- Regnal numbering
+- Heir designation and succession events
 
 ### Sensitive Field Redaction
 
