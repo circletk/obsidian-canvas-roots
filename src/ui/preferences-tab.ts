@@ -13,8 +13,12 @@ import type { ArrowStyle, ColorScheme, SpouseEdgeLabelFormat } from '../settings
 import {
 	PropertyAliasService,
 	CANONICAL_PERSON_PROPERTIES,
+	CANONICAL_EVENT_PROPERTIES,
+	CANONICAL_PLACE_PROPERTIES,
 	CANONICAL_PROPERTY_LABELS,
-	type CanonicalPersonProperty
+	type CanonicalPersonProperty,
+	type CanonicalEventProperty,
+	type CanonicalPlaceProperty
 } from '../core/property-alias-service';
 import {
 	ValueAliasService,
@@ -22,13 +26,16 @@ import {
 	EVENT_TYPE_LABELS,
 	SEX_LABELS,
 	PLACE_CATEGORY_LABELS,
+	NOTE_TYPE_LABELS,
 	CANONICAL_EVENT_TYPES,
 	CANONICAL_SEX_VALUES,
 	CANONICAL_PLACE_CATEGORIES,
+	CANONICAL_NOTE_TYPES,
 	type ValueAliasField,
 	type CanonicalEventType,
 	type CanonicalSex,
-	type CanonicalPlaceCategory
+	type CanonicalPlaceCategory,
+	type CanonicalNoteType
 } from '../core/value-alias-service';
 
 /**
@@ -324,6 +331,8 @@ function getCanonicalValueLabel(field: ValueAliasField, value: string): string {
 			return SEX_LABELS[value as CanonicalSex] || value;
 		case 'placeCategory':
 			return PLACE_CATEGORY_LABELS[value as CanonicalPlaceCategory] || value;
+		case 'noteType':
+			return NOTE_TYPE_LABELS[value as CanonicalNoteType] || value;
 	}
 }
 
@@ -739,25 +748,81 @@ class PropertyAliasModal extends Modal {
 				// Add empty option
 				dropdown.addOption('', '— Select property —');
 
-				// Group properties by category
-				const categories: Record<string, CanonicalPersonProperty[]> = {
+				// Group properties by category with headers
+				const personCategories: Record<string, CanonicalPersonProperty[]> = {
 					'Identity': ['name', 'cr_id', 'type', 'sex', 'gender', 'nickname', 'maiden_name'],
 					'Dates': ['born', 'died'],
 					'Places': ['birth_place', 'death_place'],
-					'Relationships': ['father', 'father_id', 'mother', 'mother_id', 'spouse', 'spouse_id', 'child', 'children_id'],
+					'Relationships': ['father', 'father_id', 'mother', 'mother_id', 'parents', 'parents_id', 'spouse', 'spouse_id', 'partners', 'partners_id', 'child', 'children_id'],
 					'Other': ['occupation', 'universe', 'image', 'sourced_facts', 'relationships']
 				};
 
-				for (const [category, props] of Object.entries(categories)) {
+				const eventCategories: Record<string, CanonicalEventProperty[]> = {
+					'Core': ['cr_id', 'cr_type', 'title', 'event_type'],
+					'Dates': ['date', 'date_end', 'date_precision', 'date_system'],
+					'People': ['person', 'persons'],
+					'Location': ['place'],
+					'Metadata': ['sources', 'confidence', 'description', 'is_canonical', 'universe'],
+					'Ordering': ['before', 'after', 'timeline'],
+					'Groups': ['groups']
+				};
+
+				const placeCategories: Record<string, CanonicalPlaceProperty[]> = {
+					'Core': ['cr_id', 'cr_type', 'name', 'place_type'],
+					'Hierarchy': ['parent_place'],
+					'Location': ['coordinates'],
+					'Metadata': ['universe', 'collection']
+				};
+
+				// Add Person properties with section header
+				dropdown.addOption('__category_person', '── Person Properties ──');
+				for (const [_category, props] of Object.entries(personCategories)) {
 					for (const prop of props) {
 						const label = CANONICAL_PROPERTY_LABELS[prop];
 						dropdown.addOption(prop, `${prop} (${label})`);
 					}
 				}
 
+				// Add Event properties with section header
+				dropdown.addOption('__category_event', '── Event Properties ──');
+				for (const [_category, props] of Object.entries(eventCategories)) {
+					for (const prop of props) {
+						// Skip cr_id and universe as they're already in person properties
+						if (prop === 'cr_id' || prop === 'universe') continue;
+						const label = CANONICAL_PROPERTY_LABELS[prop];
+						dropdown.addOption(prop, `${prop} (${label})`);
+					}
+				}
+
+				// Add Place properties with section header
+				dropdown.addOption('__category_place', '── Place Properties ──');
+				for (const [_category, props] of Object.entries(placeCategories)) {
+					for (const prop of props) {
+						// Skip properties already added
+						if (prop === 'cr_id' || prop === 'cr_type' || prop === 'name' || prop === 'universe' || prop === 'coordinates') continue;
+						const label = CANONICAL_PROPERTY_LABELS[prop];
+						dropdown.addOption(prop, `${prop} (${label})`);
+					}
+				}
+
+				// Disable category header options
+				const selectEl = dropdown.selectEl;
+				for (const option of Array.from(selectEl.options)) {
+					if (option.value.startsWith('__category_')) {
+						option.disabled = true;
+						option.style.fontWeight = 'bold';
+						option.style.color = 'var(--text-muted)';
+					}
+				}
+
 				dropdown.setValue(this.canonicalProperty);
 				dropdown.onChange(value => {
-					this.canonicalProperty = value;
+					// Safety: ignore category headers if somehow selected
+					if (value.startsWith('__category_')) {
+						dropdown.setValue(this.canonicalProperty);
+					} else {
+						this.canonicalProperty = value;
+					}
 				});
 			});
 
@@ -885,6 +950,7 @@ class ValueAliasModal extends Modal {
 				dropdown.addOption('eventType', 'Event type');
 				dropdown.addOption('sex', 'Sex');
 				dropdown.addOption('placeCategory', 'Place category');
+				dropdown.addOption('noteType', 'Note type (cr_type)');
 
 				dropdown.setValue(this.field);
 				dropdown.onChange(value => {
@@ -951,6 +1017,8 @@ class ValueAliasModal extends Modal {
 				return 'masc';
 			case 'placeCategory':
 				return 'canon';
+			case 'noteType':
+				return 'cohort';
 		}
 	}
 
@@ -962,6 +1030,8 @@ class ValueAliasModal extends Modal {
 				return CANONICAL_SEX_VALUES;
 			case 'placeCategory':
 				return CANONICAL_PLACE_CATEGORIES;
+			case 'noteType':
+				return CANONICAL_NOTE_TYPES;
 		}
 	}
 
@@ -973,6 +1043,8 @@ class ValueAliasModal extends Modal {
 				return SEX_LABELS[value as CanonicalSex] || value;
 			case 'placeCategory':
 				return PLACE_CATEGORY_LABELS[value as CanonicalPlaceCategory] || value;
+			case 'noteType':
+				return NOTE_TYPE_LABELS[value as CanonicalNoteType] || value;
 		}
 	}
 

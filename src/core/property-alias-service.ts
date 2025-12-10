@@ -31,8 +31,12 @@ export const CANONICAL_PERSON_PROPERTIES = [
 	'father_id',
 	'mother',
 	'mother_id',
+	'parents',       // Array of parent links (alternative to father/mother)
+	'parents_id',    // Array of parent cr_ids
 	'spouse',
 	'spouse_id',
+	'partners',      // Array of partner/spouse links (alternative to spouse)
+	'partners_id',   // Array of partner cr_ids
 	'child',
 	'children_id',
 	// Other
@@ -126,8 +130,12 @@ export const CANONICAL_PROPERTY_LABELS: Record<string, string> = {
 	father_id: 'Father ID',
 	mother: 'Mother',
 	mother_id: 'Mother ID',
+	parents: 'Parents (array)',
+	parents_id: 'Parents ID (array)',
 	spouse: 'Spouse',
 	spouse_id: 'Spouse ID',
+	partners: 'Partners (array)',
+	partners_id: 'Partners ID (array)',
 	child: 'Child/Children',
 	children_id: 'Children ID',
 	occupation: 'Occupation',

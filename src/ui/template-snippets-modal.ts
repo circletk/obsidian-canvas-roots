@@ -8,10 +8,30 @@ import { createLucideIcon } from './lucide-icons';
 
 export type TemplateType = 'person' | 'place' | 'source' | 'organization' | 'proof' | 'event';
 
+/**
+ * Property aliases mapping type
+ * Maps user's custom property name → Canvas Roots canonical name
+ */
+export type PropertyAliases = Record<string, string>;
+
 interface TemplateSnippet {
 	name: string;
 	description: string;
 	template: string;
+}
+
+/**
+ * Get the property name to use in templates.
+ * If an alias exists for the canonical property, returns the user's aliased name.
+ * Otherwise returns the canonical name.
+ */
+function getPropertyName(canonical: string, aliases: PropertyAliases): string {
+	for (const [userProp, canonicalProp] of Object.entries(aliases)) {
+		if (canonicalProp === canonical) {
+			return userProp;
+		}
+	}
+	return canonical;
 }
 
 /**
@@ -20,10 +40,12 @@ interface TemplateSnippet {
 export class TemplateSnippetsModal extends Modal {
 	private selectedType: TemplateType = 'person';
 	private initialTab?: TemplateType;
+	private propertyAliases: PropertyAliases;
 
-	constructor(app: App, initialTab?: TemplateType) {
+	constructor(app: App, initialTab?: TemplateType, propertyAliases: PropertyAliases = {}) {
 		super(app);
 		this.initialTab = initialTab;
+		this.propertyAliases = propertyAliases;
 		if (initialTab) {
 			this.selectedType = initialTab;
 		}
@@ -237,17 +259,19 @@ export class TemplateSnippetsModal extends Modal {
 	 * Get person note templates
 	 */
 	private getPersonTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic person note',
 				description: 'Minimal template with essential fields',
 				template: `---
-cr_type: person
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
-sex: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
-born:
-died:
+${p('cr_type')}: person
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
+${p('sex')}: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
+${p('born')}:
+${p('died')}:
 ---
 
 # <% tp.file.title %>
@@ -258,28 +282,28 @@ died:
 				name: 'Full person note',
 				description: 'Complete template with family relationships and place fields',
 				template: `---
-cr_type: person
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
-sex: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
+${p('cr_type')}: person
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
+${p('sex')}: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
 
 # Dates
-born:
-died:
+${p('born')}:
+${p('died')}:
 
 # Family relationships
-father:
-father_id:
-mother:
-mother_id:
+${p('father')}:
+${p('father_id')}:
+${p('mother')}:
+${p('mother_id')}:
 spouse1:
 spouse1_id:
 spouse1_marriage_date:
 spouse1_marriage_location:
 
 # Places
-birth_place:
-death_place:
+${p('birth_place')}:
+${p('death_place')}:
 burial_place:
 
 # Organization
@@ -300,13 +324,13 @@ collection:
 				name: 'Person with prompts',
 				description: 'Interactive template that prompts for key information',
 				template: `---
-cr_type: person
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
-sex: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
-born: <% tp.system.prompt("Birth date (YYYY-MM-DD)?", "", false) %>
-died: <% tp.system.prompt("Death date (YYYY-MM-DD)? Leave blank if living", "", false) %>
-birth_place: "<% tp.system.prompt("Birth place?", "", false) %>"
+${p('cr_type')}: person
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
+${p('sex')}: <% tp.system.suggester(["Male", "Female", "Unknown"], ["M", "F", "U"]) %>
+${p('born')}: <% tp.system.prompt("Birth date (YYYY-MM-DD)?", "", false) %>
+${p('died')}: <% tp.system.prompt("Death date (YYYY-MM-DD)? Leave blank if living", "", false) %>
+${p('birth_place')}: "<% tp.system.prompt("Birth place?", "", false) %>"
 ---
 
 # <% tp.file.title %>
@@ -320,16 +344,18 @@ birth_place: "<% tp.system.prompt("Birth place?", "", false) %>"
 	 * Get place note templates
 	 */
 	private getPlaceTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic place note',
 				description: 'Minimal template for real-world locations',
 				template: `---
-cr_type: place
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
-place_type: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County"], ["city", "town", "village", "country", "state", "region", "county"]) %>
-parent_place:
+${p('cr_type')}: place
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
+${p('place_type')}: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County"], ["city", "town", "village", "country", "state", "region", "county"]) %>
+${p('parent_place')}:
 ---
 
 # <% tp.file.title %>
@@ -340,13 +366,13 @@ parent_place:
 				name: 'Place with coordinates',
 				description: 'For real-world locations with geographic coordinates',
 				template: `---
-cr_type: place
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: place
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 place_category: real
-place_type: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County"], ["city", "town", "village", "country", "state", "region", "county"]) %>
-parent_place:
-coordinates:
+${p('place_type')}: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County"], ["city", "town", "village", "country", "state", "region", "county"]) %>
+${p('parent_place')}:
+${p('coordinates')}:
   lat: <% tp.system.prompt("Latitude?", "", false) %>
   long: <% tp.system.prompt("Longitude?", "", false) %>
 ---
@@ -359,12 +385,12 @@ coordinates:
 				name: 'Historical place',
 				description: 'For places that no longer exist or have changed significantly',
 				template: `---
-cr_type: place
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: place
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 place_category: historical
-place_type: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "Kingdom", "Empire"], ["city", "town", "village", "country", "state", "region", "kingdom", "empire"]) %>
-parent_place:
+${p('place_type')}: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "Kingdom", "Empire"], ["city", "town", "village", "country", "state", "region", "kingdom", "empire"]) %>
+${p('parent_place')}:
 historical_names:
   - name:
     period:
@@ -380,13 +406,13 @@ historical_names:
 				name: 'Fictional place',
 				description: 'For world-building and fictional locations',
 				template: `---
-cr_type: place
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: place
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 place_category: fictional
-universe: "<% tp.system.prompt("Universe/World name?", "", false) %>"
-place_type: <% tp.system.suggester(["City", "Town", "Village", "Country", "Kingdom", "Region", "Castle", "Fortress", "Island"], ["city", "town", "village", "country", "kingdom", "region", "castle", "fortress", "island"]) %>
-parent_place:
+${p('universe')}: "<% tp.system.prompt("Universe/World name?", "", false) %>"
+${p('place_type')}: <% tp.system.suggester(["City", "Town", "Village", "Country", "Kingdom", "Region", "Castle", "Fortress", "Island"], ["city", "town", "village", "country", "kingdom", "region", "castle", "fortress", "island"]) %>
+${p('parent_place')}:
 custom_coordinates:
   x:
   y:
@@ -407,16 +433,16 @@ custom_coordinates:
 				name: 'Full place note',
 				description: 'Complete template with all available fields',
 				template: `---
-cr_type: place
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: place
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 aliases:
   -
 place_category: <% tp.system.suggester(["Real", "Historical", "Disputed", "Legendary", "Mythological", "Fictional"], ["real", "historical", "disputed", "legendary", "mythological", "fictional"]) %>
-universe:
-place_type: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County", "Kingdom", "Castle"], ["city", "town", "village", "country", "state", "region", "county", "kingdom", "castle"]) %>
-parent_place:
-coordinates:
+${p('universe')}:
+${p('place_type')}: <% tp.system.suggester(["City", "Town", "Village", "Country", "State/Province", "Region", "County", "Kingdom", "Castle"], ["city", "town", "village", "country", "state", "region", "county", "kingdom", "castle"]) %>
+${p('parent_place')}:
+${p('coordinates')}:
   lat:
   long:
 custom_coordinates:
@@ -426,7 +452,7 @@ custom_coordinates:
 historical_names:
   - name:
     period:
-collection:
+${p('collection')}:
 ---
 
 # <% tp.file.title %>
@@ -440,17 +466,19 @@ collection:
 	 * Get source note templates
 	 */
 	private getSourceTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic source note',
 				description: 'Minimal template for documenting a source',
 				template: `---
-cr_type: source
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: source
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 source_type: <% tp.system.suggester(["Census", "Vital record", "Church record", "Newspaper", "Photo", "Correspondence", "Military", "Court record", "Land deed", "Probate", "Immigration", "Obituary", "Oral history"], ["census", "vital_record", "church_record", "newspaper", "photo", "correspondence", "military", "court_record", "land_deed", "probate", "immigration", "obituary", "oral_history"]) %>
 source_date:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 ---
 
 # <% tp.file.title %>
@@ -461,16 +489,16 @@ confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high"
 				name: 'Census source',
 				description: 'Template for census records',
 				template: `---
-cr_type: source
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: source
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 source_type: census
 source_date: <% tp.system.prompt("Census date (YYYY-MM-DD)?", "", false) %>
 source_date_accessed: <% tp.date.now("YYYY-MM-DD") %>
 source_repository: <% tp.system.suggester(["Ancestry.com", "FamilySearch", "FindMyPast", "MyHeritage", "National Archives", "Other"], ["Ancestry.com", "FamilySearch", "FindMyPast", "MyHeritage", "National Archives", ""]) %>
-collection:
+${p('collection')}:
 location:
-confidence: high
+${p('confidence')}: high
 source_quality: derivative
 media:
 ---
@@ -506,14 +534,14 @@ media:
 				name: 'Vital record source',
 				description: 'Template for birth, death, or marriage certificates',
 				template: `---
-cr_type: source
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: source
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 source_type: vital_record
 source_date: <% tp.system.prompt("Event date (YYYY-MM-DD)?", "", false) %>
 source_repository:
 location:
-confidence: high
+${p('confidence')}: high
 source_quality: primary
 media:
 ---
@@ -541,17 +569,17 @@ media:
 				name: 'Full source note',
 				description: 'Complete template with all source fields',
 				template: `---
-cr_type: source
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: source
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 source_type: <% tp.system.suggester(["Census", "Vital record", "Church record", "Newspaper", "Photo", "Correspondence", "Military", "Court record", "Land deed", "Probate", "Immigration", "Obituary", "Oral history", "Custom"], ["census", "vital_record", "church_record", "newspaper", "photo", "correspondence", "military", "court_record", "land_deed", "probate", "immigration", "obituary", "oral_history", "custom"]) %>
 source_date:
 source_date_accessed: <% tp.date.now("YYYY-MM-DD") %>
 source_repository:
 source_repository_url:
-collection:
+${p('collection')}:
 location:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 source_quality: <% tp.system.suggester(["Primary (original record)", "Secondary (later account)", "Derivative (copy/transcription)"], ["primary", "secondary", "derivative"]) %>
 media:
 media_2:
@@ -577,14 +605,16 @@ citation_override:
 	 * Get organization note templates
 	 */
 	private getOrganizationTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic organization note',
 				description: 'Minimal template for any organization type',
 				template: `---
-cr_type: organization
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: organization
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 org_type: <% tp.system.suggester(["Noble house", "Guild", "Corporation", "Military", "Religious", "Political", "Educational", "Custom"], ["noble_house", "guild", "corporation", "military", "religious", "political", "educational", "custom"]) %>
 ---
 
@@ -596,16 +626,16 @@ org_type: <% tp.system.suggester(["Noble house", "Guild", "Corporation", "Milita
 				name: 'Noble house',
 				description: 'Template for feudal houses and dynasties',
 				template: `---
-cr_type: organization
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: organization
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 org_type: noble_house
 parent_org:
 founded:
 dissolved:
 motto:
 seat:
-universe: "<% tp.system.prompt("Universe/World name?", "", false) %>"
+${p('universe')}: "<% tp.system.prompt("Universe/World name?", "", false) %>"
 ---
 
 # <% tp.file.title %>
@@ -624,15 +654,15 @@ universe: "<% tp.system.prompt("Universe/World name?", "", false) %>"
 				name: 'Military unit',
 				description: 'Template for armies, regiments, and military organizations',
 				template: `---
-cr_type: organization
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: organization
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 org_type: military
 parent_org:
 founded:
 dissolved:
 seat:
-universe:
+${p('universe')}:
 ---
 
 # <% tp.file.title %>
@@ -653,17 +683,17 @@ universe:
 				name: 'Full organization note',
 				description: 'Complete template with all organization fields',
 				template: `---
-cr_type: organization
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-name: "<% tp.file.title %>"
+${p('cr_type')}: organization
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('name')}: "<% tp.file.title %>"
 org_type: <% tp.system.suggester(["Noble house", "Guild", "Corporation", "Military", "Religious", "Political", "Educational", "Custom"], ["noble_house", "guild", "corporation", "military", "religious", "political", "educational", "custom"]) %>
 parent_org:
 founded: <% tp.system.prompt("Founded date?", "", false) %>
 dissolved:
 motto:
 seat:
-universe:
-collection:
+${p('universe')}:
+${p('collection')}:
 ---
 
 # <% tp.file.title %>
@@ -687,19 +717,21 @@ collection:
 	 * Get proof summary note templates
 	 */
 	private getProofTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic proof summary',
 				description: 'Minimal template for documenting a genealogical conclusion',
 				template: `---
-cr_type: proof_summary
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: proof_summary
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 subject_person:
 fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse", "Occupation", "Residence"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse", "occupation", "residence"]) %>
 conclusion:
 status: draft
-confidence: possible
+${p('confidence')}: possible
 evidence: []
 ---
 
@@ -719,14 +751,14 @@ evidence: []
 				name: 'Proof summary with evidence',
 				description: 'Template with pre-structured evidence entries',
 				template: `---
-cr_type: proof_summary
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: proof_summary
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 subject_person: "[[<% tp.system.prompt("Subject person note name?", "", false) %>]]"
 fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse", "Occupation", "Residence"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse", "occupation", "residence"]) %>
 conclusion: "<% tp.system.prompt("What is your conclusion?", "", false) %>"
 status: <% tp.system.suggester(["Draft", "Complete", "Needs review", "Conflicted"], ["draft", "complete", "needs_review", "conflicted"]) %>
-confidence: <% tp.system.suggester(["Proven", "Probable", "Possible", "Disproven"], ["proven", "probable", "possible", "disproven"]) %>
+${p('confidence')}: <% tp.system.suggester(["Proven", "Probable", "Possible", "Disproven"], ["proven", "probable", "possible", "disproven"]) %>
 date_written: <% tp.date.now("YYYY-MM-DD") %>
 evidence:
   - source:
@@ -765,14 +797,14 @@ evidence:
 				name: 'Conflict resolution proof',
 				description: 'Template for documenting how conflicting evidence was resolved',
 				template: `---
-cr_type: proof_summary
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
+${p('cr_type')}: proof_summary
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
 subject_person:
 fact_type: <% tp.system.suggester(["Birth date", "Birth place", "Death date", "Death place", "Parents", "Marriage date", "Marriage place", "Spouse"], ["birth_date", "birth_place", "death_date", "death_place", "parents", "marriage_date", "marriage_place", "spouse"]) %>
 conclusion:
 status: conflicted
-confidence: possible
+${p('confidence')}: possible
 date_written: <% tp.date.now("YYYY-MM-DD") %>
 evidence:
   - source:
@@ -814,20 +846,22 @@ Explain how you resolved the conflict and why you chose one conclusion over anot
 	 * Get event note templates
 	 */
 	private getEventTemplates(): TemplateSnippet[] {
+		const p = (canonical: string) => getPropertyName(canonical, this.propertyAliases);
+
 		return [
 			{
 				name: 'Basic event note',
 				description: 'Minimal template for recording life events',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
-event_type: <% tp.system.suggester(["Birth", "Death", "Marriage", "Divorce", "Residence", "Occupation", "Military", "Immigration", "Education", "Burial", "Baptism", "Custom"], ["birth", "death", "marriage", "divorce", "residence", "occupation", "military", "immigration", "education", "burial", "baptism", "custom"]) %>
-date:
-date_precision: <% tp.system.suggester(["Exact date", "Month only", "Year only", "Decade", "Estimated", "Date range", "Unknown"], ["exact", "month", "year", "decade", "estimated", "range", "unknown"]) %>
-person:
-place:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
+${p('event_type')}: <% tp.system.suggester(["Birth", "Death", "Marriage", "Divorce", "Residence", "Occupation", "Military", "Immigration", "Education", "Burial", "Baptism", "Custom"], ["birth", "death", "marriage", "divorce", "residence", "occupation", "military", "immigration", "education", "burial", "baptism", "custom"]) %>
+${p('date')}:
+${p('date_precision')}: <% tp.system.suggester(["Exact date", "Month only", "Year only", "Decade", "Estimated", "Date range", "Unknown"], ["exact", "month", "year", "decade", "estimated", "range", "unknown"]) %>
+${p('person')}:
+${p('place')}:
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 ---
 
 # <% tp.file.title %>
@@ -838,16 +872,16 @@ confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high"
 				name: 'Birth event',
 				description: 'Template for recording a birth event',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "Birth of <% tp.system.prompt("Person name?", "", false) %>"
-event_type: birth
-date: <% tp.system.prompt("Birth date (YYYY-MM-DD)?", "", false) %>
-date_precision: exact
-person: "[[<% tp.system.prompt("Person note name?", "", false) %>]]"
-place: "[[<% tp.system.prompt("Birth place?", "", false) %>]]"
-sources:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "Birth of <% tp.system.prompt("Person name?", "", false) %>"
+${p('event_type')}: birth
+${p('date')}: <% tp.system.prompt("Birth date (YYYY-MM-DD)?", "", false) %>
+${p('date_precision')}: exact
+${p('person')}: "[[<% tp.system.prompt("Person note name?", "", false) %>]]"
+${p('place')}: "[[<% tp.system.prompt("Birth place?", "", false) %>]]"
+${p('sources')}:
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 ---
 
 # Birth of <% tp.file.title %>
@@ -858,18 +892,18 @@ confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high"
 				name: 'Marriage event',
 				description: 'Template for recording a marriage event',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "Marriage of <% tp.system.prompt("Names (e.g., John Smith and Jane Doe)?", "", false) %>"
-event_type: marriage
-date: <% tp.system.prompt("Marriage date (YYYY-MM-DD)?", "", false) %>
-date_precision: exact
-persons:
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "Marriage of <% tp.system.prompt("Names (e.g., John Smith and Jane Doe)?", "", false) %>"
+${p('event_type')}: marriage
+${p('date')}: <% tp.system.prompt("Marriage date (YYYY-MM-DD)?", "", false) %>
+${p('date_precision')}: exact
+${p('persons')}:
   - "[[<% tp.system.prompt("First spouse note?", "", false) %>]]"
   - "[[<% tp.system.prompt("Second spouse note?", "", false) %>]]"
-place: "[[<% tp.system.prompt("Marriage location?", "", false) %>]]"
-sources:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('place')}: "[[<% tp.system.prompt("Marriage location?", "", false) %>]]"
+${p('sources')}:
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 ---
 
 # Marriage
@@ -880,16 +914,16 @@ confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high"
 				name: 'Death event',
 				description: 'Template for recording a death event',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "Death of <% tp.system.prompt("Person name?", "", false) %>"
-event_type: death
-date: <% tp.system.prompt("Death date (YYYY-MM-DD)?", "", false) %>
-date_precision: exact
-person: "[[<% tp.system.prompt("Person note name?", "", false) %>]]"
-place: "[[<% tp.system.prompt("Death place?", "", false) %>]]"
-sources:
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "Death of <% tp.system.prompt("Person name?", "", false) %>"
+${p('event_type')}: death
+${p('date')}: <% tp.system.prompt("Death date (YYYY-MM-DD)?", "", false) %>
+${p('date_precision')}: exact
+${p('person')}: "[[<% tp.system.prompt("Person note name?", "", false) %>]]"
+${p('place')}: "[[<% tp.system.prompt("Death place?", "", false) %>]]"
+${p('sources')}:
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 ---
 
 # Death of <% tp.file.title %>
@@ -900,17 +934,17 @@ confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high"
 				name: 'Narrative event',
 				description: 'Template for worldbuilders and storytellers',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
-event_type: <% tp.system.suggester(["Anecdote", "Lore event", "Plot point", "Flashback", "Foreshadowing", "Backstory", "Climax", "Resolution"], ["anecdote", "lore_event", "plot_point", "flashback", "foreshadowing", "backstory", "climax", "resolution"]) %>
-date:
-date_precision: <% tp.system.suggester(["Exact date", "Year only", "Estimated", "Unknown"], ["exact", "year", "estimated", "unknown"]) %>
-person:
-place:
-is_canonical: <% tp.system.suggester(["Yes", "No"], [true, false]) %>
-universe: "<% tp.system.prompt("Universe/World name?", "", false) %>"
-confidence: medium
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
+${p('event_type')}: <% tp.system.suggester(["Anecdote", "Lore event", "Plot point", "Flashback", "Foreshadowing", "Backstory", "Climax", "Resolution"], ["anecdote", "lore_event", "plot_point", "flashback", "foreshadowing", "backstory", "climax", "resolution"]) %>
+${p('date')}:
+${p('date_precision')}: <% tp.system.suggester(["Exact date", "Year only", "Estimated", "Unknown"], ["exact", "year", "estimated", "unknown"]) %>
+${p('person')}:
+${p('place')}:
+${p('is_canonical')}: <% tp.system.suggester(["Yes", "No"], [true, false]) %>
+${p('universe')}: "<% tp.system.prompt("Universe/World name?", "", false) %>"
+${p('confidence')}: medium
 ---
 
 # <% tp.file.title %>
@@ -921,20 +955,20 @@ confidence: medium
 				name: 'Relative-ordered event',
 				description: 'Event without exact date, using relative ordering',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
-event_type: <% tp.system.suggester(["Anecdote", "Lore event", "Plot point", "Custom"], ["anecdote", "lore_event", "plot_point", "custom"]) %>
-date_precision: unknown
-person:
-place:
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
+${p('event_type')}: <% tp.system.suggester(["Anecdote", "Lore event", "Plot point", "Custom"], ["anecdote", "lore_event", "plot_point", "custom"]) %>
+${p('date_precision')}: unknown
+${p('person')}:
+${p('place')}:
 # Relative ordering - link to other event notes
-before:
+${p('before')}:
   - "[[Event that happens after this one]]"
-after:
+${p('after')}:
   - "[[Event that happens before this one]]"
-timeline: "[[Timeline Note]]"
-confidence: medium
+${p('timeline')}: "[[Timeline Note]]"
+${p('confidence')}: medium
 ---
 
 # <% tp.file.title %>
@@ -951,41 +985,41 @@ This event's position is determined by its relationships to other events, not by
 				name: 'Full event note',
 				description: 'Complete template with all event fields',
 				template: `---
-cr_type: event
-cr_id: <% tp.date.now("YYYYMMDDHHmmss") %>
-title: "<% tp.file.title %>"
-event_type: <% tp.system.suggester(["Birth", "Death", "Marriage", "Divorce", "Residence", "Occupation", "Military", "Immigration", "Education", "Burial", "Baptism", "Confirmation", "Ordination", "Anecdote", "Lore event", "Plot point", "Custom"], ["birth", "death", "marriage", "divorce", "residence", "occupation", "military", "immigration", "education", "burial", "baptism", "confirmation", "ordination", "anecdote", "lore_event", "plot_point", "custom"]) %>
+${p('cr_type')}: event
+${p('cr_id')}: <% tp.date.now("YYYYMMDDHHmmss") %>
+${p('title')}: "<% tp.file.title %>"
+${p('event_type')}: <% tp.system.suggester(["Birth", "Death", "Marriage", "Divorce", "Residence", "Occupation", "Military", "Immigration", "Education", "Burial", "Baptism", "Confirmation", "Ordination", "Anecdote", "Lore event", "Plot point", "Custom"], ["birth", "death", "marriage", "divorce", "residence", "occupation", "military", "immigration", "education", "burial", "baptism", "confirmation", "ordination", "anecdote", "lore_event", "plot_point", "custom"]) %>
 
 # Date fields
-date:
-date_end:
-date_precision: <% tp.system.suggester(["Exact date", "Month only", "Year only", "Decade", "Estimated", "Date range", "Unknown"], ["exact", "month", "year", "decade", "estimated", "range", "unknown"]) %>
-date_system:
+${p('date')}:
+${p('date_end')}:
+${p('date_precision')}: <% tp.system.suggester(["Exact date", "Month only", "Year only", "Decade", "Estimated", "Date range", "Unknown"], ["exact", "month", "year", "decade", "estimated", "range", "unknown"]) %>
+${p('date_system')}:
 
 # People involved
-person:
-persons:
+${p('person')}:
+${p('persons')}:
 
 # Location
-place:
+${p('place')}:
 
 # Sources
-sources:
+${p('sources')}:
 
 # Confidence
-confidence: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
+${p('confidence')}: <% tp.system.suggester(["High", "Medium", "Low", "Unknown"], ["high", "medium", "low", "unknown"]) %>
 
 # Description
-description:
+${p('description')}:
 
 # Worldbuilding (for narrative events)
-is_canonical:
-universe:
+${p('is_canonical')}:
+${p('universe')}:
 
 # Relative ordering
-before:
-after:
-timeline:
+${p('before')}:
+${p('after')}:
+${p('timeline')}:
 ---
 
 # <% tp.file.title %>

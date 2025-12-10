@@ -161,7 +161,7 @@ export class FamilyGraphService {
 	private personCache: Map<string, PersonNode>;
 	private folderFilter: FolderFilterService | null = null;
 	private propertyAliases: Record<string, string> = {};
-	private valueAliases: ValueAliasSettings = { eventType: {}, sex: {}, placeCategory: {} };
+	private valueAliases: ValueAliasSettings = { eventType: {}, sex: {}, placeCategory: {}, noteType: {} };
 	private settings: CanvasRootsSettings | null = null;
 
 	constructor(app: App) {
@@ -944,12 +944,35 @@ export class FamilyGraphService {
 		// Both father_id and father support aliases
 		const fatherIdValue = this.resolveProperty<string>(fm, 'father_id');
 		const fatherValue = this.resolveProperty<string>(fm, 'father');
-		const fatherCrId = fatherIdValue || this.extractCrIdFromWikilink(fatherValue);
+		let fatherCrId = fatherIdValue || this.extractCrIdFromWikilink(fatherValue);
 
 		// Parse mother relationship (prefer _id field, fallback to mother field for legacy)
 		const motherIdValue = this.resolveProperty<string>(fm, 'mother_id');
 		const motherValue = this.resolveProperty<string>(fm, 'mother');
-		const motherCrId = motherIdValue || this.extractCrIdFromWikilink(motherValue);
+		let motherCrId = motherIdValue || this.extractCrIdFromWikilink(motherValue);
+
+		// Alternative: Parse parents array (for users who prefer a single array of both parents)
+		// This is checked after father/mother to allow those to take precedence
+		if (!fatherCrId && !motherCrId) {
+			const parentsIdValue = this.resolveProperty<string | string[]>(fm, 'parents_id');
+			const parentsValue = this.resolveProperty<string | string[]>(fm, 'parents');
+
+			const parentsIds = parentsIdValue
+				? (Array.isArray(parentsIdValue) ? parentsIdValue : [parentsIdValue])
+				: parentsValue
+					? (Array.isArray(parentsValue) ? parentsValue : [parentsValue])
+						.map(v => this.extractCrIdFromWikilink(v) || v)
+						.filter((v): v is string => !!v)
+					: [];
+
+			// Assign first two parents as father/mother (order-based)
+			if (parentsIds.length > 0) {
+				fatherCrId = parentsIds[0] || null;
+			}
+			if (parentsIds.length > 1) {
+				motherCrId = parentsIds[1] || null;
+			}
+		}
 
 		// Parse spouse relationships
 		// Priority: 1) Enhanced flat indexed format (spouse1, spouse2...), 2) Legacy 'spouse_id' or 'spouse' fields
@@ -976,6 +999,21 @@ export class FamilyGraphService {
 				spouseCrIds = spouseValues
 					.map(v => this.extractCrIdFromWikilink(v) || v)
 					.filter(v => v);
+			}
+
+			// Alternative: Check partners array (alias for spouse, for users who prefer that term)
+			if (spouseCrIds.length === 0) {
+				const partnersIdField = this.resolveProperty<string | string[]>(fm, 'partners_id');
+				const partnersField = this.resolveProperty<string | string[]>(fm, 'partners');
+
+				if (partnersIdField) {
+					spouseCrIds = Array.isArray(partnersIdField) ? partnersIdField : [partnersIdField];
+				} else if (partnersField) {
+					const partnerValues = Array.isArray(partnersField) ? partnersField : [partnersField];
+					spouseCrIds = partnerValues
+						.map(v => this.extractCrIdFromWikilink(v) || v)
+						.filter(v => v);
+				}
 			}
 		}
 

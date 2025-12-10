@@ -91,7 +91,7 @@ function renderOrganizationsListCard(
 		.addButton(button => button
 			.setButtonText('View templates')
 			.onClick(() => {
-				new TemplateSnippetsModal(plugin.app, 'organization').open();
+				new TemplateSnippetsModal(plugin.app, 'organization', plugin.settings.propertyAliases).open();
 			}));
 
 	// Get all organizations

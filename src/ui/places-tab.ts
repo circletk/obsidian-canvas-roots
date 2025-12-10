@@ -564,7 +564,7 @@ function renderOtherTools(
 		cls: 'crc-btn crc-btn--ghost'
 	});
 	templateBtn.addEventListener('click', () => {
-		new TemplateSnippetsModal(plugin.app).open();
+		new TemplateSnippetsModal(plugin.app, 'place', plugin.settings.propertyAliases).open();
 	});
 }
 

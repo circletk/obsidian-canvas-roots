@@ -1624,7 +1624,7 @@ export class ControlCenterModal extends Modal {
 			cls: 'crc-btn crc-btn--secondary'
 		});
 		templaterBtn.addEventListener('click', () => {
-			new TemplateSnippetsModal(this.app).open();
+			new TemplateSnippetsModal(this.app, undefined, this.plugin.settings.propertyAliases).open();
 		});
 		const templaterDocsLink = templaterBtnRow.createEl('a', {
 			text: 'Full guide →',
@@ -1704,7 +1704,7 @@ export class ControlCenterModal extends Modal {
 			.addButton(button => button
 				.setButtonText('View templates')
 				.onClick(() => {
-					new TemplateSnippetsModal(this.app).open();
+					new TemplateSnippetsModal(this.app, undefined, this.plugin.settings.propertyAliases).open();
 				}));
 
 		container.appendChild(actionsCard);
@@ -2791,7 +2791,7 @@ export class ControlCenterModal extends Modal {
 		templateBtn.appendChild(templateIcon);
 		templateBtn.addEventListener('click', (e) => {
 			e.stopPropagation();
-			new TemplateSnippetsModal(this.app, 'proof').open();
+			new TemplateSnippetsModal(this.app, 'proof', this.plugin.settings.propertyAliases).open();
 		});
 
 		// Proof list
@@ -7021,7 +7021,7 @@ export class ControlCenterModal extends Modal {
 			const templateIcon = createLucideIcon('file-code', 14);
 			templateBtn.insertBefore(templateIcon, templateBtn.firstChild);
 			templateBtn.addEventListener('click', () => {
-				new TemplateSnippetsModal(this.app, 'proof').open();
+				new TemplateSnippetsModal(this.app, 'proof', this.plugin.settings.propertyAliases).open();
 			});
 
 			container.appendChild(card);

@@ -11,7 +11,7 @@ import type CanvasRootsPlugin from '../../main';
 /**
  * Field types that support value aliasing
  */
-export type ValueAliasField = 'eventType' | 'sex' | 'placeCategory';
+export type ValueAliasField = 'eventType' | 'sex' | 'placeCategory' | 'noteType';
 
 /**
  * Canonical event types
@@ -66,12 +66,29 @@ export const CANONICAL_PLACE_CATEGORIES = [
 export type CanonicalPlaceCategory = typeof CANONICAL_PLACE_CATEGORIES[number];
 
 /**
+ * Canonical note types (cr_type/type values)
+ */
+export const CANONICAL_NOTE_TYPES = [
+	'person',
+	'place',
+	'event',
+	'source',
+	'organization',
+	'map',
+	'schema',
+	'timeline'
+] as const;
+
+export type CanonicalNoteType = typeof CANONICAL_NOTE_TYPES[number];
+
+/**
  * Human-readable labels for field types (for UI display)
  */
 export const VALUE_ALIAS_FIELD_LABELS: Record<ValueAliasField, string> = {
 	eventType: 'Event type',
 	sex: 'Sex',
-	placeCategory: 'Place category'
+	placeCategory: 'Place category',
+	noteType: 'Note type (cr_type)'
 };
 
 /**
@@ -119,6 +136,80 @@ export const PLACE_CATEGORY_LABELS: Record<CanonicalPlaceCategory, string> = {
 };
 
 /**
+ * Human-readable labels for canonical note types
+ */
+export const NOTE_TYPE_LABELS: Record<CanonicalNoteType, string> = {
+	person: 'Person',
+	place: 'Place',
+	event: 'Event',
+	source: 'Source',
+	organization: 'Organization',
+	map: 'Map',
+	schema: 'Schema',
+	timeline: 'Timeline'
+};
+
+/**
+ * Built-in synonyms that are automatically resolved (case-insensitive)
+ * These don't require user configuration - common alternative names are handled automatically
+ * User-defined aliases take precedence over these built-in synonyms
+ */
+export const BUILTIN_SYNONYMS: Record<ValueAliasField, Record<string, string>> = {
+	eventType: {
+		// Common alternatives for residence
+		'move': 'residence',
+		'moved': 'residence',
+		'relocation': 'residence',
+		'migration': 'residence',
+		// Common alternatives for birth
+		'born': 'birth',
+		'nameday': 'birth',
+		// Common alternatives for death
+		'died': 'death',
+		'passing': 'death',
+		// Common alternatives for marriage
+		'wedding': 'marriage',
+		'married': 'marriage'
+	},
+	sex: {
+		// Common alternatives
+		'm': 'male',
+		'f': 'female',
+		'man': 'male',
+		'woman': 'female',
+		'nb': 'nonbinary',
+		'enby': 'nonbinary'
+	},
+	placeCategory: {
+		// Common alternatives
+		'actual': 'real',
+		'fantasy': 'fictional',
+		'imaginary': 'fictional',
+		'myth': 'mythological',
+		'legend': 'legendary'
+	},
+	noteType: {
+		// Common alternatives for organization
+		'org': 'organization',
+		'company': 'organization',
+		'group': 'organization',
+		'faction': 'organization',
+		'guild': 'organization',
+		'house': 'organization',
+		// Common alternatives for person
+		'character': 'person',
+		'individual': 'person',
+		// Common alternatives for place
+		'location': 'place',
+		'locale': 'place',
+		// Common alternatives for source
+		'reference': 'source',
+		'citation': 'source',
+		'document': 'source'
+	}
+};
+
+/**
  * Service for resolving value aliases
  */
 export class ValueAliasService {
@@ -146,6 +237,8 @@ export class ValueAliasService {
 				return CANONICAL_SEX_VALUES;
 			case 'placeCategory':
 				return CANONICAL_PLACE_CATEGORIES;
+			case 'noteType':
+				return CANONICAL_NOTE_TYPES;
 		}
 	}
 
@@ -160,6 +253,8 @@ export class ValueAliasService {
 				return SEX_LABELS[value as CanonicalSex] || value;
 			case 'placeCategory':
 				return PLACE_CATEGORY_LABELS[value as CanonicalPlaceCategory] || value;
+			case 'noteType':
+				return NOTE_TYPE_LABELS[value as CanonicalNoteType] || value;
 		}
 	}
 
@@ -168,9 +263,10 @@ export class ValueAliasService {
 	 *
 	 * Resolution order:
 	 * 1. If value is already canonical, return it
-	 * 2. If value has an alias configured, return the canonical value
-	 * 3. For event types: return 'custom' as fallback
-	 * 4. For other fields: return original value (may trigger validation warning)
+	 * 2. If value has a user-defined alias configured, return the canonical value
+	 * 3. If value matches a built-in synonym, return the canonical value
+	 * 4. For event types: return 'custom' as fallback
+	 * 5. For other fields: return original value (may trigger validation warning)
 	 *
 	 * @param field - The field type (eventType, gender, placeCategory)
 	 * @param userValue - The value from frontmatter
@@ -188,11 +284,18 @@ export class ValueAliasService {
 			return canonicalMatch;
 		}
 
-		// Check aliases
+		// Check user-defined aliases (take precedence over built-in synonyms)
 		const aliases = this.getAliases(field);
 		const aliasedValue = aliases[normalized];
 		if (aliasedValue) {
 			return aliasedValue;
+		}
+
+		// Check built-in synonyms
+		const synonyms = BUILTIN_SYNONYMS[field];
+		const synonymValue = synonyms[normalized];
+		if (synonymValue) {
+			return synonymValue;
 		}
 
 		// Fallback behavior
@@ -243,9 +346,15 @@ export class ValueAliasService {
 			return true;
 		}
 
-		// Check if aliased
+		// Check if user-defined alias
 		const aliases = this.getAliases(field);
-		return normalized in aliases;
+		if (normalized in aliases) {
+			return true;
+		}
+
+		// Check if built-in synonym
+		const synonyms = BUILTIN_SYNONYMS[field];
+		return normalized in synonyms;
 	}
 
 	/**

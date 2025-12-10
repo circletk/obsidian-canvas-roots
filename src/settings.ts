@@ -252,6 +252,7 @@ export interface ValueAliasSettings {
 	eventType: Record<string, string>;      // userValue → canonicalEventType
 	sex: Record<string, string>;            // userValue → canonicalSex (GEDCOM aligned)
 	placeCategory: Record<string, string>;  // userValue → canonicalPlaceCategory
+	noteType: Record<string, string>;       // userValue → canonicalNoteType (cr_type/type)
 }
 
 /**
@@ -412,7 +413,8 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	valueAliases: {
 		eventType: {},             // Maps user event type → canonical event type
 		sex: {},                   // Maps user sex value → canonical sex (GEDCOM aligned)
-		placeCategory: {}          // Maps user place category → canonical place category
+		placeCategory: {},         // Maps user place category → canonical place category
+		noteType: {}               // Maps user note type (cr_type/type) → canonical note type
 	},
 	// Event management settings
 	eventsFolder: 'Canvas Roots/Events',      // Default folder for event notes

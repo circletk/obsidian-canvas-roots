@@ -180,7 +180,7 @@ function renderSourcesListCard(
 		.addButton(button => button
 			.setButtonText('View templates')
 			.onClick(() => {
-				new TemplateSnippetsModal(plugin.app, 'source').open();
+				new TemplateSnippetsModal(plugin.app, 'source', plugin.settings.propertyAliases).open();
 			}));
 
 	const allSources = sourceService.getAllSources();
