@@ -11,6 +11,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.10.20] - 2025-12-10
+
+Phase 1 of Sex/Gender Identity Expansion: distinct gender identity field support.
+
+### Added
+
+- **Gender identity field**: Added `gender_identity` property for person notes, distinct from biological `sex`
+  - Separate from `sex` field (used for GEDCOM compatibility and historical records)
+  - Separate from `gender` field (kept for backwards compatibility)
+  - Supports inclusive tracking of gender identity for trans individuals and contemporary use cases
+  - Included in property alias system with full metadata
+  - Documented in Frontmatter Reference wiki
+
+### Documentation
+
+- **Sex/Gender Identity Expansion Phase 1 complete**: Updated planning docs and roadmap
+  - Phase 1 (gender_identity field): Complete (v0.10.20)
+  - Phase 2 (Schema-based definitions): Already complete (existing Schema system)
+  - Phase 3 (Value Aliases for sex): Already complete (v0.9.4, enhanced v0.10.19)
+  - Phase 4 (Configurable normalization): Planned
+
+---
+
 ## [0.10.19] - 2025-12-10
 
 Unified property and value alias configuration UI with improved discoverability and usability.
