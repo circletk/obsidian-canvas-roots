@@ -1623,10 +1623,259 @@ export function findDuplicatePlaceNotes(app: App, options: FindDuplicatesOptions
 		}
 	}
 
+	// === Pass 6: Fuzzy name matching for misspellings ===
+	// This catches places like "Massachusetts", "Massachusettes", "Masachussettes"
+	// that have the same parent but misspelled names
+	//
+	// Strategy: For ungrouped places with the same parent, compare names using
+	// Levenshtein distance and group those with high similarity (>= 75%)
+	const MIN_FUZZY_SIMILARITY = 75; // Minimum similarity percentage to consider a match
+
+	// Group remaining ungrouped places by parent
+	const ungroupedByParent = new Map<string, PlaceNode[]>();
+	for (const place of allPlaces) {
+		if (groupedPlaceIds.has(place.id)) continue;
+
+		const parentKey = place.parentId || 'ROOT';
+		if (!ungroupedByParent.has(parentKey)) {
+			ungroupedByParent.set(parentKey, []);
+		}
+		ungroupedByParent.get(parentKey)!.push(place);
+	}
+
+	// For each parent group, find fuzzy matches
+	for (const [, siblings] of ungroupedByParent) {
+		if (siblings.length < 2) continue;
+
+		// Track which siblings have been grouped in this pass
+		const groupedInPass = new Set<string>();
+
+		for (let i = 0; i < siblings.length; i++) {
+			if (groupedInPass.has(siblings[i].id)) continue;
+
+			const fuzzyGroup: PlaceNode[] = [siblings[i]];
+			groupedInPass.add(siblings[i].id);
+
+			for (let j = i + 1; j < siblings.length; j++) {
+				if (groupedInPass.has(siblings[j].id)) continue;
+
+				// Skip if both are distinct known US states (avoid "South Carolina" vs "North Carolina")
+				if (areBothDistinctKnownStates(siblings[i].name, siblings[j].name)) {
+					continue;
+				}
+
+				// Skip if names differ only by geographic prefix (avoid "West Hartford" vs "New Hartford")
+				if (differOnlyByGeographicPrefix(siblings[i].name, siblings[j].name)) {
+					continue;
+				}
+
+				// Skip if names share same suffix but different base names (avoid "Ware County" vs "Dade County")
+				if (shareGeographicSuffixOnly(siblings[i].name, siblings[j].name)) {
+					continue;
+				}
+
+				// Calculate similarity between the two names
+				const similarity = calculateNameSimilarity(siblings[i].name, siblings[j].name);
+
+				if (similarity >= MIN_FUZZY_SIMILARITY) {
+					fuzzyGroup.push(siblings[j]);
+					groupedInPass.add(siblings[j].id);
+				}
+			}
+
+			// If we found fuzzy matches, create a group
+			if (fuzzyGroup.length > 1) {
+				const suggestedCanonical = selectBestCanonical(fuzzyGroup, placeService);
+
+				groups.push({
+					places: fuzzyGroup,
+					suggestedCanonical,
+					matchReason: 'similar_name'
+				});
+
+				for (const place of fuzzyGroup) {
+					groupedPlaceIds.add(place.id);
+				}
+			}
+		}
+	}
+
 	// Sort groups by number of duplicates (most first)
 	groups.sort((a, b) => b.places.length - a.places.length);
 
 	return groups;
+}
+
+/**
+ * Calculate Levenshtein distance between two strings
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+	const m = str1.length;
+	const n = str2.length;
+
+	// Create a 2D array for dynamic programming
+	const dp: number[][] = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+
+	// Initialize base cases
+	for (let i = 0; i <= m; i++) dp[i][0] = i;
+	for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+	// Fill in the rest of the matrix
+	for (let i = 1; i <= m; i++) {
+		for (let j = 1; j <= n; j++) {
+			const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+			dp[i][j] = Math.min(
+				dp[i - 1][j] + 1,      // deletion
+				dp[i][j - 1] + 1,      // insertion
+				dp[i - 1][j - 1] + cost // substitution
+			);
+		}
+	}
+
+	return dp[m][n];
+}
+
+/**
+ * Calculate name similarity as a percentage (0-100)
+ * Uses Levenshtein distance normalized by the longer string length
+ */
+function calculateNameSimilarity(name1: string, name2: string): number {
+	// Normalize names: lowercase, trim
+	const n1 = name1.toLowerCase().trim();
+	const n2 = name2.toLowerCase().trim();
+
+	if (n1 === n2) return 100;
+	if (n1.length === 0 || n2.length === 0) return 0;
+
+	const distance = levenshteinDistance(n1, n2);
+	const maxLength = Math.max(n1.length, n2.length);
+
+	// Convert distance to similarity percentage
+	return Math.round((1 - distance / maxLength) * 100);
+}
+
+/**
+ * Check if both names are distinct known US states
+ * This prevents false positives like "South Carolina" vs "North Carolina"
+ */
+function areBothDistinctKnownStates(name1: string, name2: string): boolean {
+	const n1 = name1.toLowerCase().trim();
+	const n2 = name2.toLowerCase().trim();
+
+	// If names are the same, they're not "distinct"
+	if (n1 === n2) return false;
+
+	const isState1 = US_STATE_FULL_NAMES.has(n1);
+	const isState2 = US_STATE_FULL_NAMES.has(n2);
+
+	// Both must be known states and different from each other
+	return isState1 && isState2;
+}
+
+/**
+ * Common geographic prefix modifiers that distinguish otherwise similar place names
+ * Examples: "West Hartford" vs "New Hartford", "North Adams" vs "South Adams"
+ */
+const GEOGRAPHIC_PREFIXES = new Set([
+	'north', 'south', 'east', 'west',
+	'new', 'old',
+	'upper', 'lower',
+	'greater', 'lesser',
+	'inner', 'outer',
+	'central',
+	'fort', 'port', 'mount', 'lake', 'saint', 'san', 'santa', 'los', 'las', 'el', 'la'
+]);
+
+/**
+ * Check if two place names differ only by a geographic prefix modifier
+ * This prevents false positives like "West Hartford" vs "New Hartford"
+ * Returns true if they share the same base name but have different prefixes
+ */
+function differOnlyByGeographicPrefix(name1: string, name2: string): boolean {
+	const n1 = name1.toLowerCase().trim();
+	const n2 = name2.toLowerCase().trim();
+
+	// If names are the same, they don't differ by prefix
+	if (n1 === n2) return false;
+
+	// Split into words
+	const words1 = n1.split(/\s+/);
+	const words2 = n2.split(/\s+/);
+
+	// Need at least 2 words to have a prefix + base name
+	if (words1.length < 2 || words2.length < 2) return false;
+
+	// Check if first word of each is a geographic prefix
+	const hasPrefix1 = GEOGRAPHIC_PREFIXES.has(words1[0]);
+	const hasPrefix2 = GEOGRAPHIC_PREFIXES.has(words2[0]);
+
+	// Both must have a prefix
+	if (!hasPrefix1 || !hasPrefix2) return false;
+
+	// Prefixes must be different
+	if (words1[0] === words2[0]) return false;
+
+	// Base names (everything after the prefix) must be the same
+	const baseName1 = words1.slice(1).join(' ');
+	const baseName2 = words2.slice(1).join(' ');
+
+	return baseName1 === baseName2;
+}
+
+/**
+ * Common geographic suffix modifiers that indicate administrative divisions
+ * Examples: "Ware County" vs "Dade County", "Springfield Township" vs "Hamilton Township"
+ */
+const GEOGRAPHIC_SUFFIXES = new Set([
+	'county', 'parish', 'borough',
+	'township', 'twp',
+	'city', 'town', 'village', 'hamlet',
+	'district', 'ward', 'precinct',
+	'state', 'province', 'territory',
+	'region', 'area', 'zone'
+]);
+
+/**
+ * Check if two place names share the same geographic suffix but have different base names
+ * This prevents false positives like "Ware County" vs "Dade County"
+ * Returns true if they both end with the same suffix but have different preceding names
+ */
+function shareGeographicSuffixOnly(name1: string, name2: string): boolean {
+	const n1 = name1.toLowerCase().trim();
+	const n2 = name2.toLowerCase().trim();
+
+	// If names are the same, they're not just sharing a suffix
+	if (n1 === n2) return false;
+
+	// Split into words
+	const words1 = n1.split(/\s+/);
+	const words2 = n2.split(/\s+/);
+
+	// Need at least 2 words to have a base name + suffix
+	if (words1.length < 2 || words2.length < 2) return false;
+
+	// Check if last word of each is a geographic suffix
+	const lastWord1 = words1[words1.length - 1];
+	const lastWord2 = words2[words2.length - 1];
+
+	const hasSuffix1 = GEOGRAPHIC_SUFFIXES.has(lastWord1);
+	const hasSuffix2 = GEOGRAPHIC_SUFFIXES.has(lastWord2);
+
+	// Both must have a suffix
+	if (!hasSuffix1 || !hasSuffix2) return false;
+
+	// Suffixes must be the same (both "County", both "Township", etc.)
+	if (lastWord1 !== lastWord2) return false;
+
+	// Base names (everything before the suffix) must be different
+	const baseName1 = words1.slice(0, -1).join(' ');
+	const baseName2 = words2.slice(0, -1).join(' ');
+
+	// If base names are identical, this isn't a false positive - they're likely duplicates
+	if (baseName1 === baseName2) return false;
+
+	// Base names are different but share suffix - these are distinct places
+	return true;
 }
 
 /**
