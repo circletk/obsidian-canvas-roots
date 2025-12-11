@@ -39,6 +39,10 @@ Data Quality: Parent conflict resolution, settings UX overhaul, and bidirectiona
 
 ### Fixed
 
+- **Family chart view only showing ancestors** - Fixed issue where the interactive family chart only displayed the direct ancestral line instead of the complete tree
+  - Chart now properly shows descendants, siblings, and in-laws
+  - Root cause: missing bidirectional children relationships in data transformation
+
 - **Bidirectional relationship validation** - Fixed false positives and persistence issues
   - Now validates parent sex matches expected parent type (male → father, female → mother)
   - Prevents incorrect fixes like setting female as father_id or male as mother_id

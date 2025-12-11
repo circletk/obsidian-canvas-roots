@@ -486,10 +486,10 @@ export class FamilyChartView extends ItemView {
 		// Filter spouses to only valid IDs
 		const spouses = (person.spouseCrIds || []).filter(id => validIds.has(id));
 
-		// NOTE: We do NOT pass the children array to family-chart.
-		// The library derives children automatically from parent relationships.
-		// Passing children explicitly causes "child has more than 1 parent" errors
-		// when our bidirectional data has children listed in multiple places.
+		// Filter children to only valid IDs
+		// family-chart requires bidirectional relationships: parents must list children
+		// and children must list parents for the tree to render correctly
+		const children = (person.childrenCrIds || []).filter(id => validIds.has(id));
 
 		return {
 			id: person.crId,
@@ -503,9 +503,7 @@ export class FamilyChartView extends ItemView {
 			rels: {
 				parents,
 				spouses,
-				// Empty children array - family-chart derives children from parent relationships.
-				// Passing our bidirectional children data causes "child has more than 1 parent" errors.
-				children: [],
+				children,
 			}
 		};
 	}
