@@ -1186,20 +1186,44 @@ export class DataQualityService {
 						const childMotherId = childCache?.frontmatter?.mother_id;
 
 						if (childFatherId !== person.crId && childMotherId !== person.crId) {
-							// Determine which parent field to update based on person's sex
-							const targetField = person.sex === 'M' ? 'father_id' : person.sex === 'F' ? 'mother_id' : 'father_id or mother_id';
-							const currentValue = person.sex === 'M' ? childFatherId : person.sex === 'F' ? childMotherId : (childFatherId || childMotherId);
-							const description = currentValue
-								? `Will update ${child.name || child.file.basename}'s ${targetField} from ${currentValue} to ${person.crId} (${person.name || person.file.basename} lists them as child)`
-								: `Will set ${child.name || child.file.basename}'s ${targetField} to ${person.crId} (${person.name || person.file.basename} lists them as child)`;
+							// Determine which parent field this person should occupy based on their sex
+							const sex = person.sex;
+							const shouldBeFather = sex === 'male' || sex === 'M';
+							const shouldBeMother = sex === 'female' || sex === 'F';
 
-							inconsistencies.push({
-								type: 'missing-parent-in-child',
-								person,
-								relatedPerson: child,
-								field: 'children_id',
-								description
-							});
+							// Only create inconsistency if:
+							// 1. Person's sex indicates they should be father, but child doesn't list them as father
+							// 2. Person's sex indicates they should be mother, but child doesn't list them as mother
+							// Skip if sex is unknown or if child already has correct parent type filled
+							let shouldCreateInconsistency = false;
+							let targetField = '';
+							let currentValue = '';
+
+							if (shouldBeFather && childFatherId !== person.crId) {
+								// Person is male, should be father, but child doesn't list them (or lists someone else)
+								shouldCreateInconsistency = true;
+								targetField = 'father_id';
+								currentValue = childFatherId;
+							} else if (shouldBeMother && childMotherId !== person.crId) {
+								// Person is female, should be mother, but child doesn't list them (or lists someone else)
+								shouldCreateInconsistency = true;
+								targetField = 'mother_id';
+								currentValue = childMotherId;
+							}
+
+							if (shouldCreateInconsistency) {
+								const description = currentValue
+									? `Will update ${child.name || child.file.basename}'s ${targetField} from ${currentValue} to ${person.crId} (${person.name || person.file.basename} lists them as child)`
+									: `Will set ${child.name || child.file.basename}'s ${targetField} to ${person.crId} (${person.name || person.file.basename} lists them as child)`;
+
+								inconsistencies.push({
+									type: 'missing-parent-in-child',
+									person,
+									relatedPerson: child,
+									field: 'children_id',
+									description
+								});
+							}
 						}
 					}
 				}
@@ -1270,8 +1294,10 @@ export class DataQualityService {
 				} else if (issue.type === 'missing-parent-in-child') {
 					// Determine if this person should be father or mother based on sex
 					const sex = issue.person.sex;
-					const parentField = sex === 'F' ? 'mother_id' : 'father_id';
-					const parentWikilinkField = sex === 'F' ? 'mother' : 'father';
+					const shouldBeFather = sex === 'male' || sex === 'M';
+					const shouldBeMother = sex === 'female' || sex === 'F';
+					const parentField = shouldBeMother ? 'mother_id' : 'father_id';
+					const parentWikilinkField = shouldBeMother ? 'mother' : 'father';
 
 					// Check if the parent field has a different value (needs correction)
 					const childCache = this.app.metadataCache.getFileCache(issue.relatedPerson.file);
