@@ -11700,7 +11700,7 @@ export class ControlCenterModal extends Modal {
 		familyGraph.ensureCacheLoaded();
 		const people = familyGraph.getAllPeople();
 
-		const changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }> = [];
+		const changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }> = [];
 
 		// Common placeholder patterns
 		const placeholderPatterns = [
@@ -11754,7 +11754,8 @@ export class ControlCenterModal extends Modal {
 					person: { name: person.name || 'Unknown' },
 					field: 'name',
 					oldValue: String(fm.name),
-					newValue: '(remove field)'
+					newValue: '(remove field)',
+					file: person.file
 				});
 			}
 
@@ -11770,7 +11771,8 @@ export class ControlCenterModal extends Modal {
 							person: { name: person.name || 'Unknown' },
 							field,
 							oldValue: value,
-							newValue: '(remove field)'
+							newValue: '(remove field)',
+							file: person.file
 						});
 					} else if (cleaned !== value) {
 						// Has cleanup needed
@@ -11778,7 +11780,8 @@ export class ControlCenterModal extends Modal {
 							person: { name: person.name || 'Unknown' },
 							field,
 							oldValue: value,
-							newValue: cleaned
+							newValue: cleaned,
+							file: person.file
 						});
 					}
 				} else if (isPlaceholder(value)) {
@@ -11786,7 +11789,8 @@ export class ControlCenterModal extends Modal {
 						person: { name: person.name || 'Unknown' },
 						field,
 						oldValue: String(value),
-						newValue: '(remove field)'
+						newValue: '(remove field)',
+						file: person.file
 					});
 				}
 			}
@@ -11803,14 +11807,16 @@ export class ControlCenterModal extends Modal {
 							person: { name: person.name || 'Unknown' },
 							field,
 							oldValue: `[${value.length} placeholder ${value.length === 1 ? 'entry' : 'entries'}]`,
-							newValue: '(remove field)'
+							newValue: '(remove field)',
+							file: person.file
 						});
 					} else if (nonPlaceholders.length < value.length) {
 						changes.push({
 							person: { name: person.name || 'Unknown' },
 							field,
 							oldValue: `${value.length} entries (${value.length - nonPlaceholders.length} placeholders)`,
-							newValue: `${nonPlaceholders.length} entries (cleaned)`
+							newValue: `${nonPlaceholders.length} entries (cleaned)`,
+							file: person.file
 						});
 					}
 				} else if (isPlaceholder(value)) {
@@ -11818,7 +11824,8 @@ export class ControlCenterModal extends Modal {
 						person: { name: person.name || 'Unknown' },
 						field,
 						oldValue: String(value),
-						newValue: '(remove field)'
+						newValue: '(remove field)',
+						file: person.file
 					});
 				}
 			}
@@ -11832,7 +11839,8 @@ export class ControlCenterModal extends Modal {
 						person: { name: person.name || 'Unknown' },
 						field,
 						oldValue: '(empty)',
-						newValue: '(remove field)'
+						newValue: '(remove field)',
+						file: person.file
 					});
 				}
 			}
@@ -12006,7 +12014,7 @@ export class ControlCenterModal extends Modal {
 		familyGraph.ensureCacheLoaded();
 		const people = familyGraph.getAllPeople();
 
-		const changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }> = [];
+		const changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }> = [];
 
 		/**
 		 * Normalize a name to proper Title Case with smart handling of prefixes
@@ -12112,7 +12120,8 @@ export class ControlCenterModal extends Modal {
 						person: { name: person.name || 'Unknown' },
 						field: 'name',
 						oldValue: fm.name,
-						newValue: normalized
+						newValue: normalized,
+						file: person.file
 					});
 				}
 			}
@@ -12936,9 +12945,9 @@ class DuplicateRelationshipsPreviewModal extends Modal {
  */
 class PlaceholderRemovalPreviewModal extends Modal {
 	// All changes for this operation
-	private allChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }>;
+	private allChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }>;
 	// Filtered/sorted changes for display
-	private filteredChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }> = [];
+	private filteredChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }> = [];
 	private onApply: () => void;
 
 	// Filter state
@@ -12952,7 +12961,7 @@ class PlaceholderRemovalPreviewModal extends Modal {
 
 	constructor(
 		app: App,
-		changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }>,
+		changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }>,
 		onApply: () => void
 	) {
 		super(app);
@@ -13035,6 +13044,7 @@ class PlaceholderRemovalPreviewModal extends Modal {
 		headerRow.createEl('th', { text: 'Field' });
 		headerRow.createEl('th', { text: 'Current' });
 		headerRow.createEl('th', { text: 'After' });
+		headerRow.createEl('th', { text: 'Actions' });
 
 		this.tbody = table.createEl('tbody');
 
@@ -13127,6 +13137,31 @@ class PlaceholderRemovalPreviewModal extends Modal {
 			row.createEl('td', { text: change.field });
 			row.createEl('td', { text: change.oldValue, cls: 'crc-batch-old-value' });
 			row.createEl('td', { text: change.newValue, cls: 'crc-batch-new-value' });
+
+			// Action buttons
+			const actionCell = row.createEl('td', { cls: 'crc-batch-actions' });
+
+			// Open in tab button
+			const openTabBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in tab' }
+			});
+			const fileIcon = createLucideIcon('file-text', 14);
+			openTabBtn.appendChild(fileIcon);
+			openTabBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf().openFile(change.file);
+			});
+
+			// Open in new window button
+			const openWindowBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in new window' }
+			});
+			const windowIcon = createLucideIcon('external-link', 14);
+			openWindowBtn.appendChild(windowIcon);
+			openWindowBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf('window').openFile(change.file);
+			});
 		}
 
 		if (this.filteredChanges.length === 0 && this.allChanges.length > 0) {
@@ -13135,7 +13170,7 @@ class PlaceholderRemovalPreviewModal extends Modal {
 				text: 'No matches found',
 				cls: 'crc-text-muted'
 			});
-			cell.setAttribute('colspan', '4');
+			cell.setAttribute('colspan', '5');
 		}
 	}
 
@@ -13150,9 +13185,9 @@ class PlaceholderRemovalPreviewModal extends Modal {
  */
 class NameNormalizationPreviewModal extends Modal {
 	// All changes for this operation
-	private allChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }>;
+	private allChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }>;
 	// Filtered/sorted changes for display
-	private filteredChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }> = [];
+	private filteredChanges: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }> = [];
 	private onApply: () => void;
 
 	// Filter state
@@ -13165,7 +13200,7 @@ class NameNormalizationPreviewModal extends Modal {
 
 	constructor(
 		app: App,
-		changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string }>,
+		changes: Array<{ person: { name: string }; field: string; oldValue: string; newValue: string; file: TFile }>,
 		onApply: () => void
 	) {
 		super(app);
@@ -13234,6 +13269,7 @@ class NameNormalizationPreviewModal extends Modal {
 		headerRow.createEl('th', { text: 'Person' });
 		headerRow.createEl('th', { text: 'Current name' });
 		headerRow.createEl('th', { text: 'Normalized name' });
+		headerRow.createEl('th', { text: 'Actions' });
 
 		this.tbody = table.createEl('tbody');
 
@@ -13321,6 +13357,31 @@ class NameNormalizationPreviewModal extends Modal {
 			row.createEl('td', { text: change.person.name });
 			row.createEl('td', { text: change.oldValue, cls: 'crc-batch-old-value' });
 			row.createEl('td', { text: change.newValue, cls: 'crc-batch-new-value' });
+
+			// Action buttons
+			const actionCell = row.createEl('td', { cls: 'crc-batch-actions' });
+
+			// Open in tab button
+			const openTabBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in tab' }
+			});
+			const fileIcon = createLucideIcon('file-text', 14);
+			openTabBtn.appendChild(fileIcon);
+			openTabBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf().openFile(change.file);
+			});
+
+			// Open in new window button
+			const openWindowBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in new window' }
+			});
+			const windowIcon = createLucideIcon('external-link', 14);
+			openWindowBtn.appendChild(windowIcon);
+			openWindowBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf('window').openFile(change.file);
+			});
 		}
 
 		if (this.filteredChanges.length === 0 && this.allChanges.length > 0) {
@@ -13329,7 +13390,7 @@ class NameNormalizationPreviewModal extends Modal {
 				text: 'No matches found',
 				cls: 'crc-text-muted'
 			});
-			cell.setAttribute('colspan', '3');
+			cell.setAttribute('colspan', '4');
 		}
 	}
 
@@ -13444,6 +13505,7 @@ class OrphanedRefsPreviewModal extends Modal {
 		headerRow.createEl('th', { text: 'Person' });
 		headerRow.createEl('th', { text: 'Field' });
 		headerRow.createEl('th', { text: 'Orphaned ID' });
+		headerRow.createEl('th', { text: 'Actions' });
 
 		this.tbody = table.createEl('tbody');
 
@@ -13526,6 +13588,31 @@ class OrphanedRefsPreviewModal extends Modal {
 			row.createEl('td', { text: change.person.name });
 			row.createEl('td', { text: change.field, cls: 'crc-field-name' });
 			row.createEl('td', { text: change.orphanedId, cls: 'crc-monospace' });
+
+			// Action buttons
+			const actionCell = row.createEl('td', { cls: 'crc-batch-actions' });
+
+			// Open in tab button
+			const openTabBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in tab' }
+			});
+			const fileIcon = createLucideIcon('file-text', 14);
+			openTabBtn.appendChild(fileIcon);
+			openTabBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf().openFile(change.person.file);
+			});
+
+			// Open in new window button
+			const openWindowBtn = actionCell.createEl('button', {
+				cls: 'crc-batch-action-btn clickable-icon',
+				attr: { 'aria-label': 'Open note in new window' }
+			});
+			const windowIcon = createLucideIcon('external-link', 14);
+			openWindowBtn.appendChild(windowIcon);
+			openWindowBtn.addEventListener('click', () => {
+				this.app.workspace.getLeaf('window').openFile(change.person.file);
+			});
 		}
 
 		// Empty state
@@ -13537,7 +13624,7 @@ class OrphanedRefsPreviewModal extends Modal {
 					: 'No orphaned references found',
 				cls: 'crc-text--muted'
 			});
-			cell.colSpan = 3;
+			cell.colSpan = 4;
 		}
 	}
 

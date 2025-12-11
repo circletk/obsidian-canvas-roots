@@ -11,18 +11,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Batch Operations for Data Cleanup** - New batch operations in People tab for post-import data quality improvements
-  - **Remove duplicate relationships**: Detects and removes duplicate entries in spouse, spouse_id, children, and children_id arrays
+- **Batch Operations for Data Cleanup** - New batch operations in People and Places tabs for post-import data quality improvements
+  - **Remove duplicate relationships** (People tab): Detects and removes duplicate entries in spouse, spouse_id, children, and children_id arrays
     - Preview modal with search, field filtering, and sorting
     - Shows affected files and counts before applying
     - Async operation with progress notices
-  - **Remove empty/placeholder values**: Cleans up common placeholder values from GEDCOM imports and data entry
+  - **Remove empty/placeholder values** (People tab): Cleans up common placeholder values from GEDCOM imports and data entry
     - Removes 15+ placeholder patterns: (unknown), Unknown, N/A, ???, Empty, None, etc.
     - Fixes malformed wikilinks with mismatched brackets: `[[unknown) ]]`
     - Cleans leading commas in place values: `, , , Canada` → `Canada`
     - Removes empty parent/spouse fields
     - Preview modal with use case descriptions, search, filtering, and sorting
     - Backup warning before applying changes
+  - **Normalize name formatting** (People tab): Standardizes person names to proper title case
+    - Capitalizes first letter of each name part
+    - Preserves special cases: "van", "de", "von" prefixes and hyphenated names
+    - Preview modal with search and sorting
+  - **Remove orphaned cr_id references** (People tab): Removes cr_id references in relationship arrays where the target note no longer exists
+    - Checks father_id, mother_id, spouse_id, children_id arrays
+    - Preview modal shows which references will be removed
+  - **Standardize place names** (Places tab): Normalizes place names to proper title case
+    - Handles comma-separated hierarchies (e.g., "london, england" → "London, England")
+    - Preserves special formatting for hyphenated place names
+    - Preview modal with search and sorting
+  - **Validate date formats** (People tab): Checks all date fields for format issues based on configurable validation preferences
+    - **Configurable validation standards** (Control Center > Preferences > Date Validation):
+      - ISO 8601: Strict YYYY-MM-DD format
+      - GEDCOM: DD MMM YYYY format (e.g., 15 JAN 1920)
+      - Flexible: Accepts both ISO 8601 and GEDCOM formats (default)
+    - **Validation options**: Allow partial dates (YYYY-MM, YYYY), circa dates (c. 1850), date ranges (1850-1920), optional leading zeros
+    - **Fictional date support**: Automatically skips notes with fc-calendar property
+    - **Preview-only validation**: Reports issues without auto-correction to prevent errors
+    - Preview modal with search, field filtering, and sorting
+
+### Fixed
+
+- **Tab navigation highlighting**: Fixed tab highlighting not updating when navigating between Control Center tabs via links
+  - Links in Preferences tab now properly highlight destination tab
+  - Applies to all cross-tab navigation links
+
+- **Scroll position reset**: Fixed scroll position persisting when switching between Control Center tabs
+  - All tabs now start at the top when switching
+  - Improves navigation UX and prevents confusion
+
+### Improved
+
+- **Date Validation card**: Added clickable link to Events tab where fictional date systems are defined
+  - Improves discoverability of fictional date system configuration
+  - Link properly updates tab highlighting and scroll position
 
 ---
 
