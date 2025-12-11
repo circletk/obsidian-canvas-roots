@@ -1765,6 +1765,22 @@ export class ControlCenterModal extends Modal {
 					void this.normalizeNames();
 				}));
 
+		// Fourth operation: Remove orphaned cr_id references
+		new Setting(batchContent)
+			.setName('Remove orphaned cr_id references')
+			.setDesc('Clean up broken relationship references (father_id, mother_id, spouse_id, children_id) pointing to deleted persons')
+			.addButton(button => button
+				.setButtonText('Preview')
+				.onClick(() => {
+					void this.previewRemoveOrphanedRefs();
+				}))
+			.addButton(button => button
+				.setButtonText('Apply')
+				.setCta()
+				.onClick(() => {
+					void this.removeOrphanedRefs();
+				}));
+
 		container.appendChild(batchCard);
 
 		// Statistics Card
@@ -12193,6 +12209,257 @@ export class ControlCenterModal extends Modal {
 		// Refresh the People tab
 		this.showTab('people');
 	}
+
+	/**
+	 * Preview orphaned cr_id reference removal
+	 */
+	private async previewRemoveOrphanedRefs(): Promise<void> {
+		const changes: Array<{ person: { name: string; file: TFile }; field: string; orphanedId: string }> = [];
+
+		// Build a map of all valid cr_ids
+		const validCrIds = new Set<string>();
+		const files = this.app.vault.getMarkdownFiles();
+
+		for (const file of files) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			const crId = cache?.frontmatter?.cr_id;
+			if (crId && typeof crId === 'string') {
+				validCrIds.add(crId);
+			}
+		}
+
+		// Check each person for orphaned references
+		for (const file of files) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			if (!cache?.frontmatter?.cr_id) continue;
+
+			const fm = cache.frontmatter as Record<string, unknown>;
+			const personName = (fm.name as string) || file.basename;
+
+			// Check father_id
+			const fatherId = fm.father_id;
+			if (fatherId && typeof fatherId === 'string' && !validCrIds.has(fatherId)) {
+				changes.push({
+					person: { name: personName, file },
+					field: 'father_id',
+					orphanedId: fatherId
+				});
+			}
+
+			// Check mother_id
+			const motherId = fm.mother_id;
+			if (motherId && typeof motherId === 'string' && !validCrIds.has(motherId)) {
+				changes.push({
+					person: { name: personName, file },
+					field: 'mother_id',
+					orphanedId: motherId
+				});
+			}
+
+			// Check spouse_id (can be string or array)
+			const spouseId = fm.spouse_id;
+			if (spouseId) {
+				const spouseIds = Array.isArray(spouseId) ? spouseId : [spouseId];
+				for (const id of spouseIds) {
+					if (typeof id === 'string' && !validCrIds.has(id)) {
+						changes.push({
+							person: { name: personName, file },
+							field: 'spouse_id',
+							orphanedId: id
+						});
+					}
+				}
+			}
+
+			// Check partners_id (alias for spouse_id)
+			const partnersId = fm.partners_id;
+			if (partnersId) {
+				const partnerIds = Array.isArray(partnersId) ? partnersId : [partnersId];
+				for (const id of partnerIds) {
+					if (typeof id === 'string' && !validCrIds.has(id)) {
+						changes.push({
+							person: { name: personName, file },
+							field: 'partners_id',
+							orphanedId: id
+						});
+					}
+				}
+			}
+
+			// Check children_id (can be string or array)
+			const childrenId = fm.children_id;
+			if (childrenId) {
+				const childrenIds = Array.isArray(childrenId) ? childrenId : [childrenId];
+				for (const id of childrenIds) {
+					if (typeof id === 'string' && !validCrIds.has(id)) {
+						changes.push({
+							person: { name: personName, file },
+							field: 'children_id',
+							orphanedId: id
+						});
+					}
+				}
+			}
+		}
+
+		if (changes.length === 0) {
+			new Notice('No orphaned cr_id references found');
+			return;
+		}
+
+		const modal = new OrphanedRefsPreviewModal(
+			this.app,
+			changes,
+			() => void this.removeOrphanedRefs()
+		);
+		modal.open();
+	}
+
+	/**
+	 * Remove orphaned cr_id references
+	 */
+	private async removeOrphanedRefs(): Promise<void> {
+		const familyGraph = this.plugin.createFamilyGraphService();
+		familyGraph.ensureCacheLoaded();
+
+		let processed = 0;
+		let modified = 0;
+		const errors: Array<{ file: string; error: string }> = [];
+
+		new Notice('Removing orphaned cr_id references...');
+
+		// Build a map of all valid cr_ids
+		const validCrIds = new Set<string>();
+		const files = this.app.vault.getMarkdownFiles();
+
+		for (const file of files) {
+			const cache = this.app.metadataCache.getFileCache(file);
+			const crId = cache?.frontmatter?.cr_id;
+			if (crId && typeof crId === 'string') {
+				validCrIds.add(crId);
+			}
+		}
+
+		// Process each file
+		for (const file of files) {
+			processed++;
+
+			try {
+				const cache = this.app.metadataCache.getFileCache(file);
+				if (!cache?.frontmatter?.cr_id) continue;
+
+				const fm = cache.frontmatter as Record<string, unknown>;
+				let hasChanges = false;
+
+				await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+					// Clean father_id
+					if (frontmatter.father_id && typeof frontmatter.father_id === 'string') {
+						if (!validCrIds.has(frontmatter.father_id)) {
+							delete frontmatter.father_id;
+							hasChanges = true;
+						}
+					}
+
+					// Clean mother_id
+					if (frontmatter.mother_id && typeof frontmatter.mother_id === 'string') {
+						if (!validCrIds.has(frontmatter.mother_id)) {
+							delete frontmatter.mother_id;
+							hasChanges = true;
+						}
+					}
+
+					// Clean spouse_id
+					if (frontmatter.spouse_id) {
+						const spouseIds = Array.isArray(frontmatter.spouse_id)
+							? frontmatter.spouse_id
+							: [frontmatter.spouse_id];
+						const validSpouseIds = spouseIds.filter((id: unknown) =>
+							typeof id === 'string' && validCrIds.has(id)
+						);
+
+						if (validSpouseIds.length !== spouseIds.length) {
+							if (validSpouseIds.length === 0) {
+								delete frontmatter.spouse_id;
+							} else if (validSpouseIds.length === 1) {
+								frontmatter.spouse_id = validSpouseIds[0];
+							} else {
+								frontmatter.spouse_id = validSpouseIds;
+							}
+							hasChanges = true;
+						}
+					}
+
+					// Clean partners_id
+					if (frontmatter.partners_id) {
+						const partnerIds = Array.isArray(frontmatter.partners_id)
+							? frontmatter.partners_id
+							: [frontmatter.partners_id];
+						const validPartnerIds = partnerIds.filter((id: unknown) =>
+							typeof id === 'string' && validCrIds.has(id)
+						);
+
+						if (validPartnerIds.length !== partnerIds.length) {
+							if (validPartnerIds.length === 0) {
+								delete frontmatter.partners_id;
+							} else if (validPartnerIds.length === 1) {
+								frontmatter.partners_id = validPartnerIds[0];
+							} else {
+								frontmatter.partners_id = validPartnerIds;
+							}
+							hasChanges = true;
+						}
+					}
+
+					// Clean children_id
+					if (frontmatter.children_id) {
+						const childrenIds = Array.isArray(frontmatter.children_id)
+							? frontmatter.children_id
+							: [frontmatter.children_id];
+						const validChildrenIds = childrenIds.filter((id: unknown) =>
+							typeof id === 'string' && validCrIds.has(id)
+						);
+
+						if (validChildrenIds.length !== childrenIds.length) {
+							if (validChildrenIds.length === 0) {
+								delete frontmatter.children_id;
+							} else if (validChildrenIds.length === 1) {
+								frontmatter.children_id = validChildrenIds[0];
+							} else {
+								frontmatter.children_id = validChildrenIds;
+							}
+							hasChanges = true;
+						}
+					}
+				});
+
+				if (hasChanges) {
+					modified++;
+				}
+			} catch (error) {
+				errors.push({
+					file: file.path,
+					error: error instanceof Error ? error.message : String(error)
+				});
+			}
+		}
+
+		if (modified > 0) {
+			new Notice(`✓ Removed orphaned references from ${modified} ${modified === 1 ? 'file' : 'files'}`);
+		} else {
+			new Notice('No orphaned cr_id references found');
+		}
+
+		if (errors.length > 0) {
+			new Notice(`⚠ ${errors.length} errors occurred. Check console for details.`);
+			console.error('Remove orphaned refs errors:', errors);
+		}
+
+		// Refresh the family graph cache
+		familyGraph.reloadCache();
+
+		// Refresh the People tab
+		this.showTab('people');
+	}
 }
 
 /**
@@ -12797,6 +13064,214 @@ class NameNormalizationPreviewModal extends Modal {
 				cls: 'crc-text-muted'
 			});
 			cell.setAttribute('colspan', '3');
+		}
+	}
+
+	onClose(): void {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}
+
+/**
+ * Modal for previewing orphaned cr_id reference removal
+ */
+class OrphanedRefsPreviewModal extends Modal {
+	private allChanges: Array<{ person: { name: string; file: TFile }; field: string; orphanedId: string }>;
+	private filteredChanges: Array<{ person: { name: string; file: TFile }; field: string; orphanedId: string }> = [];
+	private onApply: () => void;
+
+	// Filter state
+	private searchQuery = '';
+	private selectedField = 'all';
+	private sortAscending = true;
+
+	// UI elements
+	private tbody: HTMLTableSectionElement | null = null;
+	private countEl: HTMLElement | null = null;
+
+	constructor(
+		app: App,
+		changes: Array<{ person: { name: string; file: TFile }; field: string; orphanedId: string }>,
+		onApply: () => void
+	) {
+		super(app);
+		this.allChanges = changes;
+		this.filteredChanges = [...changes];
+		this.onApply = onApply;
+	}
+
+	onOpen(): void {
+		const { contentEl, titleEl } = this;
+
+		this.modalEl.addClass('crc-batch-preview-modal');
+		titleEl.setText('Preview: Remove orphaned cr_id references');
+
+		// Description with use cases
+		const description = contentEl.createDiv({ cls: 'crc-batch-description' });
+		description.createEl('p', {
+			text: 'This operation removes broken relationship references (cr_id values) that point to deleted or non-existent person notes:'
+		});
+		const useCases = description.createEl('ul');
+		useCases.createEl('li', { text: 'father_id, mother_id: Parent references' });
+		useCases.createEl('li', { text: 'spouse_id, partners_id: Spouse/partner references' });
+		useCases.createEl('li', { text: 'children_id: Child references' });
+		description.createEl('p', {
+			text: 'Note: Only the _id fields are cleaned. Wikilink references (father, mother, spouse, children) are left unchanged.',
+			cls: 'crc-text--muted'
+		});
+
+		// Search input
+		const searchContainer = contentEl.createDiv({ cls: 'crc-filter-container' });
+		const searchInput = searchContainer.createEl('input', {
+			type: 'text',
+			placeholder: 'Search by person name or orphaned ID...',
+			cls: 'crc-search-input'
+		});
+		searchInput.addEventListener('input', (e) => {
+			this.searchQuery = (e.target as HTMLInputElement).value.toLowerCase();
+			this.applyFiltersAndSort();
+		});
+
+		// Field filter dropdown
+		const filterContainer = contentEl.createDiv({ cls: 'crc-filter-container' });
+		filterContainer.createSpan({ text: 'Filter by field: ', cls: 'crc-filter-label' });
+		const fieldSelect = filterContainer.createEl('select', { cls: 'dropdown' });
+
+		const fields = ['all', 'father_id', 'mother_id', 'spouse_id', 'partners_id', 'children_id'];
+		fields.forEach(field => {
+			const option = fieldSelect.createEl('option', {
+				value: field,
+				text: field === 'all' ? 'All fields' : field
+			});
+			if (field === this.selectedField) {
+				option.selected = true;
+			}
+		});
+
+		fieldSelect.addEventListener('change', (e) => {
+			this.selectedField = (e.target as HTMLSelectElement).value;
+			this.applyFiltersAndSort();
+		});
+
+		// Sort toggle
+		const sortContainer = contentEl.createDiv({ cls: 'crc-filter-container' });
+		const sortButton = sortContainer.createEl('button', {
+			text: `Sort: ${this.sortAscending ? 'A-Z' : 'Z-A'}`,
+			cls: 'crc-btn-secondary'
+		});
+		sortButton.addEventListener('click', () => {
+			this.sortAscending = !this.sortAscending;
+			sortButton.textContent = `Sort: ${this.sortAscending ? 'A-Z' : 'Z-A'}`;
+			this.applyFiltersAndSort();
+		});
+
+		// Count display
+		this.countEl = contentEl.createDiv({ cls: 'crc-batch-count' });
+
+		// Table
+		const tableContainer = contentEl.createDiv({ cls: 'crc-table-container' });
+		const table = tableContainer.createEl('table', { cls: 'crc-batch-table' });
+
+		const thead = table.createEl('thead');
+		const headerRow = thead.createEl('tr');
+		headerRow.createEl('th', { text: 'Person' });
+		headerRow.createEl('th', { text: 'Field' });
+		headerRow.createEl('th', { text: 'Orphaned ID' });
+
+		this.tbody = table.createEl('tbody');
+
+		// Initial render
+		this.applyFiltersAndSort();
+
+		// Backup warning
+		const warning = contentEl.createDiv({ cls: 'crc-warning-callout' });
+		const warningIcon = createLucideIcon('alert-triangle', 16);
+		warning.appendChild(warningIcon);
+		warning.createSpan({
+			text: ' Backup your vault before proceeding. This operation will modify existing notes.'
+		});
+
+		// Buttons
+		const buttonContainer = contentEl.createDiv({ cls: 'crc-confirmation-buttons' });
+
+		const cancelButton = buttonContainer.createEl('button', {
+			text: 'Cancel',
+			cls: 'crc-btn-secondary'
+		});
+		cancelButton.addEventListener('click', () => this.close());
+
+		const applyButton = buttonContainer.createEl('button', {
+			text: `Apply ${this.allChanges.length} change${this.allChanges.length === 1 ? '' : 's'}`,
+			cls: 'mod-cta'
+		});
+		applyButton.addEventListener('click', async () => {
+			// Disable buttons during operation
+			applyButton.disabled = true;
+			cancelButton.disabled = true;
+			applyButton.textContent = 'Applying changes...';
+
+			this.close();
+			this.onApply();
+		});
+	}
+
+	private applyFiltersAndSort(): void {
+		// Filter
+		this.filteredChanges = this.allChanges.filter(change => {
+			// Search filter
+			if (this.searchQuery) {
+				const matchesSearch =
+					change.person.name.toLowerCase().includes(this.searchQuery) ||
+					change.orphanedId.toLowerCase().includes(this.searchQuery);
+				if (!matchesSearch) return false;
+			}
+
+			// Field filter
+			if (this.selectedField !== 'all' && change.field !== this.selectedField) {
+				return false;
+			}
+
+			return true;
+		});
+
+		// Sort
+		this.filteredChanges.sort((a, b) => {
+			const comparison = a.person.name.localeCompare(b.person.name);
+			return this.sortAscending ? comparison : -comparison;
+		});
+
+		// Render
+		this.renderTable();
+	}
+
+	private renderTable(): void {
+		if (!this.tbody || !this.countEl) return;
+
+		// Update count
+		this.countEl.textContent = `Showing ${this.filteredChanges.length} of ${this.allChanges.length} orphaned reference${this.allChanges.length === 1 ? '' : 's'}`;
+
+		// Clear table
+		this.tbody.empty();
+
+		// Render rows
+		for (const change of this.filteredChanges) {
+			const row = this.tbody.createEl('tr');
+			row.createEl('td', { text: change.person.name });
+			row.createEl('td', { text: change.field, cls: 'crc-field-name' });
+			row.createEl('td', { text: change.orphanedId, cls: 'crc-monospace' });
+		}
+
+		// Empty state
+		if (this.filteredChanges.length === 0) {
+			const row = this.tbody.createEl('tr');
+			const cell = row.createEl('td', {
+				text: this.searchQuery || this.selectedField !== 'all'
+					? 'No orphaned references match your filters'
+					: 'No orphaned references found',
+				cls: 'crc-text--muted'
+			});
+			cell.colSpan = 3;
 		}
 	}
 
