@@ -5,8 +5,59 @@
  * property aliases, folder locations, and other user preferences.
  */
 
-import { Modal, Setting, Notice, App } from 'obsidian';
+import { Modal, Setting, Notice, App, SliderComponent, AbstractInputSuggest, TextComponent, TFolder } from 'obsidian';
 import { setIcon } from 'obsidian';
+
+/**
+ * Inline suggest for folder paths with autocomplete from existing vault folders
+ */
+class FolderSuggest extends AbstractInputSuggest<TFolder> {
+	private textComponent: TextComponent;
+	private onSelectValue: (value: string) => void;
+
+	constructor(app: App, textComponent: TextComponent, onSelectValue: (value: string) => void) {
+		super(app, textComponent.inputEl);
+		this.textComponent = textComponent;
+		this.onSelectValue = onSelectValue;
+	}
+
+	getSuggestions(inputStr: string): TFolder[] {
+		const lowerInput = inputStr.toLowerCase();
+		const folders: TFolder[] = [];
+
+		// Get all folders from the vault
+		const rootFolder = this.app.vault.getRoot();
+		this.collectFolders(rootFolder, folders);
+
+		// Filter by input
+		return folders
+			.filter(folder => folder.path.toLowerCase().includes(lowerInput))
+			.sort((a, b) => a.path.localeCompare(b.path))
+			.slice(0, 20); // Limit results
+	}
+
+	private collectFolders(folder: TFolder, result: TFolder[]): void {
+		for (const child of folder.children) {
+			if (child instanceof TFolder) {
+				result.push(child);
+				this.collectFolders(child, result);
+			}
+		}
+	}
+
+	renderSuggestion(folder: TFolder, el: HTMLElement): void {
+		el.addClass('cr-folder-suggestion');
+		const iconSpan = el.createSpan({ cls: 'cr-folder-suggestion-icon' });
+		setIcon(iconSpan, 'folder');
+		el.createSpan({ text: folder.path });
+	}
+
+	selectSuggestion(folder: TFolder): void {
+		this.textComponent.setValue(folder.path);
+		this.onSelectValue(folder.path);
+		this.close();
+	}
+}
 import type CanvasRootsPlugin from '../../main';
 import type { LucideIconName } from './lucide-icons';
 import type { ArrowStyle, ColorScheme, SpouseEdgeLabelFormat } from '../settings';
@@ -52,10 +103,29 @@ export function renderPreferencesTab(
 	container: HTMLElement,
 	plugin: CanvasRootsPlugin,
 	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement,
-	showTab: (tabId: string) => void
+	showTab: (tabId: string) => void,
+	closeModal?: () => void
 ): void {
 	const propertyAliasService = new PropertyAliasService(plugin);
 	const valueAliasService = new ValueAliasService(plugin);
+
+	// Cross-reference callout pointing to Plugin Settings
+	const settingsCallout = container.createDiv({ cls: 'cr-info-box cr-settings-callout' });
+	const settingsIcon = settingsCallout.createSpan({ cls: 'cr-info-box-icon' });
+	setIcon(settingsIcon, 'settings');
+	settingsCallout.appendText('For privacy, research tools, logging, and advanced options, see ');
+	const settingsLink = settingsCallout.createEl('a', {
+		text: 'Settings → Canvas Roots',
+		href: '#'
+	});
+	settingsLink.addEventListener('click', (e) => {
+		e.preventDefault();
+		// Close Control Center first, then open Obsidian settings to Canvas Roots plugin
+		closeModal?.();
+		(plugin.app as any).setting?.open();
+		(plugin.app as any).setting?.openTabById('canvas-roots');
+	});
+	settingsCallout.appendText('.');
 
 	// Aliases card (property names + property values)
 	renderAliasesCard(container, plugin, propertyAliasService, valueAliasService, createCard, showTab);
@@ -84,6 +154,11 @@ function renderPropertySection(
 	showTab: (tabId: string) => void,
 	openByDefault: boolean
 ): void {
+	// Count how many properties have aliases configured
+	const configuredCount = properties.filter(meta =>
+		propertyAliasService.getAlias(meta.canonical)
+	).length;
+
 	// Create details element for collapsibility
 	const section = container.createEl('details', {
 		cls: 'cr-property-section'
@@ -103,8 +178,12 @@ function renderPropertySection(
 		cls: 'cr-property-section-title'
 	});
 
+	// Show "X configured" if any are configured, otherwise show total count
+	const countText = configuredCount > 0
+		? `${configuredCount} configured`
+		: `${properties.length} properties`;
 	summary.createSpan({
-		text: `(${properties.length})`,
+		text: countText,
 		cls: 'cr-property-section-count'
 	});
 
@@ -180,10 +259,8 @@ function renderPropertySection(
 							}
 						});
 
-					// Hide clear button if no alias
-					if (!currentAlias) {
-						button.extraSettingsEl.style.opacity = '0.3';
-					}
+					// Style clear button based on alias state
+					button.extraSettingsEl.addClass(currentAlias ? 'cr-clear-btn--enabled' : 'cr-clear-btn--disabled');
 				});
 
 			// Store metadata for search filtering
@@ -328,10 +405,8 @@ function renderValueSection(
 							}
 						});
 
-					// Hide clear button if no alias
-					if (!userValue) {
-						button.extraSettingsEl.style.opacity = '0.3';
-					}
+					// Style clear button based on alias state
+					button.extraSettingsEl.addClass(userValue ? 'cr-clear-btn--enabled' : 'cr-clear-btn--disabled');
 				});
 
 			// Store metadata for potential filtering later
@@ -374,6 +449,14 @@ function renderAliasesCard(
 	content.createEl('p', {
 		cls: 'crc-text-muted',
 		text: 'Use your own property names and values - Canvas Roots will recognize them without rewriting your files.'
+	});
+
+	// Base files note (prominent position)
+	const baseNote = content.createDiv({ cls: 'cr-info-box' });
+	const baseNoteIcon = baseNote.createSpan({ cls: 'cr-info-box-icon' });
+	setIcon(baseNoteIcon, 'info');
+	baseNote.createSpan({
+		text: 'Existing Bases files are not automatically updated when aliases change. Delete and recreate the base file to apply new aliases.'
 	});
 
 	// ===== SEARCH BOX =====
@@ -540,20 +623,12 @@ function renderAliasesCard(
 	);
 
 	// ===== INFO BOXES =====
-	// Tip
+	// Tip about canonical values
 	const tipContainer = content.createDiv({ cls: 'cr-info-box' });
 	const tipIcon = tipContainer.createSpan({ cls: 'cr-info-box-icon' });
 	setIcon(tipIcon, 'info');
 	tipContainer.createSpan({
 		text: 'Canonical values take precedence over aliases. Unknown event types are treated as "custom".'
-	});
-
-	// Base files warning
-	const baseWarning = content.createDiv({ cls: 'cr-info-box cr-info-box--warning' });
-	const baseWarningIcon = baseWarning.createSpan({ cls: 'cr-info-box-icon' });
-	setIcon(baseWarningIcon, 'alert-triangle');
-	baseWarning.createSpan({
-		text: 'Existing Bases files are not automatically updated when aliases change. Delete and recreate the base file to apply new aliases.'
 	});
 
 	container.appendChild(card);
@@ -594,144 +669,137 @@ function renderFolderLocationsCard(
 	const content = card.querySelector('.crc-card__content') as HTMLElement;
 
 	// Folder explanation
-	const folderInfo = content.createDiv({ cls: 'cr-info-box' });
-	const folderIcon = folderInfo.createSpan({ cls: 'cr-info-box-icon' });
-	setIcon(folderIcon, 'folder');
-	folderInfo.createSpan({
-		text: 'Set these to match your vault\'s folder structure. Imports and new notes will be created in these locations.'
+	content.createEl('p', {
+		cls: 'crc-text-muted',
+		text: 'These folders determine where new notes are created during imports and when using "Create new" actions. Canvas Roots identifies notes by their properties (cr_type), not their location—your notes can live anywhere in your vault.'
 	});
 
+	// Helper to create folder setting with autocomplete
+	const createFolderSetting = (
+		name: string,
+		desc: string,
+		placeholder: string,
+		getValue: () => string,
+		setValue: (v: string) => void
+	) => {
+		new Setting(content)
+			.setName(name)
+			.setDesc(desc)
+			.addText(text => {
+				text
+					.setPlaceholder(placeholder)
+					.setValue(getValue())
+					.onChange(async (value) => {
+						setValue(value);
+						await plugin.saveSettings();
+					});
+
+				// Attach folder autocomplete
+				new FolderSuggest(plugin.app, text, async (value) => {
+					setValue(value);
+					await plugin.saveSettings();
+				});
+			});
+	};
+
 	// People folder
-	new Setting(content)
-		.setName('People folder')
-		.setDesc('Default folder for person notes')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/People')
-			.setValue(plugin.settings.peopleFolder)
-			.onChange(async (value) => {
-				plugin.settings.peopleFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'People folder',
+		'Default folder for person notes',
+		'Canvas Roots/People',
+		() => plugin.settings.peopleFolder,
+		(v) => { plugin.settings.peopleFolder = v; }
+	);
 
 	// Places folder
-	new Setting(content)
-		.setName('Places folder')
-		.setDesc('Default folder for place notes')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Places')
-			.setValue(plugin.settings.placesFolder)
-			.onChange(async (value) => {
-				plugin.settings.placesFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Places folder',
+		'Default folder for place notes',
+		'Canvas Roots/Places',
+		() => plugin.settings.placesFolder,
+		(v) => { plugin.settings.placesFolder = v; }
+	);
 
 	// Maps folder
-	new Setting(content)
-		.setName('Maps folder')
-		.setDesc('Default folder for custom map images')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Places/Maps')
-			.setValue(plugin.settings.mapsFolder)
-			.onChange(async (value) => {
-				plugin.settings.mapsFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Maps folder',
+		'Default folder for custom map images',
+		'Canvas Roots/Places/Maps',
+		() => plugin.settings.mapsFolder,
+		(v) => { plugin.settings.mapsFolder = v; }
+	);
 
 	// Organizations folder
-	new Setting(content)
-		.setName('Organizations folder')
-		.setDesc('Default folder for organization notes')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Organizations')
-			.setValue(plugin.settings.organizationsFolder)
-			.onChange(async (value) => {
-				plugin.settings.organizationsFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Organizations folder',
+		'Default folder for organization notes',
+		'Canvas Roots/Organizations',
+		() => plugin.settings.organizationsFolder,
+		(v) => { plugin.settings.organizationsFolder = v; }
+	);
 
 	// Sources folder
-	new Setting(content)
-		.setName('Sources folder')
-		.setDesc('Default folder for source notes')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Sources')
-			.setValue(plugin.settings.sourcesFolder)
-			.onChange(async (value) => {
-				plugin.settings.sourcesFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Sources folder',
+		'Default folder for source notes',
+		'Canvas Roots/Sources',
+		() => plugin.settings.sourcesFolder,
+		(v) => { plugin.settings.sourcesFolder = v; }
+	);
 
 	// Events folder
-	new Setting(content)
-		.setName('Events folder')
-		.setDesc('Default folder for event notes')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Events')
-			.setValue(plugin.settings.eventsFolder)
-			.onChange(async (value) => {
-				plugin.settings.eventsFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Events folder',
+		'Default folder for event notes',
+		'Canvas Roots/Events',
+		() => plugin.settings.eventsFolder,
+		(v) => { plugin.settings.eventsFolder = v; }
+	);
 
 	// Timelines folder
-	new Setting(content)
-		.setName('Timelines folder')
-		.setDesc('Default folder for timeline notes (grouping events)')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Timelines')
-			.setValue(plugin.settings.timelinesFolder)
-			.onChange(async (value) => {
-				plugin.settings.timelinesFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Timelines folder',
+		'Default folder for timeline notes (grouping events)',
+		'Canvas Roots/Timelines',
+		() => plugin.settings.timelinesFolder,
+		(v) => { plugin.settings.timelinesFolder = v; }
+	);
 
 	// Bases folder
-	new Setting(content)
-		.setName('Bases folder')
-		.setDesc('Default folder for Obsidian Bases files')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Bases')
-			.setValue(plugin.settings.basesFolder)
-			.onChange(async (value) => {
-				plugin.settings.basesFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Bases folder',
+		'Default folder for Obsidian Bases files',
+		'Canvas Roots/Bases',
+		() => plugin.settings.basesFolder,
+		(v) => { plugin.settings.basesFolder = v; }
+	);
 
 	// Schemas folder
-	new Setting(content)
-		.setName('Schemas folder')
-		.setDesc('Default folder for validation schemas')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Schemas')
-			.setValue(plugin.settings.schemasFolder)
-			.onChange(async (value) => {
-				plugin.settings.schemasFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Schemas folder',
+		'Default folder for validation schemas',
+		'Canvas Roots/Schemas',
+		() => plugin.settings.schemasFolder,
+		(v) => { plugin.settings.schemasFolder = v; }
+	);
 
 	// Canvases folder
-	new Setting(content)
-		.setName('Canvases folder')
-		.setDesc('Default folder for generated canvas files')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Canvases')
-			.setValue(plugin.settings.canvasesFolder)
-			.onChange(async (value) => {
-				plugin.settings.canvasesFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Canvases folder',
+		'Default folder for generated canvas files',
+		'Canvas Roots/Canvases',
+		() => plugin.settings.canvasesFolder,
+		(v) => { plugin.settings.canvasesFolder = v; }
+	);
 
 	// Staging folder
-	new Setting(content)
-		.setName('Staging folder')
-		.setDesc('Folder for import staging (isolated from main vault during processing)')
-		.addText(text => text
-			.setPlaceholder('Canvas Roots/Staging')
-			.setValue(plugin.settings.stagingFolder)
-			.onChange(async (value) => {
-				plugin.settings.stagingFolder = value;
-				await plugin.saveSettings();
-			}));
+	createFolderSetting(
+		'Staging folder',
+		'Folder for import staging (isolated from main vault during processing)',
+		'Canvas Roots/Staging',
+		() => plugin.settings.stagingFolder,
+		(v) => { plugin.settings.stagingFolder = v; }
+	);
 
 	// Note about advanced settings
 	const advancedNote = content.createDiv({ cls: 'cr-info-box cr-info-box--muted' });
@@ -765,65 +833,78 @@ function renderCanvasLayoutCard(
 		text: 'Changes apply to new tree generations. To update existing canvases, right-click the canvas file and select "Re-layout family tree".'
 	});
 
-	// Horizontal Spacing
-	new Setting(content)
-		.setName('Horizontal spacing')
-		.setDesc('Space between nodes horizontally (pixels)')
-		.addText(text => text
-			.setPlaceholder('400')
-			.setValue(String(plugin.settings.horizontalSpacing))
-			.onChange(async (value) => {
-				const numValue = parseInt(value);
-				if (!isNaN(numValue) && numValue >= 100 && numValue <= 1000) {
-					plugin.settings.horizontalSpacing = numValue;
+	// Helper to create a slider setting with reset button
+	const createSliderSetting = (
+		name: string,
+		desc: string,
+		min: number,
+		max: number,
+		step: number,
+		defaultValue: number,
+		getValue: () => number,
+		setValue: (v: number) => void
+	) => {
+		let sliderComponent: SliderComponent;
+
+		new Setting(content)
+			.setName(name)
+			.setDesc(desc)
+			.addSlider(slider => {
+				sliderComponent = slider;
+				slider
+					.setLimits(min, max, step)
+					.setValue(getValue())
+					.setDynamicTooltip()
+					.onChange(async (value) => {
+						setValue(value);
+						await plugin.saveSettings();
+					});
+			})
+			.addExtraButton(button => button
+				.setIcon('rotate-ccw')
+				.setTooltip(`Reset to default (${defaultValue})`)
+				.onClick(async () => {
+					setValue(defaultValue);
 					await plugin.saveSettings();
-				}
-			}));
+					sliderComponent.setValue(defaultValue);
+				}));
+	};
+
+	// Horizontal Spacing
+	createSliderSetting(
+		'Horizontal spacing',
+		'Space between nodes horizontally',
+		100, 1000, 50, 400,
+		() => plugin.settings.horizontalSpacing,
+		(v) => { plugin.settings.horizontalSpacing = v; }
+	);
 
 	// Vertical Spacing
-	new Setting(content)
-		.setName('Vertical spacing')
-		.setDesc('Space between generations vertically (pixels)')
-		.addText(text => text
-			.setPlaceholder('250')
-			.setValue(String(plugin.settings.verticalSpacing))
-			.onChange(async (value) => {
-				const numValue = parseInt(value);
-				if (!isNaN(numValue) && numValue >= 100 && numValue <= 1000) {
-					plugin.settings.verticalSpacing = numValue;
-					await plugin.saveSettings();
-				}
-			}));
+	createSliderSetting(
+		'Vertical spacing',
+		'Space between generations vertically',
+		100, 1000, 50, 250,
+		() => plugin.settings.verticalSpacing,
+		(v) => { plugin.settings.verticalSpacing = v; }
+	);
 
 	// Node Width
-	new Setting(content)
-		.setName('Node width')
-		.setDesc('Width of person nodes (pixels)')
-		.addText(text => text
-			.setPlaceholder('200')
-			.setValue(String(plugin.settings.defaultNodeWidth))
-			.onChange(async (value) => {
-				const numValue = parseInt(value);
-				if (!isNaN(numValue) && numValue >= 100 && numValue <= 500) {
-					plugin.settings.defaultNodeWidth = numValue;
-					await plugin.saveSettings();
-				}
-			}));
+	createSliderSetting(
+		'Node width',
+		'Width of person nodes',
+		100, 500, 25, 200,
+		() => plugin.settings.defaultNodeWidth,
+		(v) => { plugin.settings.defaultNodeWidth = v; }
+	);
 
 	// Node Height
-	new Setting(content)
-		.setName('Node height')
-		.setDesc('Height of person nodes (pixels)')
-		.addText(text => text
-			.setPlaceholder('100')
-			.setValue(String(plugin.settings.defaultNodeHeight))
-			.onChange(async (value) => {
-				const numValue = parseInt(value);
-				if (!isNaN(numValue) && numValue >= 50 && numValue <= 300) {
-					plugin.settings.defaultNodeHeight = numValue;
-					await plugin.saveSettings();
-				}
-			}));
+	createSliderSetting(
+		'Node height',
+		'Height of person nodes',
+		50, 300, 25, 100,
+		() => plugin.settings.defaultNodeHeight,
+		(v) => { plugin.settings.defaultNodeHeight = v; }
+	);
 
 	container.appendChild(card);
 }

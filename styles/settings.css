@@ -1,3 +1,128 @@
 /* Settings interface styling */
 
-/* Placeholder for settings styles */
+/* ==========================================================================
+   Collapsible Settings Sections
+   ========================================================================== */
+
+.cr-settings-section {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--cr-border-radius, 6px);
+  margin-bottom: var(--cr-spacing-md, 12px);
+}
+
+.cr-settings-section > summary {
+  padding: var(--cr-spacing-md, 12px) var(--cr-spacing-md, 16px);
+  cursor: pointer;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--cr-spacing-sm, 8px);
+  user-select: none;
+  list-style: none;
+}
+
+.cr-settings-section > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cr-settings-section > summary::marker {
+  content: "";
+}
+
+.cr-settings-section > summary:hover {
+  background: rgb(255 255 255 / 2%);
+}
+
+/* Chevron indicator */
+.cr-settings-section > summary::before {
+  content: "›";
+  font-family: monospace;
+  font-size: 1.1em;
+  color: var(--text-muted);
+  transition: transform var(--cr-transition-fast, 150ms ease);
+  display: inline-block;
+  width: 1em;
+  text-align: center;
+}
+
+.cr-settings-section[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+/* Section description text */
+.cr-section-desc {
+  color: var(--text-muted);
+  font-size: 0.9em;
+  margin-left: auto;
+  font-weight: normal;
+}
+
+/* Section content area */
+.cr-section-content {
+  padding: 0 var(--cr-spacing-md, 16px) var(--cr-spacing-md, 16px);
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+/* Settings within sections should have appropriate spacing
+   Note: .setting-item is Obsidian's native class, targeting it within our section */
+.cr-section-content > .cr-settings-item {
+  padding-top: var(--cr-spacing-md, 12px);
+  padding-bottom: var(--cr-spacing-md, 12px);
+}
+
+.cr-section-content > .cr-settings-item:first-child {
+  padding-top: var(--cr-spacing-md, 12px);
+}
+
+.cr-section-content > .cr-settings-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+/* Info boxes within sections */
+.cr-section-content .cr-info-box {
+  margin-top: var(--cr-spacing-md, 12px);
+  margin-bottom: var(--cr-spacing-sm, 8px);
+}
+
+/* ==========================================================================
+   Cross-reference Callout (Plugin Settings to Preferences)
+   ========================================================================== */
+
+.cr-preferences-callout {
+  background: rgb(124 58 237 / 10%);
+  border: 1px solid rgb(124 58 237 / 30%);
+  border-radius: var(--cr-border-radius, 6px);
+  padding: var(--cr-spacing-md, 12px) var(--cr-spacing-md, 16px);
+  margin-bottom: var(--cr-spacing-lg, 20px);
+}
+
+.cr-preferences-callout a {
+  color: var(--interactive-accent);
+  text-decoration: none;
+}
+
+.cr-preferences-callout a:hover {
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   Settings Search Box
+   ========================================================================== */
+
+.cr-settings-search {
+  margin-bottom: var(--cr-spacing-md, 12px);
+  padding-bottom: var(--cr-spacing-md, 12px);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.cr-settings-search .setting-item {
+  border-top: none;
+  padding-top: 0;
+}
+
+.cr-settings-search .setting-item-name {
+  font-weight: normal;
+  color: var(--text-muted);
+}

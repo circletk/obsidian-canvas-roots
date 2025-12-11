@@ -132,9 +132,12 @@ export class ControlCenterModal extends Modal {
 	private treePreviewRenderer?: TreePreviewRenderer;
 	private treePreviewContainer?: HTMLElement;
 
-	constructor(app: App, plugin: CanvasRootsPlugin) {
+	constructor(app: App, plugin: CanvasRootsPlugin, initialTab?: string) {
 		super(app);
 		this.plugin = plugin;
+		if (initialTab) {
+			this.activeTab = initialTab;
+		}
 	}
 
 	onOpen() {
@@ -7885,7 +7888,8 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.switchTab(tabId)
+			(tabId) => this.switchTab(tabId),
+			() => this.close()
 		);
 	}
 

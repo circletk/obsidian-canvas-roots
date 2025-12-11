@@ -18,6 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Clicking names opens the corresponding note
   - Conflicts removed from bidirectional fix modal (now handled separately)
 
+- **Settings UX overhaul** - Major improvements to both Plugin Settings and Preferences tab
+  - **Search**: Filter settings by name or description in Plugin Settings
+  - **Collapsible sections**: Plugin Settings organized into expandable groups (Data & Detection, Privacy & Export, Research Tools, Logging, Advanced)
+  - **Sliders**: Numeric settings (spacing, node dimensions) now use sliders with reset buttons
+  - **Folder autocomplete**: Folder settings suggest existing vault folders as you type
+  - **Bidirectional navigation**: Links between Plugin Settings and Preferences tab for easy discovery
+  - **Reduced duplication**: Canvas layout and folder settings consolidated in Preferences only
+  - **Default change**: `primaryTypeProperty` now defaults to `cr_type` (avoids conflicts with other plugins)
+
 ### Fixed
 
 - **Bidirectional relationship validation** - Fixed false positives and persistence issues

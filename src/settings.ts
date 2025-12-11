@@ -459,7 +459,7 @@ export const DEFAULT_SETTINGS: CanvasRootsSettings = {
 	// Note type detection settings
 	noteTypeDetection: {
 		enableTagDetection: true,              // Allow #person, #place, etc. as fallback
-		primaryTypeProperty: 'type'            // Legacy default for backwards compatibility
+		primaryTypeProperty: 'cr_type'         // cr_type recommended to avoid conflicts with other plugins
 	},
 	// Date validation settings
 	dateFormatStandard: 'flexible',            // Most permissive default
@@ -482,196 +482,47 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		// Layout
-		new Setting(containerEl)
-			.setName('Layout')
-			.setHeading();
+		// Search box for filtering settings
+		const searchContainer = containerEl.createDiv({ cls: 'cr-settings-search' });
+		new Setting(searchContainer)
+			.setName('Search settings')
+			.addSearch(search => {
+				search
+					.setPlaceholder('Filter settings...')
+					.onChange((query) => {
+						this.filterSettings(containerEl, query);
+					});
+			});
 
-		// Regenerate canvas feature info
-		const regenerateInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		regenerateInfo.createEl('strong', { text: '💡 Tip:' });
-		regenerateInfo.appendText(' After changing layout settings, right-click any existing canvas file and select ');
-		regenerateInfo.createEl('strong', { text: '"Regenerate canvas"' });
-		regenerateInfo.appendText(' to apply the new settings.');
+		// Cross-reference callout pointing to Control Center Preferences
+		const preferencesCallout = containerEl.createDiv({ cls: 'setting-item-description cr-info-box cr-preferences-callout' });
+		preferencesCallout.createEl('strong', { text: '💡 Looking for folder locations, property aliases, or canvas styling?' });
+		preferencesCallout.createEl('br');
+		preferencesCallout.appendText('These settings are in ');
+		const preferencesLink = preferencesCallout.createEl('a', {
+			text: 'Control Center → Preferences',
+			href: '#'
+		});
+		preferencesLink.addEventListener('click', (e) => {
+			e.preventDefault();
+			// Close the plugin settings modal first, then open Control Center
+			(this.app as any).setting?.close();
+			this.app.workspace.trigger('canvas-roots:open-control-center', 'preferences');
+		});
+		preferencesCallout.appendText(' for easier access alongside other configuration options.');
 
-		new Setting(containerEl)
-			.setName('Default node width')
-			.setDesc('Width of person nodes in pixels')
-			.addText(text => text
-				.setPlaceholder('200')
-				.setValue(String(this.plugin.settings.defaultNodeWidth))
-				.onChange(async (value) => {
-					const numValue = parseInt(value);
-					if (!isNaN(numValue) && numValue > 0) {
-						this.plugin.settings.defaultNodeWidth = numValue;
-						await this.plugin.saveSettings();
-					}
-				}));
+		// ═══════════════════════════════════════════════════════════════════════
+		// DATA & DETECTION SECTION (Collapsible)
+		// ═══════════════════════════════════════════════════════════════════════
+		const dataDetails = containerEl.createEl('details', { cls: 'cr-settings-section' });
+		dataDetails.setAttribute('open', ''); // Open by default
+		const dataSummary = dataDetails.createEl('summary');
+		dataSummary.createSpan({ text: 'Data & detection' });
+		dataSummary.createSpan({ cls: 'cr-section-desc', text: 'How Canvas Roots identifies and syncs notes' });
+		const dataContent = dataDetails.createDiv({ cls: 'cr-section-content' });
 
-		new Setting(containerEl)
-			.setName('Default node height')
-			.setDesc('Height of person nodes in pixels')
-			.addText(text => text
-				.setPlaceholder('100')
-				.setValue(String(this.plugin.settings.defaultNodeHeight))
-				.onChange(async (value) => {
-					const numValue = parseInt(value);
-					if (!isNaN(numValue) && numValue > 0) {
-						this.plugin.settings.defaultNodeHeight = numValue;
-						await this.plugin.saveSettings();
-					}
-				}));
-
-		new Setting(containerEl)
-			.setName('Horizontal spacing')
-			.setDesc('Space between nodes horizontally in pixels')
-			.addText(text => text
-				.setPlaceholder('400')
-				.setValue(String(this.plugin.settings.horizontalSpacing))
-				.onChange(async (value) => {
-					const numValue = parseInt(value);
-					if (!isNaN(numValue) && numValue > 0) {
-						this.plugin.settings.horizontalSpacing = numValue;
-						await this.plugin.saveSettings();
-					}
-				}));
-
-		new Setting(containerEl)
-			.setName('Vertical spacing')
-			.setDesc('Space between generations vertically in pixels')
-			.addText(text => text
-				.setPlaceholder('250')
-				.setValue(String(this.plugin.settings.verticalSpacing))
-				.onChange(async (value) => {
-					const numValue = parseInt(value);
-					if (!isNaN(numValue) && numValue > 0) {
-						this.plugin.settings.verticalSpacing = numValue;
-						await this.plugin.saveSettings();
-					}
-				}));
-
-		// Data
-		new Setting(containerEl)
-			.setName('Data')
-			.setHeading();
-
-		// Folder explanation
-		const folderInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		folderInfo.createEl('strong', { text: '📁 About folders:' });
-		folderInfo.appendText(' These settings tell Canvas Roots where to find and create notes. Set them to match your vault\'s existing folder structure, or leave defaults to have Canvas Roots create folders automatically. ');
-		folderInfo.createEl('em', { text: 'Imports and new notes will use these paths.' });
-
-		new Setting(containerEl)
-			.setName('People folder')
-			.setDesc('Folder path for person notes (leave empty for vault root)')
-			.addText(text => text
-				.setPlaceholder('People')
-				.setValue(this.plugin.settings.peopleFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.peopleFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Places folder')
-			.setDesc('Default folder for place notes (leave empty for vault root)')
-			.addText(text => text
-				.setPlaceholder('Places')
-				.setValue(this.plugin.settings.placesFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.placesFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Maps folder')
-			.setDesc('Folder for custom map configuration notes (for fictional/historical maps)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Places/Maps')
-				.setValue(this.plugin.settings.mapsFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.mapsFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Canvases folder')
-			.setDesc('Folder for generated family tree canvases (reserved for future use)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Canvases')
-				.setValue(this.plugin.settings.canvasesFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.canvasesFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Sources folder')
-			.setDesc('Folder for source notes (census records, vital records, photos, etc.)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Sources')
-				.setValue(this.plugin.settings.sourcesFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.sourcesFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Events folder')
-			.setDesc('Folder for event notes (births, deaths, marriages, etc.)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Events')
-				.setValue(this.plugin.settings.eventsFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.eventsFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Organizations folder')
-			.setDesc('Folder for organization notes (guilds, companies, institutions, etc.)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Organizations')
-				.setValue(this.plugin.settings.organizationsFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.organizationsFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Timelines folder')
-			.setDesc('Folder for timeline notes (grouping events for visualization)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Timelines')
-				.setValue(this.plugin.settings.timelinesFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.timelinesFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Schemas folder')
-			.setDesc('Folder for validation schema files')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Schemas')
-				.setValue(this.plugin.settings.schemasFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.schemasFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Bases folder')
-			.setDesc('Folder for Obsidian Bases files (leave empty to create bases in context menu folder)')
-			.addText(text => text
-				.setPlaceholder('Canvas Roots/Bases')
-				.setValue(this.plugin.settings.basesFolder)
-				.onChange(async (value) => {
-					this.plugin.settings.basesFolder = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
+		// Auto-generate cr_id
+		new Setting(dataContent)
 			.setName('Auto-generate cr_id')
 			.setDesc('Automatically generate cr_id for person notes that don\'t have one')
 			.addToggle(toggle => toggle
@@ -681,9 +532,34 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
+		// Primary type property (from Note type detection)
+		new Setting(dataContent)
+			.setName('Primary type property')
+			.setDesc('Which frontmatter property to check first for note type (person, place, event, etc.)')
+			.addDropdown(dropdown => dropdown
+				.addOption('cr_type', 'cr_type (recommended)')
+				.addOption('type', 'type (legacy)')
+				.setValue(this.plugin.settings.noteTypeDetection.primaryTypeProperty)
+				.onChange(async (value) => {
+					this.plugin.settings.noteTypeDetection.primaryTypeProperty = value as 'type' | 'cr_type';
+					await this.plugin.saveSettings();
+				}));
+
+		// Enable tag-based detection
+		new Setting(dataContent)
+			.setName('Enable tag-based detection')
+			.setDesc('Allow tags (#person, #place, #event, #source) as fallback when no type property is found')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.noteTypeDetection.enableTagDetection)
+				.onChange(async (value) => {
+					this.plugin.settings.noteTypeDetection.enableTagDetection = value;
+					await this.plugin.saveSettings();
+				}));
+
+		// Bidirectional relationship sync
+		new Setting(dataContent)
 			.setName('Enable bidirectional relationship sync')
-			.setDesc('Automatically maintain reciprocal relationships (e.g., when you set someone as a parent, that person is automatically added as a child in the parent\'s note)')
+			.setDesc('Automatically maintain reciprocal relationships when editing notes')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.enableBidirectionalSync)
 				.onChange(async (value) => {
@@ -695,9 +571,10 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					this.display();
 				}));
 
-		new Setting(containerEl)
+		// Sync on file modify
+		new Setting(dataContent)
 			.setName('Sync on file modify')
-			.setDesc('Automatically sync relationships when person notes are edited (works with Bases table edits)')
+			.setDesc('Automatically sync relationships when person notes are edited')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.syncOnFileModify)
 				.onChange(async (value) => {
@@ -708,111 +585,140 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 				})
 				.setDisabled(!this.plugin.settings.enableBidirectionalSync));
 
-		// Canvas styling
-		new Setting(containerEl)
-			.setName('Canvas styling')
-			.setHeading();
+		// ═══════════════════════════════════════════════════════════════════════
+		// PRIVACY & EXPORT SECTION (Collapsible)
+		// ═══════════════════════════════════════════════════════════════════════
+		const privacyDetails = containerEl.createEl('details', { cls: 'cr-settings-section' });
+		const privacySummary = privacyDetails.createEl('summary');
+		privacySummary.createSpan({ text: 'Privacy & export' });
+		privacySummary.createSpan({ cls: 'cr-section-desc', text: 'Control how data is protected and exported' });
+		const privacyContent = privacyDetails.createDiv({ cls: 'cr-section-content' });
 
-		// Styling tip
-		const stylingInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		stylingInfo.createEl('strong', { text: '💡 Tip:' });
-		stylingInfo.appendText(' After changing styling settings, right-click any existing canvas file and select ');
-		stylingInfo.createEl('strong', { text: '"Regenerate canvas"' });
-		stylingInfo.appendText(' to apply the new settings.');
-
-		new Setting(containerEl)
-			.setName('Node color scheme')
-			.setDesc('How to color person nodes in the family tree')
-			.addDropdown(dropdown => dropdown
-				.addOption('sex', 'Sex (green for male, purple for female)')
-				.addOption('generation', 'Generation (color by generation level)')
-				.addOption('monochrome', 'Monochrome (no coloring)')
-				.setValue(this.plugin.settings.nodeColorScheme)
-				.onChange(async (value: ColorScheme) => {
-					this.plugin.settings.nodeColorScheme = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Show source indicators')
-			.setDesc('Display source count badges on person nodes in generated trees (e.g., "📎 3" for 3 linked sources)')
+		new Setting(privacyContent)
+			.setName('Enable privacy protection')
+			.setDesc('Protect living persons in exports and canvas displays')
 			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.showSourceIndicators)
+				.setValue(this.plugin.settings.enablePrivacyProtection)
 				.onChange(async (value) => {
-					this.plugin.settings.showSourceIndicators = value;
+					this.plugin.settings.enablePrivacyProtection = value;
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Parent-child arrow style')
-			.setDesc('Arrow style for parent-to-child relationship edges')
+		new Setting(privacyContent)
+			.setName('Living person age threshold')
+			.setDesc('Assume a person is living if born within this many years')
+			.addText(text => text
+				.setPlaceholder('100')
+				.setValue(String(this.plugin.settings.livingPersonAgeThreshold))
+				.onChange(async (value) => {
+					const numValue = parseInt(value);
+					if (!isNaN(numValue) && numValue > 0) {
+						this.plugin.settings.livingPersonAgeThreshold = numValue;
+						await this.plugin.saveSettings();
+					}
+				}));
+
+		new Setting(privacyContent)
+			.setName('Privacy display format')
+			.setDesc('How to display protected persons')
 			.addDropdown(dropdown => dropdown
-				.addOption('directed', 'Directed (→ arrow pointing to child)')
-				.addOption('bidirectional', 'Bidirectional (↔ arrows on both ends)')
-				.addOption('undirected', 'Undirected (— no arrows)')
-				.setValue(this.plugin.settings.parentChildArrowStyle)
-				.onChange(async (value: ArrowStyle) => {
-					this.plugin.settings.parentChildArrowStyle = value;
+				.addOption('living', 'Show "Living"')
+				.addOption('private', 'Show "Private"')
+				.addOption('initials', 'Show initials only')
+				.addOption('hidden', 'Exclude entirely')
+				.setValue(this.plugin.settings.privacyDisplayFormat)
+				.onChange(async (value: 'living' | 'private' | 'initials' | 'hidden') => {
+					this.plugin.settings.privacyDisplayFormat = value;
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Spouse arrow style')
-			.setDesc('Arrow style for spouse relationship edges')
-			.addDropdown(dropdown => dropdown
-				.addOption('directed', 'Directed (→ arrow pointing forward)')
-				.addOption('bidirectional', 'Bidirectional (↔ arrows on both ends)')
-				.addOption('undirected', 'Undirected (— no arrows)')
-				.setValue(this.plugin.settings.spouseArrowStyle)
-				.onChange(async (value: ArrowStyle) => {
-					this.plugin.settings.spouseArrowStyle = value;
+		new Setting(privacyContent)
+			.setName('Hide details for living persons')
+			.setDesc('Hide birth dates and places for living persons')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.hideDetailsForLiving)
+				.onChange(async (value) => {
+					this.plugin.settings.hideDetailsForLiving = value;
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Parent-child edge color')
-			.setDesc('Color for parent-to-child relationship edges')
-			.addDropdown(dropdown => dropdown
-				.addOption('none', 'None (theme default)')
-				.addOption('1', 'Red')
-				.addOption('2', 'Orange')
-				.addOption('3', 'Yellow')
-				.addOption('4', 'Green')
-				.addOption('5', 'Cyan')
-				.addOption('6', 'Purple')
-				.setValue(this.plugin.settings.parentChildEdgeColor)
-				.onChange(async (value: CanvasColor) => {
-					this.plugin.settings.parentChildEdgeColor = value;
+		new Setting(privacyContent)
+			.setName('Export filename pattern')
+			.setDesc('Use {name} for root person, {date} for current date')
+			.addText(text => text
+				.setPlaceholder('{name}-family-chart-{date}')
+				.setValue(this.plugin.settings.exportFilenamePattern)
+				.onChange(async (value) => {
+					this.plugin.settings.exportFilenamePattern = value || '{name}-family-chart-{date}';
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
-			.setName('Spouse edge color')
-			.setDesc('Color for spouse relationship edges')
-			.addDropdown(dropdown => dropdown
-				.addOption('none', 'None (theme default)')
-				.addOption('1', 'Red')
-				.addOption('2', 'Orange')
-				.addOption('3', 'Yellow')
-				.addOption('4', 'Green')
-				.addOption('5', 'Cyan')
-				.addOption('6', 'Purple')
-				.setValue(this.plugin.settings.spouseEdgeColor)
-				.onChange(async (value: CanvasColor) => {
-					this.plugin.settings.spouseEdgeColor = value;
+		// ═══════════════════════════════════════════════════════════════════════
+		// RESEARCH TOOLS SECTION (Collapsible)
+		// ═══════════════════════════════════════════════════════════════════════
+		const researchDetails = containerEl.createEl('details', { cls: 'cr-settings-section' });
+		const researchSummary = researchDetails.createEl('summary');
+		researchSummary.createSpan({ text: 'Research tools' });
+		researchSummary.createSpan({ cls: 'cr-section-desc', text: 'Optional features for advanced genealogists' });
+		const researchContent = researchDetails.createDiv({ cls: 'cr-section-content' });
+
+		const researchInfo = researchContent.createDiv({ cls: 'setting-item-description cr-info-box' });
+		researchInfo.createEl('strong', { text: '🔬' });
+		researchInfo.appendText(' These tools help track which facts have documentary evidence, aligned with the Genealogical Proof Standard.');
+
+		new Setting(researchContent)
+			.setName('Enable fact-level source tracking')
+			.setDesc('Track which specific facts have source citations')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.trackFactSourcing)
+				.onChange(async (value) => {
+					this.plugin.settings.trackFactSourcing = value;
 					await this.plugin.saveSettings();
+					// Refresh to show/hide dependent settings
+					this.display();
 				}));
 
-		// Logging
-		new Setting(containerEl)
-			.setName('Logging')
-			.setHeading();
+		// Only show dependent settings if tracking is enabled
+		if (this.plugin.settings.trackFactSourcing) {
+			new Setting(researchContent)
+				.setName('Fact coverage threshold')
+				.setDesc('Number of key facts for 100% coverage calculation')
+				.addText(text => text
+					.setPlaceholder('6')
+					.setValue(String(this.plugin.settings.factCoverageThreshold))
+					.onChange(async (value) => {
+						const numValue = parseInt(value);
+						if (!isNaN(numValue) && numValue > 0 && numValue <= 10) {
+							this.plugin.settings.factCoverageThreshold = numValue;
+							await this.plugin.saveSettings();
+						}
+					}));
 
-		new Setting(containerEl)
+			new Setting(researchContent)
+				.setName('Show research gaps in status tab')
+				.setDesc('Display summary of unsourced facts in control center')
+				.addToggle(toggle => toggle
+					.setValue(this.plugin.settings.showResearchGapsInStatus)
+					.onChange(async (value) => {
+						this.plugin.settings.showResearchGapsInStatus = value;
+						await this.plugin.saveSettings();
+					}));
+		}
+
+		// ═══════════════════════════════════════════════════════════════════════
+		// LOGGING SECTION (Collapsible)
+		// ═══════════════════════════════════════════════════════════════════════
+		const loggingDetails = containerEl.createEl('details', { cls: 'cr-settings-section' });
+		const loggingSummary = loggingDetails.createEl('summary');
+		loggingSummary.createSpan({ text: 'Logging' });
+		loggingSummary.createSpan({ cls: 'cr-section-desc', text: 'Debug output and log exports' });
+		const loggingContent = loggingDetails.createDiv({ cls: 'cr-section-content' });
+
+		new Setting(loggingContent)
 			.setName('Log level')
-			.setDesc('Set the verbosity of console logging. Debug shows all messages, Info shows important events, Warn shows warnings only, Error shows errors only, Off disables logging.')
+			.setDesc('Verbosity of console logging')
 			.addDropdown(dropdown => dropdown
-				.addOption('debug', 'Debug (most verbose)')
+				.addOption('debug', 'Debug (verbose)')
 				.addOption('info', 'Info')
 				.addOption('warn', 'Warn')
 				.addOption('error', 'Error')
@@ -826,9 +732,9 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					LoggerFactory.setLogLevel(value);
 				}));
 
-		new Setting(containerEl)
+		new Setting(loggingContent)
 			.setName('Log export folder')
-			.setDesc('Vault folder for exported log files (e.g., ".canvas-roots/logs")')
+			.setDesc('Vault folder for exported log files')
 			.addText(text => text
 				.setPlaceholder('.canvas-roots/logs')
 				.setValue(this.plugin.settings.logExportPath)
@@ -839,9 +745,9 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		new Setting(containerEl)
+		new Setting(loggingContent)
 			.setName('Obfuscate log exports')
-			.setDesc('Replace personally identifiable information (names, dates, paths) with placeholders when exporting logs. Recommended for sharing logs publicly.')
+			.setDesc('Replace PII with placeholders when exporting logs')
 			.addToggle(toggle => toggle
 				.setValue(this.plugin.settings.obfuscateLogExports)
 				.onChange(async (value) => {
@@ -849,171 +755,19 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}));
 
-		// Privacy
-		new Setting(containerEl)
-			.setName('Privacy')
-			.setHeading();
-
-		new Setting(containerEl)
-			.setName('Enable privacy protection')
-			.setDesc('Protect living persons in exports and canvas displays. When enabled, living persons (those without a death date and born within the threshold) will be obfuscated.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.enablePrivacyProtection)
-				.onChange(async (value) => {
-					this.plugin.settings.enablePrivacyProtection = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Living person age threshold')
-			.setDesc('Assume a person is living if born within this many years and has no death date')
-			.addText(text => text
-				.setPlaceholder('100')
-				.setValue(String(this.plugin.settings.livingPersonAgeThreshold))
-				.onChange(async (value) => {
-					const numValue = parseInt(value);
-					if (!isNaN(numValue) && numValue > 0) {
-						this.plugin.settings.livingPersonAgeThreshold = numValue;
-						await this.plugin.saveSettings();
-					}
-				}));
-
-		new Setting(containerEl)
-			.setName('Privacy display format')
-			.setDesc('How to display protected persons in exports and canvases')
-			.addDropdown(dropdown => dropdown
-				.addOption('living', 'Show "Living" as name')
-				.addOption('private', 'Show "Private" as name')
-				.addOption('initials', 'Show initials only')
-				.addOption('hidden', 'Exclude from output entirely')
-				.setValue(this.plugin.settings.privacyDisplayFormat)
-				.onChange(async (value: 'living' | 'private' | 'initials' | 'hidden') => {
-					this.plugin.settings.privacyDisplayFormat = value;
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Hide details for living persons')
-			.setDesc('When enabled, birth dates and places are hidden for living persons even when showing their name')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.hideDetailsForLiving)
-				.onChange(async (value) => {
-					this.plugin.settings.hideDetailsForLiving = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// Research Tools (optional - for advanced users)
-		new Setting(containerEl)
-			.setName('Research tools (optional)')
-			.setHeading();
-
-		const researchInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		researchInfo.createEl('strong', { text: '🔬 For researchers:' });
-		researchInfo.appendText(' These optional tools help track which facts have documentary evidence, aligned with the Genealogical Proof Standard. Leave disabled for casual use.');
-
-		new Setting(containerEl)
-			.setName('Enable fact-level source tracking')
-			.setDesc('Track which specific facts (birth, death, marriage, etc.) have source citations. Enables the research gaps report in data quality tab.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.trackFactSourcing)
-				.onChange(async (value) => {
-					this.plugin.settings.trackFactSourcing = value;
-					await this.plugin.saveSettings();
-					// Refresh to show/hide dependent settings
-					this.display();
-				}));
-
-		// Only show dependent settings if tracking is enabled
-		if (this.plugin.settings.trackFactSourcing) {
-			new Setting(containerEl)
-				.setName('Fact coverage threshold')
-				.setDesc('Number of key facts (birth, death, parents, etc.) for calculating 100% research coverage.')
-				.addText(text => text
-					.setPlaceholder('6')
-					.setValue(String(this.plugin.settings.factCoverageThreshold))
-					.onChange(async (value) => {
-						const numValue = parseInt(value);
-						if (!isNaN(numValue) && numValue > 0 && numValue <= 10) {
-							this.plugin.settings.factCoverageThreshold = numValue;
-							await this.plugin.saveSettings();
-						}
-					}));
-
-			new Setting(containerEl)
-				.setName('Show research gaps in status tab')
-				.setDesc('Display a summary of unsourced facts in the control center status tab.')
-				.addToggle(toggle => toggle
-					.setValue(this.plugin.settings.showResearchGapsInStatus)
-					.onChange(async (value) => {
-						this.plugin.settings.showResearchGapsInStatus = value;
-						await this.plugin.saveSettings();
-					}));
-		}
-
-		// Note Type Detection
-		new Setting(containerEl)
-			.setName('Note type detection')
-			.setHeading();
-
-		const noteTypeInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		noteTypeInfo.createEl('strong', { text: '🏷️ Flexible detection:' });
-		noteTypeInfo.appendText(' Choose how Canvas Roots identifies note types. Use ');
-		noteTypeInfo.createEl('code', { text: 'cr_type' });
-		noteTypeInfo.appendText(' to avoid conflicts with other plugins that use the ');
-		noteTypeInfo.createEl('code', { text: 'type' });
-		noteTypeInfo.appendText(' property.');
-
-		new Setting(containerEl)
-			.setName('Primary type property')
-			.setDesc('Which frontmatter property to check first for note type (person, place, event, etc.)')
-			.addDropdown(dropdown => dropdown
-				.addOption('type', 'type (legacy default)')
-				.addOption('cr_type', 'cr_type (avoids conflicts)')
-				.setValue(this.plugin.settings.noteTypeDetection.primaryTypeProperty)
-				.onChange(async (value) => {
-					this.plugin.settings.noteTypeDetection.primaryTypeProperty = value as 'type' | 'cr_type';
-					await this.plugin.saveSettings();
-				}));
-
-		new Setting(containerEl)
-			.setName('Enable tag-based detection')
-			.setDesc('Allow tags (#person, #place, #event, #source) as fallback when no type property is found.')
-			.addToggle(toggle => toggle
-				.setValue(this.plugin.settings.noteTypeDetection.enableTagDetection)
-				.onChange(async (value) => {
-					this.plugin.settings.noteTypeDetection.enableTagDetection = value;
-					await this.plugin.saveSettings();
-				}));
-
-		// Export
-		new Setting(containerEl)
-			.setName('Export')
-			.setHeading();
-
-		new Setting(containerEl)
-			.setName('Export filename pattern')
-			.setDesc('Pattern for exported filenames. Use {name} for root person name, {date} for current date.')
-			.addText(text => text
-				.setPlaceholder('{name}-family-chart-{date}')
-				.setValue(this.plugin.settings.exportFilenamePattern)
-				.onChange(async (value) => {
-					this.plugin.settings.exportFilenamePattern = value || '{name}-family-chart-{date}';
-					await this.plugin.saveSettings();
-				}));
-
-		// Advanced
-		new Setting(containerEl)
-			.setName('Advanced')
-			.setHeading();
-
-		const advancedInfo = containerEl.createDiv({ cls: 'setting-item-description cr-info-box' });
-		advancedInfo.createEl('strong', { text: '⚙️ Advanced settings:' });
-		advancedInfo.appendText(' These options control folder scanning behavior and import staging. Most users can leave these at their defaults.');
+		// ═══════════════════════════════════════════════════════════════════════
+		// ADVANCED SECTION (Collapsible)
+		// ═══════════════════════════════════════════════════════════════════════
+		const advancedDetails = containerEl.createEl('details', { cls: 'cr-settings-section' });
+		const advancedSummary = advancedDetails.createEl('summary');
+		advancedSummary.createSpan({ text: 'Advanced' });
+		advancedSummary.createSpan({ cls: 'cr-section-desc', text: 'Staging, folder filtering, and edge cases' });
+		const advancedContent = advancedDetails.createDiv({ cls: 'cr-section-content' });
 
 		// Staging folder
-		new Setting(containerEl)
+		new Setting(advancedContent)
 			.setName('Staging folder')
-			.setDesc('Folder for GEDCOM/CSV imports before merging into main tree. When set, this folder is automatically excluded from normal operations.')
+			.setDesc('Folder for imports before merging into main tree')
 			.addText(text => text
 				.setPlaceholder('People-Staging')
 				.setValue(this.plugin.settings.stagingFolder)
@@ -1026,9 +780,9 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 
 		// Only show isolation toggle if staging folder is configured
 		if (this.plugin.settings.stagingFolder) {
-			new Setting(containerEl)
+			new Setting(advancedContent)
 				.setName('Enable staging isolation')
-				.setDesc('When enabled, staging folder is automatically excluded from tree generation, duplicate detection, and other normal operations.')
+				.setDesc('Exclude staging folder from normal operations')
 				.addToggle(toggle => toggle
 					.setValue(this.plugin.settings.enableStagingIsolation)
 					.onChange(async (value) => {
@@ -1038,13 +792,13 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 		}
 
 		// Folder filtering
-		new Setting(containerEl)
+		new Setting(advancedContent)
 			.setName('Folder filtering')
-			.setDesc('Control which folders are scanned for person notes')
+			.setDesc('Control which folders are scanned for notes')
 			.addDropdown(dropdown => dropdown
-				.addOption('disabled', 'Disabled (scan all folders)')
-				.addOption('exclude', 'Exclude folders (scan all except listed)')
-				.addOption('include', 'Include folders only (scan only listed)')
+				.addOption('disabled', 'Disabled (scan all)')
+				.addOption('exclude', 'Exclude folders')
+				.addOption('include', 'Include folders only')
 				.setValue(this.plugin.settings.folderFilterMode)
 				.onChange(async (value: FolderFilterMode) => {
 					this.plugin.settings.folderFilterMode = value;
@@ -1060,7 +814,7 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 				? this.plugin.settings.excludedFolders
 				: this.plugin.settings.includedFolders;
 
-			new Setting(containerEl)
+			new Setting(advancedContent)
 				.setName(isExcludeMode ? 'Excluded folders' : 'Included folders')
 				.setDesc('One folder path per line. Subfolders are included automatically.')
 				.addTextArea(textArea => textArea
@@ -1082,5 +836,47 @@ export class CanvasRootsSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}));
 		}
+
+	}
+
+	/**
+	 * Filter visible settings based on search query
+	 */
+	private filterSettings(containerEl: HTMLElement, query: string): void {
+		const normalizedQuery = query.toLowerCase().trim();
+		const sections = containerEl.querySelectorAll('.cr-settings-section');
+
+		sections.forEach(section => {
+			const settingItems = section.querySelectorAll('.cr-section-content .setting-item');
+			let visibleCount = 0;
+
+			settingItems.forEach(item => {
+				const settingItem = item as HTMLElement;
+				const nameEl = settingItem.querySelector('.setting-item-name');
+				const descEl = settingItem.querySelector('.setting-item-description');
+
+				const name = nameEl?.textContent?.toLowerCase() || '';
+				const desc = descEl?.textContent?.toLowerCase() || '';
+
+				const matches = !normalizedQuery ||
+					name.includes(normalizedQuery) ||
+					desc.includes(normalizedQuery);
+
+				settingItem.style.display = matches ? '' : 'none';
+				if (matches) visibleCount++;
+			});
+
+			// Show/hide section based on whether it has visible items
+			const sectionEl = section as HTMLElement;
+			if (normalizedQuery && visibleCount === 0) {
+				sectionEl.style.display = 'none';
+			} else {
+				sectionEl.style.display = '';
+				// Auto-expand sections with matches when searching
+				if (normalizedQuery && visibleCount > 0) {
+					(section as HTMLDetailsElement).open = true;
+				}
+			}
+		});
 	}
 }

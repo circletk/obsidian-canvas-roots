@@ -186,3 +186,56 @@
   border: none;
   margin: var(--cr-spacing-xl) 0;
 }
+
+/* ==========================================================================
+   Clear Button Visibility
+   ========================================================================== */
+
+/* Clear button when no alias is set (disabled state) */
+.cr-clear-btn--disabled {
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+/* Clear button when alias is set (enabled state) */
+.cr-clear-btn--enabled {
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.cr-clear-btn--enabled:hover {
+  opacity: 1;
+}
+
+/* ==========================================================================
+   Folder Suggest Dropdown
+   ========================================================================== */
+
+.cr-folder-suggestion {
+  display: flex;
+  align-items: center;
+  gap: var(--cr-spacing-sm, 8px);
+}
+
+.cr-folder-suggestion-icon {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+
+/* ==========================================================================
+   Settings Cross-reference Callout
+   ========================================================================== */
+
+.cr-settings-callout {
+  margin-bottom: var(--cr-spacing-lg, 20px);
+}
+
+.cr-settings-callout a {
+  color: var(--interactive-accent);
+  text-decoration: none;
+}
+
+.cr-settings-callout a:hover {
+  text-decoration: underline;
+}

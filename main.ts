@@ -196,6 +196,14 @@ export default class CanvasRootsPlugin extends Plugin {
 			}
 		});
 
+		// Register workspace event to open Control Center to a specific tab
+		// Used by Plugin Settings to link to Preferences tab
+		this.registerEvent(
+			this.app.workspace.on('canvas-roots:open-control-center' as 'layout-change', (initialTab?: string) => {
+				new ControlCenterModal(this.app, this, initialTab).open();
+			})
+		);
+
 		// Add command: Generate Tree for Current Note
 		this.addCommand({
 			id: 'generate-tree-for-current-note',
