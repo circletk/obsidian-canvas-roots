@@ -7547,7 +7547,7 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.showTab(tabId)
+			(tabId) => this.switchTab(tabId)
 		);
 	}
 
@@ -7560,7 +7560,7 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.showTab(tabId)
+			(tabId) => this.switchTab(tabId)
 		);
 	}
 
@@ -7573,7 +7573,7 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.showTab(tabId)
+			(tabId) => this.switchTab(tabId)
 		);
 	}
 
@@ -7586,7 +7586,7 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.showTab(tabId)
+			(tabId) => this.switchTab(tabId)
 		);
 	}
 
@@ -7599,7 +7599,7 @@ export class ControlCenterModal extends Modal {
 			container,
 			this.plugin,
 			(options) => this.createCard(options),
-			(tabId) => this.showTab(tabId)
+			(tabId) => this.switchTab(tabId)
 		);
 	}
 
