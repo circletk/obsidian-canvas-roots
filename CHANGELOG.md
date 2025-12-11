@@ -53,12 +53,24 @@ Data Quality: Enhanced batch operations with relationship validation, value norm
   - Converted to Obsidian's `Setting` component for proper right-alignment
   - Consistent with People tab styling
 
-- **Batch operation modals** - Improved user feedback during and after applying changes
-  - Modals now stay open while operation runs
+- **Batch operation modals** - Improved user feedback and clarity
+  - Modals now close immediately after applying changes (avoiding stale cache display)
   - Shows "Applying changes..." message during execution
-  - After completion: success message, green checkmark, and enabled Close button
-  - Users can review results before closing
-  - Applies to: Remove duplicates, Remove placeholders, Normalize names, Remove orphaned references, and Bidirectional validation
+  - Success/failure notices appear after completion
+  - Applies to: Remove duplicates, Remove placeholders, Normalize names, Remove orphaned references, Add cr_type property, and Bidirectional validation
+
+- **Bidirectional relationship preview** - Enhanced modal descriptions to clearly show what will be changed
+  - Action-oriented descriptions: "Will add X to Y's field_name"
+  - Explicitly shows which field will be modified (children_id, father_id, mother_id, spouse_id)
+  - Includes context about existing relationship
+  - Example: "Will add Aaron Seymour to Calvin Seymour's children_id (Aaron Seymour lists them as father)"
+
+### Fixed
+
+- **Remove empty/placeholder values** - Fixed false positives in preview modal
+  - Preview was checking non-existent frontmatter fields, causing `isPlaceholder(undefined)` to return true
+  - Added field existence checks before placeholder validation for place fields, relationship fields, and parent fields
+  - Preview now accurately reflects what will actually be removed
 
 ---
 
