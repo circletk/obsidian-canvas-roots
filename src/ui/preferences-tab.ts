@@ -70,7 +70,7 @@ export function renderPreferencesTab(
 	renderCanvasStylingCard(container, plugin, createCard);
 
 	// Date Validation card
-	renderDateValidationCard(container, plugin, createCard);
+	renderDateValidationCard(container, plugin, createCard, showTab);
 }
 
 /**
@@ -938,7 +938,8 @@ function renderCanvasStylingCard(
 function renderDateValidationCard(
 	container: HTMLElement,
 	plugin: CanvasRootsPlugin,
-	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement
+	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement,
+	showTab: (tabId: string) => void
 ): void {
 	const card = createCard({
 		title: 'Date validation',
@@ -947,11 +948,22 @@ function renderDateValidationCard(
 	});
 	const content = card.querySelector('.crc-card__content') as HTMLElement;
 
-	// Info text
-	content.createEl('p', {
-		cls: 'crc-text-muted',
-		text: 'These settings control how dates are validated in the "Validate date formats" batch operation. Fictional dates (with fc-calendar property) are automatically skipped.'
+	// Info text with link to Events tab
+	const infoText = content.createEl('p', {
+		cls: 'crc-text-muted'
 	});
+	infoText.appendText('These settings control how dates are validated in the "Validate date formats" batch operation. Fictional dates (with fc-calendar property) are automatically skipped. ');
+
+	const link = infoText.createEl('a', {
+		text: 'Fictional date systems are defined in the Events tab',
+		href: '#',
+		cls: 'crc-text-link'
+	});
+	link.addEventListener('click', (e) => {
+		e.preventDefault();
+		showTab('events');
+	});
+	infoText.appendText('.');
 
 	// Date Format Standard
 	new Setting(content)
