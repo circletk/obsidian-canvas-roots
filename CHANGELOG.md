@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [0.11.2] - 2025-12-11
+
+Data Quality: Parent conflict resolution, settings UX overhaul, and bidirectional relationship fixes.
+
 ### Added
 
 - **Parent claim conflicts card** (People tab) - New dedicated card for resolving conflicting parent claims
