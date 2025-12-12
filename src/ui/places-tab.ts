@@ -16,6 +16,7 @@ import { CreateMissingPlacesModal } from './create-missing-places-modal';
 import { BuildPlaceHierarchyModal } from './build-place-hierarchy-modal';
 import { StandardizePlacesModal, findPlaceNameVariations } from './standardize-places-modal';
 import { MergeDuplicatePlacesModal, findDuplicatePlaceNotes } from './merge-duplicate-places-modal';
+import { StandardizePlaceTypesModal, findNonStandardTypePlaces } from './standardize-place-types-modal';
 import { TemplateSnippetsModal } from './template-snippets-modal';
 import { renderPlaceTypeManagerCard } from '../places/ui/place-type-manager-card';
 import { BulkGeocodeModal } from '../maps/ui/bulk-geocode-modal';
@@ -200,13 +201,16 @@ function loadDataQualityCard(
 		folderFilter: plugin.getFolderFilter()
 	});
 
+	// Get places with non-standard types (locality, etc.)
+	const nonStandardTypePlaces = findNonStandardTypePlaces(placeService);
+
 	// Calculate total issues (missing places + other issues, but avoid double counting)
 	// Missing places are tracked separately from PlaceIssue 'missing_place_note'
 	// Exclude 'duplicate_name' from place-graph since we use findDuplicatePlaceNotes instead
 	const missingPlaceNoteIssues = issuesByType.get('missing_place_note') || [];
 	const duplicateNameIssues = issuesByType.get('duplicate_name') || [];
 	const otherIssueCount = issues.length - missingPlaceNoteIssues.length - duplicateNameIssues.length;
-	const totalIssues = missingPlaces.length + otherIssueCount + duplicateGroups.length;
+	const totalIssues = missingPlaces.length + otherIssueCount + duplicateGroups.length + nonStandardTypePlaces.length;
 
 	// Count categories (only count non-empty ones)
 	let categoryCount = 0;
@@ -214,6 +218,7 @@ function loadDataQualityCard(
 	if (issuesByType.has('real_missing_coords')) categoryCount++;
 	if (issuesByType.has('orphan_place')) categoryCount++;
 	if (duplicateGroups.length > 0) categoryCount++;
+	if (nonStandardTypePlaces.length > 0) categoryCount++;
 	if (issuesByType.has('circular_hierarchy')) categoryCount++;
 	if (issuesByType.has('fictional_with_coords')) categoryCount++;
 	if (issuesByType.has('invalid_category')) categoryCount++;
@@ -379,7 +384,24 @@ function loadDataQualityCard(
 		});
 	}
 
-	// 6. Circular hierarchies (if any)
+	// 6. Non-standard place types (locality, etc.) - using already computed variable
+	if (nonStandardTypePlaces.length > 0) {
+		renderSimplifiedIssueRow(sectionsContainer, {
+			icon: 'map-pin',
+			title: `${nonStandardTypePlaces.length} place${nonStandardTypePlaces.length !== 1 ? 's' : ''} with generic types`,
+			description: 'Convert "locality" and other generic types to city/town/village',
+			action: {
+				label: 'Standardize types',
+				onClick: () => {
+					new StandardizePlaceTypesModal(plugin.app, placeService, {
+						onComplete: () => showTab('places')
+					}).open();
+				}
+			}
+		});
+	}
+
+	// 7. Circular hierarchies (if any)
 	const circular = issuesByType.get('circular_hierarchy') || [];
 	if (circular.length > 0) {
 		renderIssueSection(sectionsContainer, {
@@ -400,7 +422,7 @@ function loadDataQualityCard(
 		expandedCount++;
 	}
 
-	// 6. Fictional places with coordinates (if any)
+	// 8. Fictional places with coordinates (if any)
 	const fictionalWithCoords = issuesByType.get('fictional_with_coords') || [];
 	if (fictionalWithCoords.length > 0) {
 		renderIssueSection(sectionsContainer, {
@@ -421,7 +443,7 @@ function loadDataQualityCard(
 		expandedCount++;
 	}
 
-	// 7. Invalid categories (if any)
+	// 9. Invalid categories (if any)
 	const invalidCategory = issuesByType.get('invalid_category') || [];
 	if (invalidCategory.length > 0) {
 		renderIssueSection(sectionsContainer, {

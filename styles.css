@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-12 03:16:18 UTC
+ * - Generated: 2025-12-12 03:37:24 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -574,7 +574,7 @@ settings:
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 5270 lines, 95.95 KB */
+/* Component Size: 5366 lines, 97.72 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -5844,6 +5844,102 @@ settings:
 
 .cr-flatten-file-link:hover {
   text-decoration: underline;
+}
+
+/* ==========================================================================
+   STANDARDIZE PLACE TYPES MODAL
+   ========================================================================== */
+
+.crc-standardize-types-modal {
+  width: 650px;
+  max-width: 90vw;
+}
+
+.crc-standardize-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  margin-bottom: 16px;
+}
+
+.crc-standardize-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  gap: 12px;
+}
+
+.crc-standardize-row:last-child {
+  border-bottom: none;
+}
+
+.crc-standardize-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.crc-standardize-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.crc-standardize-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.crc-standardize-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.crc-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.crc-type-badge--current {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.crc-standardize-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.crc-standardize-selector .crc-select {
+  min-width: 100px;
+}
+
+.crc-standardize-status {
+  text-align: center;
+  padding: 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
+
+.crc-bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
 }
 
 
@@ -16447,10 +16543,10 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-12 03:16:19 UTC
+ * Build completed: 2025-12-12 03:37:24 UTC
  * Components processed: 30
- * Total lines: 16154
- * Total size: 318.47 KB
+ * Total lines: 16250
+ * Total size: 320.24 KB
  * Build duration: 0.03 seconds
  *
  * Component breakdown:
@@ -16462,7 +16558,7 @@ body.wide-timeline .view-content {
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 129 lines, 3.33 KB
- * - modals.css: 5270 lines, 95.95 KB
+ * - modals.css: 5366 lines, 97.72 KB
  * - duplicate-detection.css: 163 lines, 2.82 KB
  * - tree-statistics.css: 41 lines, 0.6 KB
  * - validation.css: 84 lines, 1.47 KB

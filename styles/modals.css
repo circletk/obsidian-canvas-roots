@@ -5267,3 +5267,99 @@
 .cr-flatten-file-link:hover {
   text-decoration: underline;
 }
+
+/* ==========================================================================
+   STANDARDIZE PLACE TYPES MODAL
+   ========================================================================== */
+
+.crc-standardize-types-modal {
+  width: 650px;
+  max-width: 90vw;
+}
+
+.crc-standardize-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  margin-bottom: 16px;
+}
+
+.crc-standardize-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  gap: 12px;
+}
+
+.crc-standardize-row:last-child {
+  border-bottom: none;
+}
+
+.crc-standardize-row:hover {
+  background: var(--background-modifier-hover);
+}
+
+.crc-standardize-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.crc-standardize-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.crc-standardize-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.crc-type-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+.crc-type-badge--current {
+  background: var(--background-modifier-border);
+  color: var(--text-muted);
+}
+
+.crc-standardize-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.crc-standardize-selector .crc-select {
+  min-width: 100px;
+}
+
+.crc-standardize-status {
+  text-align: center;
+  padding: 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+}
+
+.crc-bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+}
