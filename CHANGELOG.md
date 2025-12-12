@@ -45,6 +45,10 @@ Data Quality: Parent conflict resolution, settings UX overhaul, and bidirectiona
 
 - **Places tab crash with non-string place values** - Fixed TypeError when place properties contain arrays or objects instead of strings
 
+- **GEDCOM import nested arrays for wikilinks** - Fixed YAML serialization writing `[[place]]` as nested arrays; wikilink values are now properly quoted
+
+- **Map view not showing markers** - Fixed map not recognizing flat coordinate properties (`coordinates_lat`, `coordinates_long`) written by geocoding; now supports nested, flat, and legacy coordinate formats
+
 - **Bidirectional relationship validation** - Fixed false positives and persistence issues
   - Now validates parent sex matches expected parent type (male → father, female → mother)
   - Prevents incorrect fixes like setting female as father_id or male as mother_id

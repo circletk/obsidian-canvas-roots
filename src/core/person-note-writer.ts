@@ -253,7 +253,14 @@ export async function createPersonNote(
 				yamlLines.push(`  - ${item}`);
 			}
 		} else {
-			yamlLines.push(`${key}: ${value}`);
+			// Quote values that contain wikilinks to prevent YAML parsing issues
+			// [[foo]] in YAML is interpreted as nested array [["foo"]]
+			const needsQuotes = typeof value === 'string' && value.includes('[[') && !value.startsWith('"');
+			if (needsQuotes) {
+				yamlLines.push(`${key}: "${value}"`);
+			} else {
+				yamlLines.push(`${key}: ${value}`);
+			}
 		}
 	}
 	yamlLines.push('---');

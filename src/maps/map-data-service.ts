@@ -200,8 +200,27 @@ export class MapDataService {
 			const cache = this.plugin.app.metadataCache.getFileCache(file);
 			if (!isPlaceNote(fm, cache, this.plugin.settings.noteTypeDetection)) continue;
 
-			// Parse coordinates (handles both object and JSON string formats)
-			const coords = this.parseCoordinates(fm.coordinates);
+			// Parse coordinates - supports multiple formats:
+			// 1. Nested object: coordinates: { lat: ..., lng: ... }
+			// 2. Flat properties: coordinates_lat, coordinates_long
+			// 3. Legacy flat: latitude, longitude
+			let coords = this.parseCoordinates(fm.coordinates);
+			if (!coords.lat && !coords.lng) {
+				// Try flat format (coordinates_lat, coordinates_long)
+				const flatLat = this.parseCoordinate(fm.coordinates_lat);
+				const flatLng = this.parseCoordinate(fm.coordinates_long);
+				if (flatLat !== undefined || flatLng !== undefined) {
+					coords = { lat: flatLat, lng: flatLng };
+				}
+			}
+			if (!coords.lat && !coords.lng) {
+				// Try legacy format (latitude, longitude)
+				const legacyLat = this.parseCoordinate(fm.latitude);
+				const legacyLng = this.parseCoordinate(fm.longitude);
+				if (legacyLat !== undefined || legacyLng !== undefined) {
+					coords = { lat: legacyLat, lng: legacyLng };
+				}
+			}
 
 			// Parse pixel coordinates for pixel-based maps
 			// Supports both flat (pixel_x, pixel_y) and nested (pixel_coordinates.x, pixel_coordinates.y) formats
