@@ -1,0 +1,527 @@
+0 HEAD
+1 SOUR Canvas Roots Test
+2 VERS 1.0
+2 NAME Canvas Roots Small Test Family (Full)
+1 DEST ANY
+1 DATE 11 DEC 2025
+1 SUBM @SUBM1@
+1 FILE gedcom-sample-small-full.ged
+1 GEDC
+2 VERS 5.5.1
+2 FORM LINEAGE-LINKED
+1 CHAR UTF-8
+0 @SUBM1@ SUBM
+1 NAME Canvas Roots User
+0 @S1@ SOUR
+1 TITL Anderson Family Bible
+1 AUTH Robert Anderson
+1 PUBL Family records, Chicago IL
+1 TEXT Contains birth, death, and marriage records for the Anderson family from 1930-2010.
+0 @S2@ SOUR
+1 TITL Washington State Vital Records
+1 AUTH Washington State Department of Health
+1 PUBL Washington State Archives
+1 TEXT Official birth, death, and marriage certificates for Washington State.
+0 @S3@ SOUR
+1 TITL California Birth Index
+1 AUTH California Department of Public Health
+1 PUBL California State Archives
+1 TEXT Birth records for California residents.
+0 @S4@ SOUR
+1 TITL Martinez Family Papers
+1 AUTH Carlos Martinez
+1 PUBL Private collection, Los Angeles CA
+1 TEXT Letters, photographs, and documents from the Martinez family.
+0 @S5@ SOUR
+1 TITL U.S. Census Records
+1 AUTH U.S. Census Bureau
+1 PUBL National Archives
+1 TEXT Federal census records 1930-2020.
+0 @S6@ SOUR
+1 TITL Taiwan Household Registry
+1 AUTH Taiwan Ministry of the Interior
+1 PUBL Taiwan National Archives
+1 TEXT Official household registration records from Taiwan.
+0 @S7@ SOUR
+1 TITL Immigration Records
+1 AUTH U.S. Citizenship and Immigration Services
+1 PUBL National Archives
+1 TEXT U.S. immigration and naturalization records.
+0 @I1@ INDI
+1 NAME James /Anderson/
+2 GIVN James
+2 SURN Anderson
+2 SOUR @S1@
+1 SEX M
+1 BIRT
+2 DATE 15 JAN 1960
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 OCCU Engineer
+2 DATE FROM 1985 TO 2020
+2 PLAC Seattle, King County, Washington, USA
+1 GRAD
+2 DATE 1982
+2 PLAC Seattle, King County, Washington, USA
+1 FAMS @F1@
+1 FAMC @F10@
+0 @I2@ INDI
+1 NAME Linda /Martinez/
+2 GIVN Linda
+2 SURN Martinez
+2 SOUR @S4@
+1 SEX F
+1 BIRT
+2 DATE 22 MAR 1962
+2 PLAC Los Angeles, Los Angeles County, California, USA
+2 SOUR @S3@
+1 OCCU Teacher
+2 DATE FROM 1984 TO 2010
+2 PLAC Portland, Multnomah County, Oregon, USA
+1 FAMS @F1@
+1 FAMC @F11@
+0 @I3@ INDI
+1 NAME David /Anderson/
+2 GIVN David
+2 SURN Anderson
+1 SEX M
+1 BIRT
+2 DATE 8 JUL 1985
+2 PLAC Portland, Multnomah County, Oregon, USA
+2 SOUR @S2@
+1 OCCU Software Developer
+2 DATE FROM 2010
+2 PLAC Seattle, King County, Washington, USA
+1 FAMC @F1@
+1 FAMS @F2@
+0 @I4@ INDI
+1 NAME Sarah /Anderson/
+2 GIVN Sarah
+2 SURN Anderson
+1 SEX F
+1 BIRT
+2 DATE 14 NOV 1987
+2 PLAC Portland, Multnomah County, Oregon, USA
+2 SOUR @S2@
+1 OCCU Lawyer
+2 DATE FROM 2015
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+1 FAMC @F1@
+1 FAMS @F3@
+0 @I5@ INDI
+1 NAME Michael /Anderson/
+2 GIVN Michael
+2 SURN Anderson
+1 SEX M
+1 BIRT
+2 DATE 3 APR 1990
+2 PLAC Portland, Multnomah County, Oregon, USA
+2 SOUR @S2@
+1 OCCU Doctor
+2 DATE FROM 2020
+2 PLAC Austin, Travis County, Texas, USA
+1 FAMC @F1@
+1 FAMS @F4@
+0 @I6@ INDI
+1 NAME Emily /Chen/
+2 GIVN Emily
+2 SURN Chen
+2 SOUR @S6@
+1 SEX F
+1 BIRT
+2 DATE 19 SEP 1986
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S3@
+1 IMMI
+2 DATE 1970
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S7@
+1 OCCU Designer
+2 DATE FROM 2010
+2 PLAC Seattle, King County, Washington, USA
+1 FAMS @F2@
+1 FAMC @F12@
+0 @I7@ INDI
+1 NAME Christopher /Anderson/
+2 GIVN Christopher
+2 SURN Anderson
+1 SEX M
+1 BIRT
+2 DATE 12 FEB 2010
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 FAMC @F2@
+0 @I8@ INDI
+1 NAME Sophia /Anderson/
+2 GIVN Sophia
+2 SURN Anderson
+1 SEX F
+1 BIRT
+2 DATE 28 JUN 2012
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 FAMC @F2@
+0 @I9@ INDI
+1 NAME Ryan /Thompson/
+2 GIVN Ryan
+2 SURN Thompson
+1 SEX M
+1 BIRT
+2 DATE 5 DEC 1988
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S5@
+1 OCCU Accountant
+2 DATE FROM 2012
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+1 FAMS @F3@
+1 FAMC @F13@
+0 @I10@ INDI
+1 NAME Olivia /Thompson/
+2 GIVN Olivia
+2 SURN Thompson
+1 SEX F
+1 BIRT
+2 DATE 18 MAY 2013
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S5@
+1 FAMC @F3@
+0 @I11@ INDI
+1 NAME Emma /Thompson/
+2 GIVN Emma
+2 SURN Thompson
+1 SEX F
+1 BIRT
+2 DATE 7 OCT 2015
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S5@
+1 FAMC @F3@
+0 @I12@ INDI
+1 NAME Jessica /Lee/
+2 GIVN Jessica
+2 SURN Lee
+1 SEX F
+1 BIRT
+2 DATE 25 AUG 1991
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S5@
+1 OCCU Nurse
+2 DATE FROM 2015
+2 PLAC Austin, Travis County, Texas, USA
+1 FAMS @F4@
+1 FAMC @F14@
+0 @I13@ INDI
+1 NAME Noah /Anderson/
+2 GIVN Noah
+2 SURN Anderson
+1 SEX M
+1 BIRT
+2 DATE 9 MAR 2016
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S5@
+1 FAMC @F4@
+0 @I14@ INDI
+1 NAME Robert /Anderson/
+2 GIVN Robert
+2 SURN Anderson
+2 SOUR @S1@
+1 SEX M
+1 BIRT
+2 DATE 10 MAY 1930
+2 PLAC Chicago, Cook County, Illinois, USA
+2 SOUR @S5@
+1 DEAT
+2 DATE 15 JAN 2005
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 OCCU Mechanic
+2 DATE FROM 1950 TO 1995
+2 PLAC Chicago, Cook County, Illinois, USA
+1 MILI U.S. Army
+2 DATE FROM 1950 TO 1953
+2 PLAC Korea
+1 FAMS @F10@
+0 @I15@ INDI
+1 NAME Margaret /Wilson/
+2 GIVN Margaret
+2 SURN Wilson
+1 SEX F
+1 BIRT
+2 DATE 3 AUG 1932
+2 PLAC Minneapolis, Hennepin County, Minnesota, USA
+2 SOUR @S5@
+1 DEAT
+2 DATE 22 JUL 2010
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 OCCU Homemaker
+1 FAMS @F10@
+0 @I16@ INDI
+1 NAME Carlos /Martinez/
+2 GIVN Carlos
+2 SURN Martinez
+2 SOUR @S4@
+1 SEX M
+1 BIRT
+2 DATE 18 FEB 1935
+2 PLAC El Paso, El Paso County, Texas, USA
+2 SOUR @S5@
+1 DEAT
+2 DATE 8 NOV 2012
+2 PLAC Los Angeles, Los Angeles County, California, USA
+2 SOUR @S3@
+1 IMMI
+2 DATE 1955
+2 PLAC Los Angeles, Los Angeles County, California, USA
+2 SOUR @S7@
+1 OCCU Construction Worker
+2 DATE FROM 1955 TO 2000
+2 PLAC Los Angeles, Los Angeles County, California, USA
+1 FAMS @F11@
+0 @I17@ INDI
+1 NAME Rosa /Garcia/
+2 GIVN Rosa
+2 SURN Garcia
+1 SEX F
+1 BIRT
+2 DATE 27 DEC 1938
+2 PLAC San Diego, San Diego County, California, USA
+2 SOUR @S3@
+1 OCCU Seamstress
+2 DATE FROM 1958 TO 1998
+2 PLAC Los Angeles, Los Angeles County, California, USA
+1 FAMS @F11@
+0 @I18@ INDI
+1 NAME Wei /Chen/
+2 GIVN Wei
+2 SURN Chen
+2 SOUR @S6@
+1 SEX M
+1 BIRT
+2 DATE 14 JUN 1955
+2 PLAC Taipei, Taiwan
+2 SOUR @S6@
+1 IMMI
+2 DATE 1965
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S7@
+1 OCCU Restaurant Owner
+2 DATE FROM 1980 TO 2020
+2 PLAC San Francisco, San Francisco County, California, USA
+1 FAMS @F12@
+0 @I19@ INDI
+1 NAME Mei /Liu/
+2 GIVN Mei
+2 SURN Liu
+2 SOUR @S6@
+1 SEX F
+1 BIRT
+2 DATE 9 SEP 1958
+2 PLAC Shanghai, China
+2 SOUR @S6@
+1 IMMI
+2 DATE 1970
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S7@
+1 OCCU Chef
+2 DATE FROM 1980 TO 2018
+2 PLAC San Francisco, San Francisco County, California, USA
+1 FAMS @F12@
+0 @I20@ INDI
+1 NAME William /Thompson/
+2 GIVN William
+2 SURN Thompson
+1 SEX M
+1 BIRT
+2 DATE 22 APR 1960
+2 PLAC New York, New York County, New York, USA
+2 SOUR @S5@
+1 OCCU Professor
+2 DATE FROM 1990
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+1 FAMS @F13@
+0 @I21@ INDI
+1 NAME Patricia /O'Brien/
+2 GIVN Patricia
+2 SURN O'Brien
+1 SEX F
+1 BIRT
+2 DATE 11 OCT 1963
+2 PLAC Dublin, Ireland
+2 SOUR @S7@
+1 IMMI
+2 DATE 1980
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S7@
+1 OCCU Writer
+2 DATE FROM 1988
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+1 FAMS @F13@
+0 @I22@ INDI
+1 NAME Daniel /Lee/
+2 GIVN Daniel
+2 SURN Lee
+1 SEX M
+1 BIRT
+2 DATE 6 JAN 1965
+2 PLAC Seoul, South Korea
+2 SOUR @S7@
+1 IMMI
+2 DATE 1975
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S7@
+1 OCCU Business Owner
+2 DATE FROM 1990
+2 PLAC Austin, Travis County, Texas, USA
+1 FAMS @F14@
+0 @I23@ INDI
+1 NAME Amy /Park/
+2 GIVN Amy
+2 SURN Park
+1 SEX F
+1 BIRT
+2 DATE 30 JUL 1968
+2 PLAC Busan, South Korea
+2 SOUR @S7@
+1 IMMI
+2 DATE 1978
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S7@
+1 OCCU Pharmacist
+2 DATE FROM 1995
+2 PLAC Austin, Travis County, Texas, USA
+1 FAMS @F14@
+0 @I24@ INDI
+1 NAME Jennifer /Anderson/
+2 GIVN Jennifer
+2 SURN Anderson
+1 SEX F
+1 BIRT
+2 DATE 12 DEC 1963
+2 PLAC Chicago, Cook County, Illinois, USA
+2 SOUR @S5@
+1 OCCU Secretary
+2 DATE FROM 1985 TO 2020
+2 PLAC Chicago, Cook County, Illinois, USA
+1 FAMC @F10@
+0 @I25@ INDI
+1 NAME Thomas /Anderson/
+2 GIVN Thomas
+2 SURN Anderson
+1 SEX M
+1 BIRT
+2 DATE 7 MAR 1965
+2 PLAC Chicago, Cook County, Illinois, USA
+2 SOUR @S5@
+1 OCCU Electrician
+2 DATE FROM 1988
+2 PLAC Chicago, Cook County, Illinois, USA
+1 FAMC @F10@
+0 @I26@ INDI
+1 NAME Maria /Martinez/
+2 GIVN Maria
+2 SURN Martinez
+2 SOUR @S4@
+1 SEX F
+1 BIRT
+2 DATE 4 MAY 1964
+2 PLAC El Paso, El Paso County, Texas, USA
+2 SOUR @S5@
+1 OCCU Retail Worker
+2 DATE FROM 1985 TO 2010
+2 PLAC Los Angeles, Los Angeles County, California, USA
+1 FAMC @F11@
+0 @I27@ INDI
+1 NAME Juan /Martinez/
+2 GIVN Juan
+2 SURN Martinez
+2 SOUR @S4@
+1 SEX M
+1 BIRT
+2 DATE 19 AUG 1966
+2 PLAC Los Angeles, Los Angeles County, California, USA
+2 SOUR @S3@
+1 OCCU Driver
+2 DATE FROM 1988
+2 PLAC Los Angeles, Los Angeles County, California, USA
+1 FAMC @F11@
+0 @F1@ FAM
+1 HUSB @I1@
+1 WIFE @I2@
+1 MARR
+2 DATE 12 JUN 1984
+2 PLAC Seattle, King County, Washington, USA
+2 SOUR @S2@
+1 CHIL @I3@
+1 CHIL @I4@
+1 CHIL @I5@
+0 @F2@ FAM
+1 HUSB @I3@
+1 WIFE @I6@
+1 MARR
+2 DATE 5 SEP 2009
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S3@
+1 CHIL @I7@
+1 CHIL @I8@
+0 @F3@ FAM
+1 HUSB @I9@
+1 WIFE @I4@
+1 MARR
+2 DATE 22 NOV 2012
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S5@
+1 CHIL @I10@
+1 CHIL @I11@
+0 @F4@ FAM
+1 HUSB @I5@
+1 WIFE @I12@
+1 MARR
+2 DATE 8 JUL 2015
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S5@
+1 CHIL @I13@
+0 @F10@ FAM
+1 HUSB @I14@
+1 WIFE @I15@
+1 MARR
+2 DATE 3 APR 1955
+2 PLAC Chicago, Cook County, Illinois, USA
+2 SOUR @S5@
+1 CHIL @I1@
+1 CHIL @I24@
+1 CHIL @I25@
+0 @F11@ FAM
+1 HUSB @I16@
+1 WIFE @I17@
+1 MARR
+2 DATE 15 FEB 1960
+2 PLAC El Paso, El Paso County, Texas, USA
+2 SOUR @S4@
+1 CHIL @I2@
+1 CHIL @I26@
+1 CHIL @I27@
+0 @F12@ FAM
+1 HUSB @I18@
+1 WIFE @I19@
+1 MARR
+2 DATE 20 MAY 1980
+2 PLAC San Francisco, San Francisco County, California, USA
+2 SOUR @S6@
+1 CHIL @I6@
+0 @F13@ FAM
+1 HUSB @I20@
+1 WIFE @I21@
+1 MARR
+2 DATE 14 JUN 1985
+2 PLAC Boston, Suffolk County, Massachusetts, USA
+2 SOUR @S5@
+1 CHIL @I9@
+0 @F14@ FAM
+1 HUSB @I22@
+1 WIFE @I23@
+1 MARR
+2 DATE 10 OCT 1990
+2 PLAC Austin, Travis County, Texas, USA
+2 SOUR @S7@
+1 CHIL @I12@
+0 TRLR

@@ -2,7 +2,7 @@
 
 **Create and visualize family trees on the Obsidian Canvas.**
 
-Canvas Roots transforms structured genealogical data in your Markdown notes into beautifully laid-out family trees. Store your research in plain text, generate visual trees on demand, and explore your ancestry through interactive charts and maps.
+Canvas Roots transforms structured genealogical data in your Markdown notes into beautifully laid-out family trees. Whether you're a genealogist tracing real ancestors, a novelist mapping fictional dynasties, or a researcher documenting historical figures—store your research in plain text, generate visual trees on demand, and explore your ancestry through interactive charts and maps.
 
 ## Quick Start
 
@@ -16,8 +16,9 @@ Canvas Roots transforms structured genealogical data in your Markdown notes into
 Transform person notes with relationship frontmatter into visual family trees on the Obsidian Canvas. Supports multiple layout algorithms, automatic positioning, and unlimited tree depth.
 
 - **Multiple root selection** - Generate trees from any ancestor
-- **Flexible layouts** - Horizontal, vertical, and compact arrangements
+- **Flexible layouts** - Horizontal, vertical, compact, timeline, and hourglass arrangements
 - **Smart spacing** - Automatic node positioning with collision avoidance
+- **Export options** - Export trees to Canvas, Excalidraw, or Markdown
 
 [Learn about tree generation](Tree-Generation)
 
@@ -25,10 +26,31 @@ Transform person notes with relationship frontmatter into visual family trees on
 A dedicated view for exploring family relationships with zoom, pan, and click-to-navigate functionality.
 
 - **Smooth navigation** - Zoom and pan through large family trees
-- **Person details** - Click any node to see full information
+- **Inline editing** - Add, modify, and delete relationships directly in the chart
 - **Multiple display modes** - Compact, detailed, and photo views
+- **Bidirectional sync** - Changes automatically update your markdown notes
 
 [Explore the chart view](Family-Chart-View)
+
+### Events & Timelines
+Document life events and visualize them chronologically with person, family, and place timelines.
+
+- **Event notes** - 22+ built-in event types (birth, death, marriage, residence, occupation, and more)
+- **Timeline views** - Person timelines, family timelines, place timelines, and global timeline
+- **Timeline export** - Export to Canvas, Excalidraw, or Markdown tables
+- **Date precision** - Support for exact, estimated, ranges, and partial dates
+
+[Learn about events and timelines](Events-And-Timelines)
+
+### Evidence & Sources
+Track your research with GPS-aligned fact-level source tracking and proof summaries.
+
+- **Source notes** - Document sources with citations, repositories, and confidence levels
+- **Fact tracking** - Track which specific facts have source citations
+- **Proof summaries** - Document reasoning for genealogical conclusions
+- **Citation generator** - Generate citations in Chicago, Evidence Explained, MLA, and Turabian formats
+
+[Learn about evidence and sources](Evidence-And-Sources)
 
 ### Geographic Features
 Visualize where your ancestors lived, worked, and traveled with integrated map views.
@@ -36,31 +58,55 @@ Visualize where your ancestors lived, worked, and traveled with integrated map v
 - **Place notes** - Document locations with coordinates and historical context
 - **Life event mapping** - See birth, death, marriage, and residence locations
 - **Route visualization** - Track migration patterns and journeys
+- **Custom maps** - Support for fictional world mapping with custom image maps
 
 [Discover geographic features](Geographic-Features)
+
+### World-Building Suite
+Tools for novelists and world-builders working with fictional genealogies.
+
+- **Fictional date systems** - Custom calendars and eras (Middle-earth, Westeros, or your own)
+- **Organization notes** - Noble houses, guilds, corporations, military units
+- **Custom relationships** - Godparent, guardian, mentor, apprentice, and more
+- **Universe filtering** - Separate real and fictional data
+
+[Explore world-building features](World-Building)
 
 ### Import & Export
 Bring in existing family data or share your research with others.
 
-- **GEDCOM support** - Import from and export to standard genealogy format
-- **CSV import/export** - Bulk data management with spreadsheets
+- **GEDCOM Import v2** - Import people, events, sources, and places from standard genealogy format
+- **Export v2** - Export to GEDCOM, GEDCOM X, Gramps, and CSV with round-trip fidelity
 - **Selective export** - Export specific branches or lineages
+- **Privacy protection** - Configurable privacy controls for living persons
 
 [Learn about import/export](Import-Export)
 
-### Data Management
-Keep your family data clean and organized with powerful management tools.
+### Data Quality Tools
+Keep your family data clean and consistent with validation and batch operations.
 
-- **Bidirectional sync** - Automatic relationship linking between notes
-- **Duplicate detection** - Find and merge duplicate person records
-- **Collections** - Organize people into logical groups
+- **Bidirectional validation** - Detect and fix one-way relationship inconsistencies
+- **Duplicate detection** - Find and merge duplicate person and place records
+- **Batch operations** - Normalize names, remove placeholders, fix orphaned references
+- **Date validation** - Detect impossible dates and logical errors
 
 [Manage your data](Data-Management)
+
+### Customization
+Adapt Canvas Roots to your existing data structure and terminology.
+
+- **Property aliases** - Map your custom frontmatter property names to Canvas Roots fields
+- **Value aliases** - Map custom values (gender, event types, place categories)
+- **Type managers** - Customize event types, source types, organization types, and more
+- **Style Settings** - Customize colors via the Style Settings plugin
+
+[Configure settings](Settings-And-Configuration)
 
 ### Obsidian Bases Integration
 Use Obsidian's table-based interface for efficient bulk data entry and editing.
 
 - **Spreadsheet-like editing** - Edit multiple people at once
+- **Pre-built templates** - Ready-to-use Bases for people, places, events, sources, and organizations
 - **Sort and filter** - Find specific records quickly
 - **Automatic sync** - Changes flow back to person notes
 
@@ -76,13 +122,17 @@ Use Obsidian's table-based interface for efficient bulk data entry and editing.
 
 ### Features
 - [Family Chart View](Family-Chart-View) - Dedicated tree exploration view
+- [Events and Timelines](Events-And-Timelines) - Life events and chronological visualization
+- [Evidence and Sources](Evidence-And-Sources) - Source tracking and proof summaries
 - [Geographic Features](Geographic-Features) - Maps and location tracking
+- [World-Building](World-Building) - Fictional dates, organizations, custom relationships
 - [Relationship Tools](Relationship-Tools) - Calculator, numbering systems, lineage tracking
 - [Advanced Features](Advanced-Features) - Excalidraw export, split canvas, folder stats
 
 ### Reference
 - [Frontmatter Reference](Frontmatter-Reference) - Complete property documentation
-- [Styling & Theming](Styling-And-Theming) - CSS customization
+- [Settings and Configuration](Settings-And-Configuration) - Plugin settings and customization
+- [Styling and Theming](Styling-And-Theming) - CSS customization
 - [FAQ](FAQ) - Common questions answered
 - [Troubleshooting](Troubleshooting) - Solutions to common issues
 
@@ -94,5 +144,5 @@ Use Obsidian's table-based interface for efficient bulk data entry and editing.
 
 ---
 
-**Version**: 0.6.0
-**Last Updated**: 2025-12-03
+**Version**: 0.11.2
+**Last Updated**: 2025-12-11

@@ -7,6 +7,8 @@ This directory contains progressively larger GEDCOM test files for stress-testin
 
 ## Test Files Overview
 
+### Basic Files (Person Notes Only)
+
 | File | People | Families | Generations | File Size | Purpose |
 |------|--------|----------|-------------|-----------|---------|
 | `gedcom-sample-tiny.ged` | 11 | 4 | 4 | 2.6 KB | Baseline validation |
@@ -15,6 +17,28 @@ This directory contains progressively larger GEDCOM test files for stress-testin
 | `gedcom-sample-large.ged` | 163 | ~80 | 6 | 31 KB | Large family tree |
 | `gedcom-sample-xlarge.ged` | 599 | 179 | 7 | 113 KB | Extreme stress test |
 | `gedcom-sample-small-malformed.ged` | 13 | 5 | 3 | 2.1 KB | Error handling test |
+| `gedcom-sample-small-remarriage.ged` | - | - | - | 6.4 KB | Remarriage scenarios |
+
+### Full Files (All Note Types: People, Events, Sources, Places)
+
+These enhanced files include source records, detailed place hierarchies (with US counties), and source citations on vital events. **Use these for demonstrating all note types imported by Canvas Roots.**
+
+| File | People | Sources | Place Levels | File Size | Purpose |
+|------|--------|---------|--------------|-----------|---------|
+| `gedcom-sample-tiny-full.ged` | 11 | 4 | 4 (city→county→state→country) | 4.7 KB | Demo all note types (tiny) |
+| `gedcom-sample-small-full.ged` | 27 | 7 | 4 (city→county→state→country) | 10 KB | Demo all note types (small) |
+| `gedcom-sample-medium-full.ged` | 60 | 8 | 4 (city→county→state→country) | 15.5 KB | Demo all note types (medium) |
+| `gedcom-sample-large-full.ged` | 163 | 8 | 4 (city→county→state→country) | 36 KB | Demo all note types (large) |
+
+**Full files include:**
+- **Source records**: Family bibles, vital records, census records, immigration records, church records, newspapers, military records, Social Security Death Index
+- **Source citations**: Birth, death, and marriage events cite appropriate sources
+- **Detailed places**: US locations include county (e.g., "Boston, Suffolk County, Massachusetts, USA")
+- **Life events**: Births, deaths, marriages, occupations, education, military service, immigration, residence
+
+**When to use which:**
+- **Basic files**: Testing family tree layout, performance, and person note handling
+- **Full files**: Demonstrating complete import workflow with all note types (GIFs, videos, documentation)
 
 ## Recommended Testing Sequence
 

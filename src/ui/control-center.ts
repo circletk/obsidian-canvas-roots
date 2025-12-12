@@ -67,6 +67,7 @@ import {
 	PROOF_STATUS_LABELS,
 	PROOF_CONFIDENCE_LABELS
 } from '../sources';
+import { isPersonNote } from '../utils/note-type-detection';
 import type {
 	FactKey,
 	ResearchGapsSummary,
@@ -11025,10 +11026,13 @@ export class ControlCenterModal extends Modal {
 		const cache = this.app.metadataCache.getFileCache(file);
 		if (!cache?.frontmatter) return null;
 
-		const crId = cache.frontmatter.cr_id;
-		if (!crId) return null;
-
 		const fm = cache.frontmatter;
+
+		// Only include person notes (not events, sources, places, etc.)
+		if (!isPersonNote(fm, cache, this.plugin.settings.noteTypeDetection)) return null;
+
+		const crId = fm.cr_id;
+		if (!crId) return null;
 
 		// Note: Frontmatter uses 'born'/'died' properties, mapped to birthDate/deathDate internally
 		// Convert Date objects to ISO strings if necessary (Obsidian parses YAML dates as Date objects)
