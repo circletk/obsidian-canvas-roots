@@ -5363,3 +5363,102 @@
   background: var(--background-secondary);
   border-radius: var(--radius-m);
 }
+
+/* ==========================================================================
+   COMPACT PLACE STATISTICS
+   ========================================================================== */
+
+.crc-stats-summary-row {
+  font-size: var(--font-ui-small);
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.crc-stats-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crc-stats-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+}
+
+.crc-stats-type-name {
+  color: var(--text-muted);
+}
+
+.crc-stats-type-count {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.crc-stats-toggle {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.crc-stats-toggle button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.crc-stats-toggle button:hover {
+  color: var(--text-normal);
+}
+
+.crc-stats-details {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease-out;
+}
+
+.crc-stats-details--expanded {
+  max-height: 500px;
+  transition: max-height 0.3s ease-in;
+}
+
+.crc-stats-details-content {
+  padding-top: 12px;
+}
+
+.crc-stats-section {
+  margin-bottom: 12px;
+}
+
+.crc-stats-section-title {
+  font-size: var(--font-ui-smaller);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px 0;
+}
+
+.crc-stats-inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crc-stats-inline-item {
+  font-size: var(--font-ui-smaller);
+  padding: 2px 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+}

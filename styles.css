@@ -8,7 +8,7 @@
  * GitHub: https://github.com/banisterious/obsidian-canvas-roots
  *
  * BUILD INFORMATION:
- * - Generated: 2025-12-12 03:37:24 UTC
+ * - Generated: 2025-12-12 04:01:47 UTC
  * - Components: 30 files
  * - Build System: Node.js CSS Build Script v1.0.0
  *
@@ -574,7 +574,7 @@ settings:
    COMPONENT: MODALS.CSS
    ========================================================================== */
 
-/* Component Size: 5366 lines, 97.72 KB */
+/* Component Size: 5465 lines, 99.55 KB */
 
 /* ==========================================================================
    Canvas Roots Control Center - Styling
@@ -5940,6 +5940,105 @@ settings:
   padding: 8px 12px;
   background: var(--background-secondary);
   border-radius: var(--radius-m);
+}
+
+/* ==========================================================================
+   COMPACT PLACE STATISTICS
+   ========================================================================== */
+
+.crc-stats-summary-row {
+  font-size: var(--font-ui-small);
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.crc-stats-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.crc-stats-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  font-size: var(--font-ui-smaller);
+}
+
+.crc-stats-type-name {
+  color: var(--text-muted);
+}
+
+.crc-stats-type-count {
+  font-weight: 500;
+  color: var(--text-normal);
+}
+
+.crc-stats-toggle {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.crc-stats-toggle button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-ui-smaller);
+  color: var(--text-muted);
+}
+
+.crc-stats-toggle button:hover {
+  color: var(--text-normal);
+}
+
+.crc-stats-details {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height 0.2s ease-out;
+}
+
+.crc-stats-details--expanded {
+  max-height: 500px;
+  transition: max-height 0.3s ease-in;
+}
+
+.crc-stats-details-content {
+  padding-top: 12px;
+}
+
+.crc-stats-section {
+  margin-bottom: 12px;
+}
+
+.crc-stats-section-title {
+  font-size: var(--font-ui-smaller);
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 6px 0;
+}
+
+.crc-stats-inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.crc-stats-inline-item {
+  font-size: var(--font-ui-smaller);
+  padding: 2px 8px;
+  background: var(--background-secondary);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
 }
 
 
@@ -16543,10 +16642,10 @@ body.wide-timeline .view-content {
    ========================================================================== */
 
 /*
- * Build completed: 2025-12-12 03:37:24 UTC
+ * Build completed: 2025-12-12 04:01:47 UTC
  * Components processed: 30
- * Total lines: 16250
- * Total size: 320.24 KB
+ * Total lines: 16349
+ * Total size: 322.07 KB
  * Build duration: 0.03 seconds
  *
  * Component breakdown:
@@ -16558,7 +16657,7 @@ body.wide-timeline .view-content {
  * - nodes.css: 12 lines, 0.3 KB
  * - edges.css: 4 lines, 0.07 KB
  * - settings.css: 129 lines, 3.33 KB
- * - modals.css: 5366 lines, 97.72 KB
+ * - modals.css: 5465 lines, 99.55 KB
  * - duplicate-detection.css: 163 lines, 2.82 KB
  * - tree-statistics.css: 41 lines, 0.6 KB
  * - validation.css: 84 lines, 1.47 KB

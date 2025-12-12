@@ -19,6 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Place notes table open buttons** - Added separate buttons to open place notes in new tab or new window
 
+### Changed
+
+- **Places tab reorganization** - Reordered cards to prioritize actionable content: Data quality first, then Place notes table, then Statistics last
+- **Place statistics card** - Now shows compact summary with collapsible detailed statistics (categories, top places, migration patterns)
+- **Removed Referenced places card** - Consolidated into Data quality card's "Missing place notes" section to reduce redundancy
+
 ### Fixed
 
 - **Tree output root person picker showing non-person notes** - Fixed person browser in Control Center > Tree output tab listing events, sources, and places instead of only person notes

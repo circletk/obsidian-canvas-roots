@@ -31,7 +31,7 @@ export function renderPlacesTab(
 	createCard: (options: { title: string; icon?: LucideIconName; subtitle?: string }) => HTMLElement,
 	showTab: (tabId: string) => void
 ): void {
-	// Data Quality Card (unified issues + actions)
+	// 1. Data Quality Card (unified issues + actions) - actionable, first
 	const dataQualityCard = createCard({
 		title: 'Data quality',
 		icon: 'alert-triangle',
@@ -49,25 +49,7 @@ export function renderPlacesTab(
 	// Load data quality content asynchronously
 	loadDataQualityCard(dataQualityContent, plugin, showTab);
 
-	// Overview Card
-	const overviewCard = createCard({
-		title: 'Place statistics',
-		icon: 'map-pin',
-		subtitle: 'Geographic data overview'
-	});
-
-	const overviewContent = overviewCard.querySelector('.crc-card__content') as HTMLElement;
-	overviewContent.createEl('p', {
-		text: 'Loading statistics...',
-		cls: 'crc-text--muted'
-	});
-
-	container.appendChild(overviewCard);
-
-	// Load statistics asynchronously
-	loadPlaceStatistics(overviewContent, plugin);
-
-	// Place List Card
+	// 2. Place List Card - browse/edit, second
 	const listCard = createCard({
 		title: 'Place notes',
 		icon: 'globe',
@@ -85,30 +67,12 @@ export function renderPlacesTab(
 	// Load place list asynchronously
 	loadPlaceList(listContent, plugin, showTab);
 
-	// Referenced Places Card (places mentioned in person notes)
-	const referencedCard = createCard({
-		title: 'Referenced places',
-		icon: 'link',
-		subtitle: 'Places mentioned in person notes'
-	});
-
-	const referencedContent = referencedCard.querySelector('.crc-card__content') as HTMLElement;
-	referencedContent.createEl('p', {
-		text: 'Loading references...',
-		cls: 'crc-text--muted'
-	});
-
-	container.appendChild(referencedCard);
-
-	// Load referenced places asynchronously
-	loadReferencedPlaces(referencedContent, plugin, showTab);
-
-	// Place Type Manager card
+	// 3. Place Type Manager card
 	renderPlaceTypeManagerCard(container, plugin, createCard, () => {
 		showTab('places');
 	});
 
-	// Batch Operations Card
+	// 4. Batch Operations Card
 	const batchCard = createCard({
 		title: 'Batch operations',
 		icon: 'zap',
@@ -139,6 +103,24 @@ export function renderPlacesTab(
 			}));
 
 	container.appendChild(batchCard);
+
+	// 5. Place Statistics Card - collapsible reference info, last
+	const statsCard = createCard({
+		title: 'Place statistics',
+		icon: 'bar-chart',
+		subtitle: 'Geographic data overview'
+	});
+
+	const statsContent = statsCard.querySelector('.crc-card__content') as HTMLElement;
+	statsContent.createEl('p', {
+		text: 'Loading statistics...',
+		cls: 'crc-text--muted'
+	});
+
+	container.appendChild(statsCard);
+
+	// Load statistics asynchronously
+	loadPlaceStatistics(statsContent, plugin);
 }
 
 /**
@@ -701,111 +683,141 @@ function loadPlaceStatistics(container: HTMLElement, plugin: CanvasRootsPlugin):
 		return;
 	}
 
-	// Overview statistics grid
-	const statsGrid = container.createDiv({ cls: 'crc-stats-grid' });
+	// Compact summary row
+	const summaryRow = container.createDiv({ cls: 'crc-stats-summary-row' });
 
-	// Total places
-	createStatItem(statsGrid, 'Total places', stats.totalPlaces.toString(), 'map-pin');
-
-	// With coordinates
 	const coordPercent = stats.totalPlaces > 0
 		? Math.round((stats.withCoordinates / stats.totalPlaces) * 100)
 		: 0;
-	createStatItem(statsGrid, 'With coordinates', `${stats.withCoordinates} (${coordPercent}%)`, 'globe');
 
-	// Hierarchy depth
-	createStatItem(statsGrid, 'Max hierarchy depth', stats.maxHierarchyDepth.toString(), 'layers');
+	summaryRow.createEl('span', { text: `${stats.totalPlaces} places` });
+	summaryRow.createEl('span', { text: ' · ', cls: 'crc-text--muted' });
+	summaryRow.createEl('span', { text: `${coordPercent}% geocoded`, cls: coordPercent === 100 ? 'crc-text--success' : '' });
+	summaryRow.createEl('span', { text: ' · ', cls: 'crc-text--muted' });
+	summaryRow.createEl('span', { text: `${stats.maxHierarchyDepth} levels deep` });
 
-	// Orphan places
-	createStatItem(statsGrid, 'Orphan places', stats.orphanPlaces.toString(), 'alert-circle');
+	// By type breakdown (inline badges)
+	const typeRow = container.createDiv({ cls: 'crc-stats-type-row crc-mt-2' });
+	const allPlaces = placeService.getAllPlaces();
+	const typeMap = new Map<string, number>();
+	for (const place of allPlaces) {
+		const type = place.placeType || 'untyped';
+		typeMap.set(type, (typeMap.get(type) || 0) + 1);
+	}
+
+	// Sort by count descending, show top types
+	const sortedTypes = Array.from(typeMap.entries())
+		.sort((a, b) => b[1] - a[1])
+		.slice(0, 8);
+
+	for (const [type, count] of sortedTypes) {
+		const badge = typeRow.createEl('span', {
+			cls: 'crc-stats-type-badge'
+		});
+		badge.createEl('span', { text: type, cls: 'crc-stats-type-name' });
+		badge.createEl('span', { text: count.toString(), cls: 'crc-stats-type-count' });
+	}
+
+	// Collapsible detailed sections
+	const detailsContainer = container.createDiv({ cls: 'crc-stats-details' });
+
+	// Toggle for showing details
+	const toggleRow = container.createDiv({ cls: 'crc-stats-toggle crc-mt-2' });
+	const toggleBtn = toggleRow.createEl('button', {
+		cls: 'crc-btn crc-btn--small crc-btn--ghost'
+	});
+	const toggleIcon = createLucideIcon('chevron-right', 14);
+	toggleBtn.appendChild(toggleIcon);
+	toggleBtn.createEl('span', { text: 'Show detailed statistics' });
+
+	let detailsExpanded = false;
+
+	toggleBtn.addEventListener('click', () => {
+		detailsExpanded = !detailsExpanded;
+		detailsContainer.classList.toggle('crc-stats-details--expanded', detailsExpanded);
+		toggleBtn.empty();
+		const newIcon = createLucideIcon(detailsExpanded ? 'chevron-down' : 'chevron-right', 14);
+		toggleBtn.appendChild(newIcon);
+		toggleBtn.createEl('span', { text: detailsExpanded ? 'Hide detailed statistics' : 'Show detailed statistics' });
+	});
+
+	// Detailed content (hidden by default)
+	const detailsContent = detailsContainer.createDiv({ cls: 'crc-stats-details-content' });
 
 	// By Category breakdown
-	const categorySection = container.createDiv({ cls: 'crc-mt-4' });
-	categorySection.createEl('h4', { text: 'By category', cls: 'crc-section-title' });
-
-	const categoryGrid = categorySection.createDiv({ cls: 'crc-stats-grid crc-stats-grid--compact' });
-
 	const categories: PlaceCategory[] = ['real', 'historical', 'disputed', 'legendary', 'mythological', 'fictional'];
-	for (const category of categories) {
-		const count = stats.byCategory[category];
-		if (count > 0) {
-			createStatItem(categoryGrid, formatPlaceCategoryName(category), count.toString());
+	const nonZeroCategories = categories.filter(cat => stats.byCategory[cat] > 0);
+
+	if (nonZeroCategories.length > 0) {
+		const categorySection = detailsContent.createDiv({ cls: 'crc-stats-section' });
+		categorySection.createEl('h5', { text: 'By category', cls: 'crc-stats-section-title' });
+
+		const categoryList = categorySection.createDiv({ cls: 'crc-stats-inline-list' });
+		for (const category of nonZeroCategories) {
+			const count = stats.byCategory[category];
+			categoryList.createEl('span', {
+				text: `${formatPlaceCategoryName(category)}: ${count}`,
+				cls: 'crc-stats-inline-item'
+			});
 		}
 	}
 
 	// Universes (if any fictional/mythological places)
 	const universeCount = Object.keys(stats.byUniverse).length;
 	if (universeCount > 0) {
-		const universeSection = container.createDiv({ cls: 'crc-mt-4' });
-		universeSection.createEl('h4', { text: 'By universe', cls: 'crc-section-title' });
+		const universeSection = detailsContent.createDiv({ cls: 'crc-stats-section' });
+		universeSection.createEl('h5', { text: 'Fictional universes', cls: 'crc-stats-section-title' });
 
-		const universeList = universeSection.createEl('ul', { cls: 'crc-list' });
-		for (const [universe, count] of Object.entries(stats.byUniverse).sort((a, b) => b[1] - a[1])) {
-			const item = universeList.createEl('li');
-			item.createEl('span', { text: universe });
-			item.createEl('span', { text: ` (${count})`, cls: 'crc-text--muted' });
-		}
-	}
-
-	// Collections (user-defined groupings)
-	const collectionCount = Object.keys(stats.byCollection).length;
-	if (collectionCount > 0) {
-		const collectionSection = container.createDiv({ cls: 'crc-mt-4' });
-		collectionSection.createEl('h4', { text: 'By collection', cls: 'crc-section-title' });
-
-		const collectionList = collectionSection.createEl('ul', { cls: 'crc-list' });
-		for (const [collection, count] of Object.entries(stats.byCollection).sort((a, b) => b[1] - a[1])) {
-			const item = collectionList.createEl('li');
-			item.createEl('span', { text: collection });
-			item.createEl('span', { text: ` (${count})`, cls: 'crc-text--muted' });
+		const universeList = universeSection.createDiv({ cls: 'crc-stats-inline-list' });
+		for (const [universe, count] of Object.entries(stats.byUniverse).sort((a, b) => b[1] - a[1]).slice(0, 5)) {
+			universeList.createEl('span', {
+				text: `${universe}: ${count}`,
+				cls: 'crc-stats-inline-item'
+			});
 		}
 	}
 
 	// Top birth places
 	if (stats.topBirthPlaces.length > 0) {
-		const birthSection = container.createDiv({ cls: 'crc-mt-4' });
-		birthSection.createEl('h4', { text: 'Most common birth places', cls: 'crc-section-title' });
+		const birthSection = detailsContent.createDiv({ cls: 'crc-stats-section' });
+		birthSection.createEl('h5', { text: 'Top birth places', cls: 'crc-stats-section-title' });
 
-		const birthList = birthSection.createEl('ol', { cls: 'crc-list crc-list--numbered' });
+		const birthList = birthSection.createDiv({ cls: 'crc-stats-inline-list' });
 		for (const place of stats.topBirthPlaces.slice(0, 5)) {
-			const item = birthList.createEl('li');
-			item.createEl('span', { text: place.place });
-			item.createEl('span', { text: ` (${place.count})`, cls: 'crc-text--muted' });
+			birthList.createEl('span', {
+				text: `${place.place}: ${place.count}`,
+				cls: 'crc-stats-inline-item'
+			});
 		}
 	}
 
 	// Top death places
 	if (stats.topDeathPlaces.length > 0) {
-		const deathSection = container.createDiv({ cls: 'crc-mt-4' });
-		deathSection.createEl('h4', { text: 'Most common death places', cls: 'crc-section-title' });
+		const deathSection = detailsContent.createDiv({ cls: 'crc-stats-section' });
+		deathSection.createEl('h5', { text: 'Top death places', cls: 'crc-stats-section-title' });
 
-		const deathList = deathSection.createEl('ol', { cls: 'crc-list crc-list--numbered' });
+		const deathList = deathSection.createDiv({ cls: 'crc-stats-inline-list' });
 		for (const place of stats.topDeathPlaces.slice(0, 5)) {
-			const item = deathList.createEl('li');
-			item.createEl('span', { text: place.place });
-			item.createEl('span', { text: ` (${place.count})`, cls: 'crc-text--muted' });
+			deathList.createEl('span', {
+				text: `${place.place}: ${place.count}`,
+				cls: 'crc-stats-inline-item'
+			});
 		}
 	}
 
 	// Migration patterns
 	if (stats.migrationPatterns.length > 0) {
-		const migrationSection = container.createDiv({ cls: 'crc-mt-4' });
-		migrationSection.createEl('h4', { text: 'Migration patterns (birth → death)', cls: 'crc-section-title' });
+		const migrationSection = detailsContent.createDiv({ cls: 'crc-stats-section' });
+		migrationSection.createEl('h5', { text: 'Migration patterns', cls: 'crc-stats-section-title' });
 
-		const migrationList = migrationSection.createEl('ul', { cls: 'crc-list' });
+		const migrationList = migrationSection.createDiv({ cls: 'crc-stats-inline-list' });
 		for (const pattern of stats.migrationPatterns.slice(0, 5)) {
-			const item = migrationList.createEl('li');
-			item.createEl('span', { text: `${pattern.from} → ${pattern.to}` });
-			item.createEl('span', { text: ` (${pattern.count})`, cls: 'crc-text--muted' });
+			migrationList.createEl('span', {
+				text: `${pattern.from} → ${pattern.to}: ${pattern.count}`,
+				cls: 'crc-stats-inline-item'
+			});
 		}
 	}
-
-	// Helpful note pointing to actions
-	const noteSection = container.createDiv({ cls: 'crc-mt-4' });
-	noteSection.createEl('p', {
-		text: 'Use the Actions card above to create missing places, build hierarchy, standardize names, or bulk geocode coordinates.',
-		cls: 'crc-text--muted crc-text--small'
-	});
 }
 
 /**
@@ -1117,189 +1129,6 @@ function loadPlaceList(
 
 	// Initial render
 	renderTable();
-}
-
-/**
- * Load referenced places into container
- */
-function loadReferencedPlaces(
-	container: HTMLElement,
-	plugin: CanvasRootsPlugin,
-	showTab: (tabId: string) => void
-): void {
-	container.empty();
-
-	const placeService = new PlaceGraphService(plugin.app);
-	placeService.setSettings(plugin.settings);
-	placeService.setValueAliases(plugin.settings.valueAliases);
-	placeService.reloadCache();
-
-	const references = placeService.getReferencedPlaces();
-
-	if (references.size === 0) {
-		container.createEl('p', {
-			text: 'No place references found in person notes.',
-			cls: 'crc-text--muted'
-		});
-		return;
-	}
-
-	// Separate linked vs unlinked
-	const linked: Array<{ name: string; count: number }> = [];
-	const unlinked: Array<{ name: string; count: number }> = [];
-
-	for (const [name, info] of references.entries()) {
-		if (info.linked) {
-			linked.push({ name, count: info.count });
-		} else {
-			unlinked.push({ name, count: info.count });
-		}
-	}
-
-	// State for filtering and sorting
-	let filterText = '';
-	let sortBy: 'count' | 'name' = 'count';
-	let showLinked = true;
-	let showUnlinked = true;
-
-	// Summary
-	const summary = container.createDiv({ cls: 'crc-stats-summary crc-mb-3' });
-	summary.createEl('span', { text: `${linked.length} linked`, cls: 'crc-text--success' });
-	summary.createEl('span', { text: ' • ', cls: 'crc-text--muted' });
-	summary.createEl('span', { text: `${unlinked.length} unlinked`, cls: unlinked.length > 0 ? 'crc-text--warning' : 'crc-text--muted' });
-
-	// Controls row
-	const controlsRow = container.createDiv({ cls: 'crc-referenced-controls crc-mb-3' });
-
-	// Link status dropdown (filter)
-	const linkStatusSelect = controlsRow.createEl('select', { cls: 'dropdown' });
-	linkStatusSelect.createEl('option', { value: 'all', text: 'All places' });
-	linkStatusSelect.createEl('option', { value: 'linked', text: 'Linked only' });
-	linkStatusSelect.createEl('option', { value: 'unlinked', text: 'Unlinked only' });
-
-	// Sort dropdown
-	const sortSelect = controlsRow.createEl('select', { cls: 'dropdown' });
-	sortSelect.createEl('option', { value: 'count', text: 'Count (high–low)' });
-	sortSelect.createEl('option', { value: 'name', text: 'Name (A–Z)' });
-
-	// Search input
-	const filterInput = controlsRow.createEl('input', {
-		type: 'text',
-		placeholder: `Search ${linked.length + unlinked.length} places...`,
-		cls: 'crc-filter-input'
-	});
-
-	// List container
-	const listContainer = container.createDiv({ cls: 'crc-referenced-list' });
-
-	// Render function
-	const renderList = () => {
-		listContainer.empty();
-
-		// Apply sorting
-		const sortFn = sortBy === 'count'
-			? (a: { name: string; count: number }, b: { name: string; count: number }) => b.count - a.count
-			: (a: { name: string; count: number }, b: { name: string; count: number }) => a.name.localeCompare(b.name);
-
-		// Filter and combine lists
-		const allPlaces: Array<{ name: string; count: number; linked: boolean }> = [];
-
-		if (showLinked) {
-			for (const p of linked) {
-				if (!filterText || p.name.toLowerCase().includes(filterText.toLowerCase())) {
-					allPlaces.push({ ...p, linked: true });
-				}
-			}
-		}
-
-		if (showUnlinked) {
-			for (const p of unlinked) {
-				if (!filterText || p.name.toLowerCase().includes(filterText.toLowerCase())) {
-					allPlaces.push({ ...p, linked: false });
-				}
-			}
-		}
-
-		// Sort
-		allPlaces.sort((a, b) => {
-			// Unlinked first when sorting by count
-			if (sortBy === 'count' && a.linked !== b.linked) {
-				return a.linked ? 1 : -1;
-			}
-			return sortFn(a, b);
-		});
-
-		if (allPlaces.length === 0) {
-			listContainer.createEl('p', {
-				text: filterText ? 'No places match the filter.' : 'No places to show.',
-				cls: 'crc-text--muted'
-			});
-			return;
-		}
-
-		// Render list
-		const list = listContainer.createEl('ul', { cls: 'crc-list crc-referenced-places-list' });
-
-		for (const place of allPlaces) {
-			const item = list.createEl('li', {
-				cls: `crc-referenced-place-item ${place.linked ? 'crc-referenced-place-item--linked' : 'crc-referenced-place-item--unlinked'}`
-			});
-
-			const content = item.createDiv({ cls: 'crc-referenced-place-content' });
-
-			// Status indicator
-			const statusIcon = content.createSpan({ cls: 'crc-referenced-place-status' });
-			if (place.linked) {
-				setLucideIcon(statusIcon, 'check', 14);
-				statusIcon.addClass('crc-text--success');
-			} else {
-				setLucideIcon(statusIcon, 'alert-circle', 14);
-				statusIcon.addClass('crc-text--warning');
-			}
-
-			// Name and count
-			content.createEl('span', { text: place.name, cls: 'crc-referenced-place-name' });
-			content.createEl('span', { text: ` (${place.count})`, cls: 'crc-text--muted' });
-
-			// Quick-create button for unlinked
-			if (!place.linked) {
-				const createBtn = item.createEl('button', {
-					cls: 'crc-btn crc-btn--small crc-btn--ghost',
-					text: 'Create'
-				});
-				createBtn.addEventListener('click', () => {
-					showQuickCreatePlaceModal(plugin, place.name, showTab);
-				});
-			}
-		}
-
-		// Show count
-		const countText = listContainer.createEl('p', {
-			cls: 'crc-text--muted crc-text--small crc-mt-2'
-		});
-		countText.textContent = `Showing ${allPlaces.length} of ${linked.length + unlinked.length} places`;
-	};
-
-	// Event handlers
-	linkStatusSelect.addEventListener('change', () => {
-		const value = linkStatusSelect.value;
-		showLinked = value === 'all' || value === 'linked';
-		showUnlinked = value === 'all' || value === 'unlinked';
-		renderList();
-	});
-
-	sortSelect.addEventListener('change', () => {
-		sortBy = sortSelect.value as 'count' | 'name';
-		renderList();
-	});
-
-	filterInput.addEventListener('input', () => {
-		filterText = filterInput.value;
-		renderList();
-	});
-
-	// Initial render
-	renderList();
 }
 
 /**
