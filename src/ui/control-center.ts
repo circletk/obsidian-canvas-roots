@@ -12180,19 +12180,8 @@ export class ControlCenterModal extends Modal {
 				}
 			}
 
-			// Check empty parent/spouse fields
-			const emptyFields = ['father', 'mother'];
-			for (const field of emptyFields) {
-				if (field in fm && (fm[field] === '' || fm[field] === null)) {
-					changes.push({
-						person: { name: person.name || 'Unknown' },
-						field,
-						oldValue: '(empty)',
-						newValue: '(remove field)',
-						file: person.file
-					});
-				}
-			}
+			// Note: Empty parent/spouse fields (null, undefined, '') are intentionally
+			// NOT flagged as issues - they represent unknown/missing data which is valid.
 		}
 
 		if (changes.length === 0) {
@@ -13597,7 +13586,7 @@ class PlaceholderRemovalPreviewModal extends Modal {
 		// Add modal class for sizing
 		this.modalEl.addClass('crc-batch-preview-modal');
 
-		titleEl.setText('Preview: Remove empty/placeholder values');
+		titleEl.setText('Preview: Remove placeholder values');
 
 		// Description
 		const description = contentEl.createDiv({ cls: 'crc-batch-description' });
